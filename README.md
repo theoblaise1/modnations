@@ -5,7 +5,8 @@ pensé pour **2 à 10 joueurs** sur un serveur dédié auto-hébergé (LAN ou Ta
 Nom de travail, sans lien avec une marque existante. Aucune ressource n'est copiée : textures et
 structures sont générées par script, tous les noms sont originaux.
 
-> État : **jalon J1 livré** (nation, grades, trésorerie, territoire, population).
+> État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
+> recherche de 65 paliers, onglet Recherche). Les jalons suivants attendent la validation en jeu.
 > Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
@@ -36,7 +37,7 @@ structures sont générées par script, tous les noms sont originaux.
 | Jalon | Contenu | État |
 |---|---|---|
 | J1 | Nation multi-membres (syst. 1 + 7 hors guerre), trésorerie, territoire, population, écran national | ✅ livré |
-| J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | à valider |
+| J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré, à valider en jeu |
 | J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | — |
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | — |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée (syst. 4) | — |
@@ -73,7 +74,19 @@ La répartition des systèmes 7 à 10 (ajoutés après le découpage initial J1�
 | `/balance [joueur]` · `/pay <joueur> <montant>` · `/baltop` | Économie personnelle. |
 | `/sfadmin money\|treasury\|bypass …` | Outils opérateur (niveau 2) pour tester et modérer. |
 
-Touche **N** : écran national (Aperçu, Recherche, Trésor, Territoire, Rôles, Journal, Contrats).
+Touche **N** : écran national (Aperçu, Science, Trésor, Carte, Rôles, Journal, Contrats).
+
+### Recherche (J2)
+| Commande | Effet |
+|---|---|
+| `/research` | Recherche en cours et progression. |
+| `/research list [domaine]` | Paliers d'un domaine et leur état (✔ terminé, ⌛ en cours, ● disponible, ✘ verrouillé). |
+| `/research info <palier>` | Fiche : coûts (✔/✘ selon le coffre national), prérequis, durée, récompenses. |
+| `/research start <palier>` · `/research cancel` | Lancer (permission `rechercher`) · annuler (50 % du coût rendu). |
+| `/sfadmin research <nation> complete <palier>\|finish\|points <n>` | Outils opérateur. |
+
+Une seule recherche active par nation ; les objets sont prélevés dans le **coffre national** ;
+la recherche avance même serveur éteint (horodatages réels).
 
 ### Permissions (identifiants de commande)
 `revendiquer`, `abandonner`, `retirer`, `coffre`, `construire`, `inviter`, `exclure`,
@@ -84,19 +97,19 @@ Touche **N** : écran national (Aperçu, Recherche, Trésor, Territoire, Rôles,
 `startingBalance`, `creationCost`, `maxMembers`, `inviteExpiryMinutes`, `claimBaseCost`,
 `claimCostGrowth`, `requireContiguous`, `unclaimRefundRatio`, `surfaceSpawnYOffset`,
 `cropYieldBonus`, `protectFromExplosions`, `treasuryReach`, `incomeIntervalTicks`,
-`incomePerInhabitant`, `maxBuildingVolume`, `farmMinFarmland`, `buildingRecheckTicks`.
+`incomePerInhabitant`, `maxBuildingVolume`, `farmMinFarmland`, `buildingRecheckTicks`,
+`researchCancelRefund`.
 
 ---
 
-## Ajouter un palier de recherche (format du jalon J2)
+## Ajouter ou modifier un palier de recherche
 
-> Le moteur de recherche arrive au **J2** ; ce format est le contrat retenu, à confirmer à la
-> livraison de J2. Les paliers ne sont **pas** codés en Java : ils sont lus depuis le datapack,
-> donc modifiables par un datapack de monde sans recompiler.
+Les paliers ne sont **pas** codés en Java : ils sont lus depuis le datapack à chaque chargement
+(`/reload` en jeu), donc modifiables par un datapack de monde sans recompiler. Le plan complet
+des 65 paliers et le catalogue des déblocages sont dans [`docs/recherche.md`](docs/recherche.md).
 
-1. Créer `src/main/resources/data/sovereignfrontier/research/<domaine>_<palier>.json`
-   (ou le même chemin dans un datapack). L'identifiant du palier est
-   `sovereignfrontier:<domaine>_<palier>`.
+1. Créer `data/<namespace>/research/<domaine>_<palier>.json` (dans `src/main/resources/` ou dans
+   un datapack). L'identifiant du palier est le chemin du fichier, ex. `sovereignfrontier:industrie_8`.
 2. Renseigner :
 
 ```json
@@ -104,28 +117,38 @@ Touche **N** : écran national (Aperçu, Recherche, Trésor, Territoire, Rôles,
   "domain": "industrie",
   "tier": 8,
   "cost": {
-    "treasury": 25000,
+    "treasury": 6800,
+    "points": 0,
     "items": [
-      { "item": "minecraft:iron_block", "count": 32 },
-      { "item": "minecraft:redstone_block", "count": 16 }
+      { "item": "minecraft:firework_rocket", "count": 64 },
+      { "item": "minecraft:diamond", "count": 8 }
     ]
   },
-  "requires": ["sovereignfrontier:industrie_7", "sovereignfrontier:ressources_6"],
-  "min_population": 6,
+  "requires": ["sovereignfrontier:technologie_1"],
+  "min_population": 9,
   "rewards": [
-    { "type": "unlock_recipe", "recipe": "sovereignfrontier:fusee" },
-    { "type": "passive_bonus", "stat": "crop_yield", "amount": 0.02 }
+    { "type": "unlock", "key": "rocket" },
+    { "type": "bonus", "stat": "crop_yield", "amount": 0.02 }
   ]
 }
 ```
 
    - `domain` : `civil` (15 paliers), `militaire` (16), `ressources` (15), `industrie` (12),
-     `technologie` (7).
-   - Durée : `120 s × palier^1,35` par défaut (champ optionnel `duration_seconds` pour la forcer).
-   - Les objets de `cost.items` sont consommés au lancement ; le coût en trésorerie est débité.
-3. Ajouter les traductions `sovereignfrontier.research.<domaine>_<palier>` (nom) et
-   `….desc` (description) dans `assets/sovereignfrontier/lang/en_us.json`.
-4. `/reload` en jeu (ou redémarrage) puis vérifier l'onglet Recherche.
+     `technologie` (7). Le palier `n` exige implicitement le palier `n-1` du même domaine :
+     `requires` ne liste que les prérequis **croisés**.
+   - `cost.items` : objets prélevés dans le **coffre national** au lancement ; `treasury` est
+     débité de la trésorerie ; `points` (points de recherche, J4) est facultatif.
+   - Durée : `120 s × palier^1,35` (champ facultatif `duration_seconds` pour la forcer), divisée
+     par le bonus `research_speed`.
+   - `rewards` : `unlock` (clé du catalogue de `docs/recherche.md`) ou `bonus` (`stat` parmi
+     `population_multiplier`, `income_multiplier`, `crop_yield`, `claim_cost_multiplier`,
+     `max_members`, `research_speed`).
+3. Ajouter dans `assets/sovereignfrontier/lang/en_us.json` : `sovereignfrontier.research.<chemin>`
+   (nom), `sovereignfrontier.research.<chemin>.desc` (description) et, pour une nouvelle clé,
+   `sovereignfrontier.unlock.<clé>`.
+4. Vérifier : `python3 tools/check_research.py` (schéma, séquences, cycles, conformité au plan),
+   puis `/reload` en jeu. Un fichier invalide est ignoré avec un message explicite dans le journal
+   du serveur (`Palier de recherche … ignoré : …`).
 
 ---
 
@@ -141,6 +164,10 @@ python3 tools/gen_textures.py      # régénère les textures 16x16 (Pillow) ; -
 python3 tools/gen_structures.py    # régénère les gabarits NBT ; --check en CI
 python3 tools/check_sides.py       # aucune classe cliente hors du paquet client ; --self-test
 python3 tools/check_lang.py        # toute clé de traduction utilisée existe
+python3 tools/check_research.py    # arbre de recherche conforme à docs/recherche.md ; --self-test
+
+# Captures automatiques de l'écran national (client sur écran virtuel, runs/client/screenshots/)
+SF_SCREENSHOTS=1 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient
 ```
 
 La CI (`.github/workflows/build.yml`) exécute ces contrôles, `./gradlew build`, les GameTests
@@ -152,13 +179,14 @@ sur serveur headless, et publie le `.jar` à chaque push.
 | `SovereignFrontier`, `SFConfig` | Point d'entrée commun, configuration serveur TOML. |
 | `registry/` | Tous les `DeferredRegister` (blocs, objets, onglet créatif, attachments). |
 | `nation/` | Modèle (`Nation`, rôles, permissions), `NationData` (SavedData), `TerritoryIndex` (cache), logique métier (`NationManager`, `CivilBuildings`). |
+| `research/` | Arbre de recherche : définitions JSON, registre rechargé par datapack, état par nation, `ResearchManager`. |
 | `economy/` | `EconomyData` : portefeuilles personnels. |
 | `player/` | DataAttachments joueur. |
 | `block/` | Blocs nationaux et menu du coffre. |
 | `command/` | Commandes Brigadier et autocomplétion. |
 | `event/` | Abonnés aux événements serveur (protection, ticks, connexions). |
 | `network/` | Payloads (NeoForge 1.21) et construction des snapshots. |
-| `client/` | **Seul** paquet autorisé à toucher au code client (`@OnlyIn(Dist.CLIENT)`). |
+| `client/` | **Seul** paquet autorisé à toucher au code client (`@OnlyIn(Dist.CLIENT)`) ; `client/dev/` : outil de captures (inactif sans `SF_SCREENSHOTS`). |
 | `gametest/` | GameTests exécutés en CI. |
 
 ### Règles d'architecture
