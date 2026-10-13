@@ -3,6 +3,11 @@
   "values": [
     "sovereignfrontier:tresor_national",
     "sovereignfrontier:coffre_national",
-    "sovereignfrontier:blindage_national"
+    "sovereignfrontier:blindage_national",
+    "sovereignfrontier:caisson_reacteur",
+    "sovereignfrontier:cellule_combustible",
+    "sovereignfrontier:dissipateur_thermique",
+    "sovereignfrontier:station_ingenierie",
+    "sovereignfrontier:controleur_reacteur"
   ]
 }

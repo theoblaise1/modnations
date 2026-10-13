@@ -551,6 +551,196 @@ def registre_civil_top(c: Canvas, rng: random.Random) -> None:
 def registre_civil_bottom(c: Canvas, rng: random.Random) -> None:
     planks(c, rng, 0, 0, c.last, c.last, WOOD_DARK, plank_h=4, grain=4, seam=-30)
 
+# --------------------------------------------------------------------------- #
+# Jalon J3 : énergie, machines, réacteur, Station d'ingénierie
+# --------------------------------------------------------------------------- #
+COPPER = (184, 104, 64)
+COPPER_DARK = (122, 64, 38)
+ENERGY = (96, 220, 255)
+ENERGY_DARK = (36, 120, 170)
+HEAT = (255, 120, 40)
+GLASS_BLUE = (40, 70, 120)
+GAS = (180, 230, 120)
+REACTOR = (64, 70, 60)
+TRANSPARENT = (0, 0, 0, 0)
+
+
+def machine_frame(c: Canvas, rng: random.Random, base: Color = STEEL) -> None:
+    steel_base(c, rng, base)
+    bevel(c, 0, 0, c.last, c.last)
+    corner_rivets(c)
+
+
+def gauge(c: Canvas, x0: int, y0: int, x1: int, y1: int, color: Color) -> None:
+    fill_rect(c, x0, y0, x1, y1, STEEL_GROOVE)
+    for y in range(y0 + 1, y1):
+        for x in range(x0 + 1, x1):
+            c.set(x, y, mix(color, shade(color, -70), (y - y0) / max(1, y1 - y0)))
+
+
+@texture("cable_energie", seed=0x5F0101)
+def cable_energie(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, TRANSPARENT)
+    noise_rect(c, rng, 5, 0, 10, c.last, COPPER, amount=6, streak=4)
+    vline(c, 5, 0, c.last, COPPER_DARK)
+    vline(c, 10, 0, c.last, COPPER_DARK)
+    for y in range(1, c.last, 4):
+        hline(c, 6, 9, y, shade(COPPER, 30))
+
+
+@texture("generateur_thermique_front", seed=0x5F0102)
+def generateur_thermique_front(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    fill_rect(c, 4, 6, 11, 12, STEEL_GROOVE)
+    for x in range(5, 11):
+        c.set(x, 11, HEAT)
+        c.set(x, 10, shade(HEAT, -40) if x % 2 else HEAT)
+    hline(c, 4, 11, 4, STEEL_LIGHT)
+
+
+@texture("generateur_thermique_side", seed=0x5F0103)
+def generateur_thermique_side(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    for y in (4, 7, 10):
+        hline(c, 3, 12, y, STEEL_GROOVE)
+
+
+@texture("panneau_solaire_top", seed=0x5F0104)
+def panneau_solaire_top(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, STEEL_LIGHT)
+    for gy in range(2):
+        for gx in range(2):
+            x0, y0 = 1 + gx * 7, 1 + gy * 7
+            noise_rect(c, rng, x0, y0, x0 + 6, y0 + 6, GLASS_BLUE, amount=4)
+            c.set(x0 + 1, y0 + 1, shade(GLASS_BLUE, 70))
+            hline(c, x0, x0 + 6, y0 + 3, shade(GLASS_BLUE, -20))
+
+
+@texture("cellule_energie_side", seed=0x5F0105)
+def cellule_energie_side(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    gauge(c, 5, 3, 10, 12, ENERGY)
+
+
+@texture("cellule_energie_top", seed=0x5F0106)
+def cellule_energie_top(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    fill_rect(c, 6, 6, 9, 9, ENERGY)
+    outline_rect(c, 5, 5, 10, 10, STEEL_GROOVE)
+
+
+@texture("foreuse_gaz_side", seed=0x5F0107)
+def foreuse_gaz_side(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng, (82, 86, 70))
+    gauge(c, 4, 4, 11, 11, GAS)
+    vline(c, 7, 12, c.last, STEEL_GROOVE)
+    vline(c, 8, 12, c.last, STEEL_GROOVE)
+
+
+@texture("foreuse_gaz_top", seed=0x5F0108)
+def foreuse_gaz_top(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng, (82, 86, 70))
+    for i in range(4):
+        outline_rect(c, 3 + i, 3 + i, 12 - i, 12 - i, STEEL_GROOVE if i % 2 else STEEL_LIGHT)
+
+
+@texture("caisson_reacteur", seed=0x5F0109)
+def caisson_reacteur(c: Canvas, rng: random.Random) -> None:
+    steel_base(c, rng, REACTOR)
+    bevel(c, 0, 0, c.last, c.last)
+    for i in range(0, 16, 4):
+        c.set(i, i, (200, 180, 40))
+        c.set(c.last - i, i, (200, 180, 40))
+    corner_rivets(c)
+
+
+@texture("controleur_reacteur_front", seed=0x5F010A)
+def controleur_reacteur_front(c: Canvas, rng: random.Random) -> None:
+    steel_base(c, rng, REACTOR)
+    bevel(c, 0, 0, c.last, c.last)
+    fill_rect(c, 3, 3, 12, 8, STEEL_GROOVE)
+    for x in range(4, 12):
+        c.set(x, 6, ENERGY if x < 8 else HEAT)
+    for x, col in ((4, (60, 200, 80)), (7, (220, 200, 40)), (10, (220, 50, 40))):
+        fill_rect(c, x, 10, x + 1, 11, col)
+
+
+@texture("cellule_combustible", seed=0x5F010B)
+def cellule_combustible(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng, (60, 66, 60))
+    for x in (4, 7, 10):
+        fill_rect(c, x, 3, x + 1, 12, (90, 230, 90))
+        vline(c, x, 3, 12, (40, 150, 40))
+
+
+@texture("dissipateur_thermique", seed=0x5F010C)
+def dissipateur_thermique(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, STEEL_DARK)
+    for x in range(1, 15, 3):
+        vline(c, x, 1, c.last - 1, STEEL_LIGHT)
+        vline(c, x + 1, 1, c.last - 1, shade(STEEL_LIGHT, -30))
+    outline_rect(c, 0, 0, c.last, c.last, STEEL_GROOVE)
+
+
+@texture("station_ingenierie_top", seed=0x5F010D)
+def station_ingenierie_top(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    fill_rect(c, 3, 3, 12, 12, (28, 48, 80))
+    for x in range(3, 13, 3):
+        vline(c, x, 3, 12, (60, 110, 170))
+    for y in range(3, 13, 3):
+        hline(c, 3, 12, y, (60, 110, 170))
+
+
+@texture("station_ingenierie_side", seed=0x5F010E)
+def station_ingenierie_side(c: Canvas, rng: random.Random) -> None:
+    machine_frame(c, rng)
+    fill_rect(c, 3, 3, 12, 6, STEEL_GROOVE)
+    for x in range(4, 12, 2):
+        c.set(x, 4, ENERGY)
+    fill_rect(c, 5, 9, 10, 12, GOLD_DARK)
+    fill_rect(c, 6, 10, 9, 11, GOLD)
+
+
+@texture("item/combustible_enrichi", seed=0x5F0201)
+def item_combustible_enrichi(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, TRANSPARENT)
+    fill_rect(c, 5, 1, 10, 14, STEEL_DARK)
+    fill_rect(c, 6, 3, 9, 12, (90, 230, 90))
+    vline(c, 6, 3, 12, (150, 255, 150))
+    hline(c, 5, 10, 1, STEEL_LIGHT)
+    hline(c, 5, 10, 14, STEEL_LIGHT)
+
+
+@texture("item/bouteille_gaz", seed=0x5F0202)
+def item_bouteille_gaz(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, TRANSPARENT)
+    fill_rect(c, 4, 4, 11, 14, STEEL)
+    fill_rect(c, 6, 1, 9, 3, STEEL_DARK)
+    vline(c, 5, 5, 13, STEEL_LIGHT)
+    outline_rect(c, 4, 4, 11, 14, STEEL_GROOVE)
+
+
+@texture("item/bouteille_gaz_pleine", seed=0x5F0203)
+def item_bouteille_gaz_pleine(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, TRANSPARENT)
+    fill_rect(c, 4, 4, 11, 14, (90, 140, 60))
+    fill_rect(c, 6, 1, 9, 3, STEEL_DARK)
+    vline(c, 5, 5, 13, GAS)
+    fill_rect(c, 6, 8, 9, 10, (230, 220, 60))
+    outline_rect(c, 4, 4, 11, 14, STEEL_GROOVE)
+
+
+@texture("item/circuit", seed=0x5F0204)
+def item_circuit(c: Canvas, rng: random.Random) -> None:
+    fill_rect(c, 0, 0, c.last, c.last, TRANSPARENT)
+    noise_rect(c, rng, 2, 3, 13, 12, (30, 110, 50), amount=4)
+    fill_rect(c, 6, 6, 9, 9, (30, 30, 34))
+    for x in (3, 5, 10, 12):
+        vline(c, x, 4, 11, GOLD)
+    outline_rect(c, 2, 3, 13, 12, (20, 70, 30))
+
+
 
 # --------------------------------------------------------------------------- #
 # Ligne de commande
@@ -562,10 +752,17 @@ def _rel(path: Path) -> str:
         return str(path)
 
 
+def texture_path(name: str) -> Path:
+    """``item/x`` → textures/item/x.png ; sinon textures/block/<name>.png."""
+    if name.startswith("item/"):
+        return BLOCK_TEXTURE_DIR.parent / "item" / f"{name[5:]}.png"
+    return BLOCK_TEXTURE_DIR / f"{name}.png"
+
+
 def write_all() -> int:
-    BLOCK_TEXTURE_DIR.mkdir(parents=True, exist_ok=True)
     for name in TEXTURES:
-        path = BLOCK_TEXTURE_DIR / f"{name}.png"
+        path = texture_path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
         render(name).save(path, format="PNG")
         print(f"écrit : {_rel(path)}")
     print(f"{len(TEXTURES)} texture(s) générée(s).")
@@ -575,7 +772,7 @@ def write_all() -> int:
 def check_all() -> int:
     problems: list[str] = []
     for name in TEXTURES:
-        path = BLOCK_TEXTURE_DIR / f"{name}.png"
+        path = texture_path(name)
         if not path.is_file():
             problems.append(f"manquant   : {_rel(path)}")
             continue

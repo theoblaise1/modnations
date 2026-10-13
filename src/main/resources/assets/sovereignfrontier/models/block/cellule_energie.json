@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "sovereignfrontier:block/cellule_energie_side",
+    "end": "sovereignfrontier:block/cellule_energie_top"
+  }
+}

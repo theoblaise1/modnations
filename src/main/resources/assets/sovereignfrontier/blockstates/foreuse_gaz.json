@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sovereignfrontier:block/foreuse_gaz"
+    },
+    "facing=east": {
+      "model": "sovereignfrontier:block/foreuse_gaz"
+    },
+    "facing=south": {
+      "model": "sovereignfrontier:block/foreuse_gaz"
+    },
+    "facing=west": {
+      "model": "sovereignfrontier:block/foreuse_gaz"
+    }
+  }
+}

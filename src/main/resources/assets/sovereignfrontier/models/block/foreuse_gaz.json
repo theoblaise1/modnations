@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "sovereignfrontier:block/foreuse_gaz_side",
+    "end": "sovereignfrontier:block/foreuse_gaz_top"
+  }
+}

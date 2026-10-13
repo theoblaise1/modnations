@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sovereignfrontier:block/panneau_solaire"
+    },
+    "facing=east": {
+      "model": "sovereignfrontier:block/panneau_solaire"
+    },
+    "facing=south": {
+      "model": "sovereignfrontier:block/panneau_solaire"
+    },
+    "facing=west": {
+      "model": "sovereignfrontier:block/panneau_solaire"
+    }
+  }
+}

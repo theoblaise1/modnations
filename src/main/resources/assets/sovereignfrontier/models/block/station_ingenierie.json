@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "sovereignfrontier:block/station_ingenierie_top",
+    "side": "sovereignfrontier:block/station_ingenierie_side",
+    "bottom": "sovereignfrontier:block/generateur_thermique_side"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sovereignfrontier:block/controleur_reacteur"
+    },
+    "facing=east": {
+      "model": "sovereignfrontier:block/controleur_reacteur",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sovereignfrontier:block/controleur_reacteur",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sovereignfrontier:block/controleur_reacteur",
+      "y": 270
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sovereignfrontier:block/cellule_energie"
+    },
+    "facing=east": {
+      "model": "sovereignfrontier:block/cellule_energie"
+    },
+    "facing=south": {
+      "model": "sovereignfrontier:block/cellule_energie"
+    },
+    "facing=west": {
+      "model": "sovereignfrontier:block/cellule_energie"
+    }
+  }
+}
