@@ -169,11 +169,15 @@ public final class TerritoryEvents {
 
     // ------------------------------------------------------------------ apparitions et cultures
 
-    /** Les monstres de surface n'apparaissent pas naturellement en territoire revendiqué. */
+    /**
+     * Les monstres de surface n'apparaissent pas naturellement en territoire revendiqué.
+     * Seules les apparitions du thread principal (NATURAL, PATROL) sont filtrées : celles de la
+     * génération de chunks tournent sur d'autres threads, et un chunk revendiqué est déjà généré.
+     */
     @SubscribeEvent
     public static void onSpawnPosition(MobSpawnEvent.PositionCheck event) {
         MobSpawnType type = event.getSpawnType();
-        if (type != MobSpawnType.NATURAL && type != MobSpawnType.CHUNK_GENERATION && type != MobSpawnType.PATROL) {
+        if (type != MobSpawnType.NATURAL && type != MobSpawnType.PATROL) {
             return;
         }
         if (!(event.getEntity() instanceof Enemy) || !(event.getLevel() instanceof ServerLevel level)) {
