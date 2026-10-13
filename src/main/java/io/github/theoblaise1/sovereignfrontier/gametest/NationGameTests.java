@@ -66,30 +66,37 @@ public final class NationGameTests {
         ServerPlayer chef = fakePlayer(helper, "sf_chef_a");
         ServerPlayer outsider = fakePlayer(helper, "sf_etranger");
 
+        ChunkPos capital = new ChunkPos(helper.absolutePos(BlockPos.ZERO));
+        moveTo(helper, chef, capital);
         expect(helper, NationManager.create(chef, "TestClaims"), true, "création");
         Nation nation = data.nationOf(chef.getUUID());
         helper.assertTrue(nation != null && nation.roleOf(chef.getUUID()) == NationRole.CHEF, "le fondateur est chef");
+        helper.assertTrue(data.ownerAt(dim, capital.toLong()) == nation && nation.treasury() == 0L,
+                "capitale offerte à la fondation");
+        moveTo(helper, outsider, capital);
+        expect(helper, NationManager.create(outsider, "TestRivale"), false, "fondation sur une capitale déjà prise");
 
-        ChunkPos chunk = new ChunkPos(helper.absolutePos(BlockPos.ZERO));
-        expect(helper, NationManager.claim(chef, dim, chunk), false, "claim sans fonds");
+        ChunkPos east = new ChunkPos(capital.x + 1, capital.z);
+        expect(helper, NationManager.claim(chef, dim, east), false, "claim sans fonds");
         NationAdmin.adjustTreasury(server, nation, 10_000L);
-        expect(helper, NationManager.claim(chef, dim, chunk), true, "premier claim");
-        helper.assertTrue(data.ownerAt(dim, chunk.toLong()) == nation, "cache mis à jour après claim");
-        helper.assertTrue(nation.treasury() == 10_000L - 100L, "coût du 1er chunk débité");
-        expect(helper, NationManager.claim(chef, dim, chunk), false, "chunk déjà possédé");
-        expect(helper, NationManager.claim(chef, dim, new ChunkPos(chunk.x + 2, chunk.z)), false, "chunk non contigu");
-        ChunkPos east = new ChunkPos(chunk.x + 1, chunk.z);
+        expect(helper, NationManager.claim(chef, dim, capital), false, "chunk déjà possédé");
+        expect(helper, NationManager.claim(chef, dim, new ChunkPos(capital.x + 3, capital.z)), false, "chunk non contigu");
         expect(helper, NationManager.claim(chef, dim, east), true, "chunk contigu");
-        helper.assertTrue(nation.treasury() == 10_000L - 100L - 108L, "coût croissant du 2e chunk");
+        helper.assertTrue(data.ownerAt(dim, east.toLong()) == nation, "cache mis à jour après claim");
+        helper.assertTrue(nation.treasury() == 10_000L - 108L, "2e chunk : ceil(100 * 1.08^1) = 108");
+        ChunkPos east2 = new ChunkPos(capital.x + 2, capital.z);
+        expect(helper, NationManager.claim(chef, dim, east2), true, "3e chunk contigu");
+        helper.assertTrue(nation.treasury() == 10_000L - 108L - 117L, "3e chunk : ceil(100 * 1.08^2) = 117");
 
         helper.assertTrue(TerritoryEvents.canBuild(chef, nation), "le chef peut construire");
         helper.assertFalse(TerritoryEvents.canBuild(outsider, nation), "un étranger ne peut pas construire");
 
-        expect(helper, NationManager.unclaim(chef, dim, east), true, "abandon");
-        helper.assertTrue(data.ownerAt(dim, east.toLong()) == null, "cache invalidé après unclaim");
+        expect(helper, NationManager.unclaim(chef, dim, east2), true, "abandon");
+        helper.assertTrue(data.ownerAt(dim, east2.toLong()) == null, "cache invalidé après unclaim");
 
         expect(helper, NationManager.disband(chef), true, "dissolution");
-        helper.assertTrue(data.ownerAt(dim, chunk.toLong()) == null, "cache vidé après dissolution");
+        helper.assertTrue(data.ownerAt(dim, capital.toLong()) == null && data.ownerAt(dim, east.toLong()) == null,
+                "cache vidé après dissolution");
         helper.assertTrue(data.nationOf(chef.getUUID()) == null, "index des membres vidé");
         helper.succeed();
     }
@@ -102,6 +109,8 @@ public final class NationGameTests {
         ServerPlayer chef = fakePlayer(helper, "sf_chef_b");
         ServerPlayer recruit = fakePlayer(helper, "sf_recrue");
 
+        ChunkPos capital = new ChunkPos(helper.absolutePos(BlockPos.ZERO));
+        moveTo(helper, chef, capital);
         expect(helper, NationManager.create(chef, "TestMembres"), true, "création");
         Nation nation = data.nationOf(chef.getUUID());
         expect(helper, NationManager.join(recruit, "TestMembres"), false, "rejoindre sans invitation");
@@ -110,7 +119,7 @@ public final class NationGameTests {
         helper.assertTrue(nation.roleOf(recruit.getUUID()) == NationRole.RECRUE, "nouveau membre = recrue");
 
         NationAdmin.adjustTreasury(server, nation, 1_000L);
-        ChunkPos chunk = new ChunkPos(helper.absolutePos(BlockPos.ZERO));
+        ChunkPos chunk = new ChunkPos(capital.x, capital.z + 1);
         expect(helper, NationManager.claim(recruit, dim, chunk), false, "recrue sans permission de revendiquer");
         expect(helper, NationManager.setPermission(recruit, NationRole.RECRUE, NationPermission.CLAIM, true), false,
                 "une recrue ne modifie pas les permissions");
@@ -181,6 +190,11 @@ public final class NationGameTests {
         helper.setBlock(core.offset(1, -1, 1), Blocks.STONE);
         helper.assertFalse(NationalChestBlock.isStructureValid(helper.getLevel(), helper.absolutePos(core)), "socle incomplet");
         helper.succeed();
+    }
+
+    private static void moveTo(GameTestHelper helper, ServerPlayer player, ChunkPos chunk) {
+        BlockPos pos = chunk.getMiddleBlockPosition(helper.absolutePos(BlockPos.ZERO).getY());
+        player.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);
     }
 
     /** Faux joueur NeoForge (aucun réseau) avec un nom unique, placé dans le niveau du test. */

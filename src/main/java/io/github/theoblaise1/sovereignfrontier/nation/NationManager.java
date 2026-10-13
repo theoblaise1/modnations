@@ -85,16 +85,26 @@ public final class NationManager {
         if (data.byName(name) != null) {
             return ActionResult.fail(Msg.err("nation.error.name_taken", name));
         }
+        // Le chunk courant devient la capitale, offerte : sans elle, impossible de poser un
+        // Trésor national sur son territoire pour alimenter la première revendication.
+        ResourceKey<Level> dimension = player.level().dimension();
+        ChunkPos capital = player.chunkPosition();
+        Nation capitalOwner = data.ownerAt(dimension, capital.toLong());
+        if (capitalOwner != null) {
+            return ActionResult.fail(Msg.err("nation.error.capital_taken", capitalOwner.name()));
+        }
         long cost = SFConfig.NATION_CREATION_COST.get();
         EconomyData eco = EconomyData.get(server);
         if (cost > 0 && !eco.trySpend(player.getUUID(), cost)) {
             return ActionResult.fail(Msg.err("nation.error.creation_cost", Money.format(cost)));
         }
         Nation nation = data.create(name, player.getUUID(), player.getGameProfile().getName(), TimeUtil.now());
+        data.claim(nation, dimension, capital.toLong());
         nation.log("create", player.getGameProfile().getName(), name);
+        nation.log("capital", capital.x + ", " + capital.z, dimension.location().toString());
         server.getPlayerList().broadcastSystemMessage(Msg.info("nation.broadcast.created", player.getDisplayName(), name), false);
         changed(server, nation);
-        return ActionResult.ok(Msg.ok("nation.created", name));
+        return ActionResult.ok(Msg.ok("nation.created", name, capital.x, capital.z));
     }
 
     public static ActionResult invite(ServerPlayer actor, ServerPlayer target) {
