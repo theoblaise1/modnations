@@ -21,6 +21,20 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.NATIONAL_CHEST.get());
                         output.accept(ModItems.ARMORED_PLATING.get());
                         output.accept(ModItems.CIVIL_REGISTRY.get());
+                        output.accept(ModItems.ENGINEERING_STATION.get());
+                        output.accept(ModItems.CABLE.get());
+                        output.accept(ModItems.THERMAL_GENERATOR.get());
+                        output.accept(ModItems.SOLAR_PANEL.get());
+                        output.accept(ModItems.ENERGY_CELL.get());
+                        output.accept(ModItems.GAS_DRILL.get());
+                        output.accept(ModItems.REACTOR_CONTROLLER.get());
+                        output.accept(ModItems.REACTOR_CASING.get());
+                        output.accept(ModItems.FUEL_CELL.get());
+                        output.accept(ModItems.HEAT_SINK.get());
+                        output.accept(ModItems.ENRICHED_FUEL.get());
+                        output.accept(ModItems.GAS_BOTTLE.get());
+                        output.accept(ModItems.FULL_GAS_BOTTLE.get());
+                        output.accept(ModItems.CIRCUIT.get());
                     })
                     .build());
 

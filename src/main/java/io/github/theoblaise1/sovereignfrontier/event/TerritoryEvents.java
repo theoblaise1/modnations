@@ -10,6 +10,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
+import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.nation.TerritoryRules;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -206,7 +207,9 @@ public final class TerritoryEvents {
 
     @SubscribeEvent
     public static void onExplosion(ExplosionEvent.Detonate event) {
-        if (!SFConfig.PROTECT_FROM_EXPLOSIONS.get() || !(event.getLevel() instanceof ServerLevel level)) {
+        // L'explosion d'un réacteur en surchauffe frappe aussi le territoire de sa propre nation.
+        if (!SFConfig.PROTECT_FROM_EXPLOSIONS.get() || MachineBlockEntity.meltdownInProgress
+                || !(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
         NationData data = NationData.get(level.getServer());

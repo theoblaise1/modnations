@@ -1,0 +1,26 @@
+{
+  "tab": "machines",
+  "unlock": "circuits",
+  "ingredients": [
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 2
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 4
+    },
+    {
+      "item": "minecraft:gold_nugget",
+      "count": 4
+    },
+    {
+      "item": "minecraft:quartz",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:circuit",
+    "count": 4
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "tab": "machines",
+  "unlock": "reactor.nuclear",
+  "ingredients": [
+    {
+      "item": "minecraft:glowstone_dust",
+      "count": 8
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 8
+    },
+    {
+      "item": "minecraft:blaze_powder",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:combustible_enrichi",
+    "count": 1
+  }
+}

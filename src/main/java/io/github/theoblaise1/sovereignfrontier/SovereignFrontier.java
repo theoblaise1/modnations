@@ -2,6 +2,8 @@ package io.github.theoblaise1.sovereignfrontier;
 
 import io.github.theoblaise1.sovereignfrontier.network.ModPayloads;
 import io.github.theoblaise1.sovereignfrontier.registry.ModAttachments;
+import io.github.theoblaise1.sovereignfrontier.registry.ModBlockEntities;
+import io.github.theoblaise1.sovereignfrontier.registry.ModMenus;
 import io.github.theoblaise1.sovereignfrontier.registry.ModBlocks;
 import io.github.theoblaise1.sovereignfrontier.registry.ModCreativeTabs;
 import io.github.theoblaise1.sovereignfrontier.registry.ModItems;
@@ -24,6 +26,8 @@ public final class SovereignFrontier {
         ModItems.ITEMS.register(modBus);
         ModCreativeTabs.TABS.register(modBus);
         ModAttachments.ATTACHMENTS.register(modBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modBus);
+        ModMenus.MENUS.register(modBus);
         modBus.addListener(ModPayloads::register);
         container.registerConfig(ModConfig.Type.SERVER, SFConfig.SPEC);
     }

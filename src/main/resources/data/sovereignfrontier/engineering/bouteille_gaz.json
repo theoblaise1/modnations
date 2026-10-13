@@ -1,0 +1,18 @@
+{
+  "tab": "machines",
+  "unlock": "drill.gas",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 4
+    },
+    {
+      "item": "minecraft:glass",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:bouteille_gaz",
+    "count": 4
+  }
+}

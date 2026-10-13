@@ -1,0 +1,22 @@
+{
+  "tab": "machines",
+  "unlock": "machines.automation",
+  "ingredients": [
+    {
+      "item": "minecraft:copper_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:redstone_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 6
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:cellule_energie",
+    "count": 1
+  }
+}

@@ -37,6 +37,19 @@ public final class SFConfig {
     // Recherche
     public static final ModConfigSpec.DoubleValue RESEARCH_CANCEL_REFUND;
 
+    // Énergie et machines (J3)
+    public static final ModConfigSpec.IntValue THERMAL_OUTPUT;
+    public static final ModConfigSpec.IntValue SOLAR_OUTPUT;
+    public static final ModConfigSpec.IntValue DRILL_ENERGY_PER_TICK;
+    public static final ModConfigSpec.IntValue DRILL_LITERS_PER_CYCLE;
+    public static final ModConfigSpec.LongValue GAS_PER_DIMENSION;
+    public static final ModConfigSpec.IntValue REACTOR_OUTPUT_PER_CELL;
+    public static final ModConfigSpec.IntValue REACTOR_HEAT_PER_CELL;
+    public static final ModConfigSpec.IntValue REACTOR_DISSIPATION_PER_SINK;
+    public static final ModConfigSpec.IntValue REACTOR_MAX_HEAT;
+    public static final ModConfigSpec.IntValue REACTOR_FUEL_TICKS;
+    public static final ModConfigSpec.DoubleValue REACTOR_EXPLOSION_POWER;
+
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 
@@ -84,6 +97,31 @@ public final class SFConfig {
                 .defineInRange("farmMinFarmland", 16, 1, 81);
         BUILDING_RECHECK_TICKS = b.comment("Intervalle entre deux revalidations (une seule par passage, à tour de rôle).")
                 .defineInRange("buildingRecheckTicks", 100, 20, 72000);
+        b.pop();
+
+        b.push("energy");
+        THERMAL_OUTPUT = b.comment("Production du générateur thermique pendant la combustion (En/tick).")
+                .defineInRange("thermalOutput", 20, 1, 100000);
+        SOLAR_OUTPUT = b.comment("Production du panneau solaire de jour, ciel dégagé (En/tick).")
+                .defineInRange("solarOutput", 8, 1, 100000);
+        DRILL_ENERGY_PER_TICK = b.comment("Consommation de la foreuse à gaz (En/tick).")
+                .defineInRange("drillEnergyPerTick", 40, 1, 100000);
+        DRILL_LITERS_PER_CYCLE = b.comment("Gaz extrait par la foreuse toutes les 20 ticks (litres).")
+                .defineInRange("drillLitersPerCycle", 10, 1, 100000);
+        GAS_PER_DIMENSION = b.comment("Réserve de gaz FINIE de chaque dimension (litres), décomptée globalement.")
+                .defineInRange("gasPerDimension", 200000L, 0L, Long.MAX_VALUE);
+        REACTOR_OUTPUT_PER_CELL = b.comment("Production du réacteur par cellule de combustible (En/tick).")
+                .defineInRange("reactorOutputPerCell", 120, 1, 1000000);
+        REACTOR_HEAT_PER_CELL = b.comment("Chaleur produite par cellule de combustible et par tick.")
+                .defineInRange("reactorHeatPerCell", 4, 0, 10000);
+        REACTOR_DISSIPATION_PER_SINK = b.comment("Chaleur évacuée par dissipateur thermique et par tick.")
+                .defineInRange("reactorDissipationPerSink", 3, 0, 10000);
+        REACTOR_MAX_HEAT = b.comment("Chaleur à laquelle le réacteur explose.")
+                .defineInRange("reactorMaxHeat", 10000, 100, 10000000);
+        REACTOR_FUEL_TICKS = b.comment("Durée d'un combustible enrichi (ticks de fonctionnement du réacteur).")
+                .defineInRange("reactorFuelTicks", 6000, 20, 10000000);
+        REACTOR_EXPLOSION_POWER = b.comment("Puissance de l'explosion d'un réacteur en surchauffe (TNT = 4).")
+                .defineInRange("reactorExplosionPower", 6.0D, 0.0D, 50.0D);
         b.pop();
 
         b.push("research");

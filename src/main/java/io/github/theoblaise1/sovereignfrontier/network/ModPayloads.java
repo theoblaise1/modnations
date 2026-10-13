@@ -1,5 +1,6 @@
 package io.github.theoblaise1.sovereignfrontier.network;
 
+import io.github.theoblaise1.sovereignfrontier.engineering.EngineeringManager;
 import io.github.theoblaise1.sovereignfrontier.nation.ActionResult;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
@@ -39,6 +40,11 @@ public final class ModPayloads {
         registrar.playToServer(ClaimChunkC2S.TYPE, ClaimChunkC2S.STREAM_CODEC, ModPayloads::onClaim);
         registrar.playToServer(TreasuryTransferC2S.TYPE, TreasuryTransferC2S.STREAM_CODEC, ModPayloads::onTreasury);
         registrar.playToServer(SetRolePermissionC2S.TYPE, SetRolePermissionC2S.STREAM_CODEC, ModPayloads::onSetPermission);
+        registrar.playToClient(EngineeringRecipesS2C.TYPE, EngineeringRecipesS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleEngineeringRecipes(payload, context));
+        registrar.playToClient(OpenEngineeringS2C.TYPE, OpenEngineeringS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleOpenEngineering(payload, context));
+        registrar.playToServer(EngineeringCraftC2S.TYPE, EngineeringCraftC2S.STREAM_CODEC, ModPayloads::onEngineeringCraft);
         registrar.playToServer(StartResearchC2S.TYPE, StartResearchC2S.STREAM_CODEC, ModPayloads::onStartResearch);
         registrar.playToServer(CancelResearchC2S.TYPE, CancelResearchC2S.STREAM_CODEC, ModPayloads::onCancelResearch);
     }
@@ -46,6 +52,12 @@ public final class ModPayloads {
     private static void onStartResearch(StartResearchC2S payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             reply(player, ResearchManager.start(player, payload.id()));
+        }
+    }
+
+    private static void onEngineeringCraft(EngineeringCraftC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            reply(player, EngineeringManager.craft(player, payload.id()));
         }
     }
 

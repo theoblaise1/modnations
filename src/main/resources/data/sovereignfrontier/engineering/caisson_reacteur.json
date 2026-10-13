@@ -1,0 +1,22 @@
+{
+  "tab": "machines",
+  "unlock": "reactor.nuclear",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_block",
+      "count": 1
+    },
+    {
+      "item": "sovereignfrontier:blindage_national",
+      "count": 2
+    },
+    {
+      "item": "minecraft:obsidian",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:caisson_reacteur",
+    "count": 4
+  }
+}

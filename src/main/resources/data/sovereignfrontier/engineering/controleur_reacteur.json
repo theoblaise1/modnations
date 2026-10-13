@@ -1,0 +1,26 @@
+{
+  "tab": "machines",
+  "unlock": "reactor.nuclear",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:redstone_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 2
+    },
+    {
+      "item": "minecraft:comparator",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:controleur_reacteur",
+    "count": 1
+  }
+}

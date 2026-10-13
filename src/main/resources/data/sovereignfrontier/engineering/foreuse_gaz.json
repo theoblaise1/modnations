@@ -1,0 +1,30 @@
+{
+  "tab": "machines",
+  "unlock": "drill.gas",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:piston",
+      "count": 2
+    },
+    {
+      "item": "minecraft:copper_block",
+      "count": 2
+    },
+    {
+      "item": "minecraft:redstone_block",
+      "count": 1
+    },
+    {
+      "item": "minecraft:diamond",
+      "count": 1
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:foreuse_gaz",
+    "count": 1
+  }
+}

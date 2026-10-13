@@ -1,0 +1,26 @@
+{
+  "tab": "machines",
+  "unlock": "generator.solar",
+  "ingredients": [
+    {
+      "item": "minecraft:glass",
+      "count": 6
+    },
+    {
+      "item": "minecraft:daylight_detector",
+      "count": 1
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 4
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 4
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:panneau_solaire",
+    "count": 1
+  }
+}

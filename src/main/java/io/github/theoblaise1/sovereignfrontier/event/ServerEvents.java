@@ -8,6 +8,8 @@ import io.github.theoblaise1.sovereignfrontier.command.NationCommand;
 import io.github.theoblaise1.sovereignfrontier.command.ResearchCommand;
 import io.github.theoblaise1.sovereignfrontier.command.TerritoryCommands;
 import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
+import io.github.theoblaise1.sovereignfrontier.energy.EnergyNetworks;
+import io.github.theoblaise1.sovereignfrontier.engineering.EngineeringManager;
 import io.github.theoblaise1.sovereignfrontier.nation.AdminBypass;
 import io.github.theoblaise1.sovereignfrontier.nation.CivilBuildings;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
@@ -82,12 +84,15 @@ public final class ServerEvents {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         TreasurySessions.close(event.getEntity().getUUID());
+        EngineeringManager.close(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         TreasurySessions.clear();
         AdminBypass.clear();
+        EngineeringManager.clear();
+        EnergyNetworks.clear();
     }
 
     /** Toutes les 10 ticks : message d'entrée/sortie de territoire (une recherche O(1) dans le cache). */

@@ -1,0 +1,18 @@
+{
+  "tab": "machines",
+  "unlock": "energy.cables",
+  "ingredients": [
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 4
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:cable_energie",
+    "count": 8
+  }
+}

@@ -1,7 +1,10 @@
 package io.github.theoblaise1.sovereignfrontier.client;
 
+import io.github.theoblaise1.sovereignfrontier.client.screen.EngineeringScreen;
 import io.github.theoblaise1.sovereignfrontier.client.screen.NationScreen;
 import io.github.theoblaise1.sovereignfrontier.network.ActionFeedbackS2C;
+import io.github.theoblaise1.sovereignfrontier.network.EngineeringRecipesS2C;
+import io.github.theoblaise1.sovereignfrontier.network.OpenEngineeringS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationSnapshotS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationTab;
 import io.github.theoblaise1.sovereignfrontier.network.ResearchDefinitionsS2C;
@@ -47,13 +50,25 @@ public final class ClientPayloadHandler {
             }
         } else if (payload.openScreen()) {
             mc.setScreen(new NationScreen(tab));
+        } else if (mc.screen instanceof EngineeringScreen screen) {
+            screen.refresh();
         }
     }
 
     private static void applyFeedback(ActionFeedbackS2C payload) {
-        // Sans écran national ouvert, le message est déjà dans le chat
+        // Sans écran ouvert, le message est déjà dans le chat
         if (Minecraft.getInstance().screen instanceof NationScreen screen) {
             screen.showFeedback(payload.message(), payload.success());
+        } else if (Minecraft.getInstance().screen instanceof EngineeringScreen screen) {
+            screen.showFeedback(payload.message(), payload.success());
         }
+    }
+
+    public static void handleEngineeringRecipes(EngineeringRecipesS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientEngineeringState.set(payload.recipes()));
+    }
+
+    public static void handleOpenEngineering(OpenEngineeringS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> Minecraft.getInstance().setScreen(new EngineeringScreen(payload.pos())));
     }
 }
