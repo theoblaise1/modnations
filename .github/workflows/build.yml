@@ -1,0 +1,63 @@
+# Compilation et vérifications de Sovereign Frontier à chaque push / pull request.
+name: Build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# Annule les exécutions devenues obsolètes sur la même référence (branche ou PR).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compilation et vérifications
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du dépôt
+        uses: actions/checkout@v4
+
+      - name: Installation de Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Installation de Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Version de Pillow figée pour que la génération des textures soit reproductible.
+      - name: Installation de Pillow
+        run: python -m pip install pillow==12.3.0
+
+      # Cache Gradle (dépendances, artefacts Minecraft/NeoForge) et validation du wrapper.
+      - name: Configuration de Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Aucune référence au code client hors du paquet client (sécurité serveur dédié).
+      - name: Vérification serveur dédié
+        run: python tools/check_sides.py
+
+      # Les textures versionnées doivent correspondre à celles produites par le générateur.
+      - name: Vérification des textures générées
+        run: python tools/gen_textures.py --check
+
+      - name: Compilation Gradle
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+      - name: Publication du JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: sovereignfrontier-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error
