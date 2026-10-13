@@ -1,0 +1,8 @@
+# Fins de ligne normalisées en LF (y compris gradlew), CRLF pour les scripts Windows.
+* text=auto eol=lf
+*.bat text eol=crlf
+
+# Fichiers binaires : aucune conversion ni diff texte.
+*.png binary
+*.jar binary
+*.nbt binary

@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+/build/
+/out/
+
+# Répertoires d'exécution NeoGradle (client, serveur, données)
+/run/
+/runs/
+/logs/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / VS Code
+.vscode/
+.classpath
+.project
+.settings/
+/bin/
+
+# Python
+__pycache__/
+*.pyc
+
+# Système
+.DS_Store
