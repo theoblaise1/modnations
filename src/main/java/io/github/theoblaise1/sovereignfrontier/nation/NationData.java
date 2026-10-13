@@ -153,7 +153,8 @@ public final class NationData extends SavedData {
         return buildingCursor++;
     }
 
-    List<Nation> nationsSnapshot() {
+    /** Copie de la liste des nations, sûre à parcourir pendant des mutations (tâches périodiques). */
+    public List<Nation> nationsSnapshot() {
         return new ArrayList<>(nations.values());
     }
 

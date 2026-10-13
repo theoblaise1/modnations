@@ -16,6 +16,7 @@ import java.util.List;
  * @param treasuryAccess     vrai si le joueur se tient près d'un Trésor national de sa nation (dépôt/retrait possibles)
  * @param rolePermissions    5 masques de permissions, indexés par ordinal de {@code NationRole}
  * @param incomeIntervalTicks durée d'un cycle de revenu, en ticks
+ * @param research           état de recherche de la nation ({@link ResearchView#EMPTY} sans nation)
  */
 public record NationSnapshot(
         boolean hasNation,
@@ -38,7 +39,8 @@ public record NationSnapshot(
         List<MemberInfo> members,
         int[] rolePermissions,
         List<LogEntry> log,
-        MapView map) {
+        MapView map,
+        ResearchView research) {
 
     /** Membre de la nation tel qu'affiché dans la liste. */
     public record MemberInfo(String name, int role, boolean online) {
@@ -95,6 +97,7 @@ public record NationSnapshot(
         buf.writeCollection(map.nationNames(), FriendlyByteBuf::writeUtf);
         buf.writeVarIntArray(map.nationColors());
         buf.writeInt(map.ownColor());
+        research.write(buf);
     }
 
     public static NationSnapshot read(FriendlyByteBuf buf) {
@@ -128,8 +131,9 @@ public record NationSnapshot(
         }
         MapView map = new MapView(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readByteArray(),
                 buf.readList(FriendlyByteBuf::readUtf), buf.readVarIntArray(), buf.readInt());
+        ResearchView research = ResearchView.read(buf);
         return new NationSnapshot(hasNation, wallet, invitations, nationName, leaderName, created, myRole, myPerms,
                 treasury, access, chunks, nextCost, houses, farms, workshops, income, interval, members, rolePerms,
-                log, map);
+                log, map, research);
     }
 }

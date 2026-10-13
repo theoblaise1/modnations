@@ -37,6 +37,7 @@ public final class ClientEvents {
     @SubscribeEvent
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientNationState.clear();
+        ClientResearchState.clear();
     }
 
     /** Évite d'envoyer le paquet à un serveur qui n'a pas le mod. */

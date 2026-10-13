@@ -8,7 +8,9 @@ Clés détectées :
   * ternaires : Msg.xxx(cond ? "a" : "b") ;
   * dynamiques : role.<NationRole>, perm.<id NationPermission>, building.<BuildingType>,
     log.<clé de nation.log(...)>, help.nation.<sous-commande>, gui.tab.<id NationTab>,
-    l'aide tr("x") de l'écran national (gui.x) et les touches (KeyMapping).
+    l'aide tr("x") de l'écran national (gui.x), les touches (KeyMapping), research.domain.<id>,
+    research.stat.<id> et research.state.<statut>. Les noms de paliers et de déblocages
+    (research.<palier>, unlock.<clé>) sont vérifiés par tools/check_research.py.
 """
 import json
 import re
@@ -60,6 +62,14 @@ def main() -> int:
         used.add(PREFIX + "role." + c.lower())
     for c in enum_constants(read("BuildingType.java")):
         used.add(PREFIX + "building." + c.lower())
+    for did in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)", \d+\)', read("ResearchDomain.java"), re.M):
+        used.add(PREFIX + "research.domain." + did)
+    for sid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)"\)', read("ResearchStat.java"), re.M):
+        used.add(PREFIX + "research.stat." + sid)
+    status = re.search(r'enum Status \{(.*?)\}', read("ResearchManager.java"), re.S)
+    if status:
+        for c in re.findall(r'([A-Z_]+)', status.group(1)):
+            used.add(PREFIX + "research.state." + c.lower())
     for pid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)"\)', read("NationPermission.java"), re.M):
         used.add(PREFIX + "perm." + pid)
     for tid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)"\)', read("NationTab.java"), re.M):

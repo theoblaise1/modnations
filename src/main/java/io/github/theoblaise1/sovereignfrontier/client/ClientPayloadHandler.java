@@ -4,6 +4,7 @@ import io.github.theoblaise1.sovereignfrontier.client.screen.NationScreen;
 import io.github.theoblaise1.sovereignfrontier.network.ActionFeedbackS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationSnapshotS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationTab;
+import io.github.theoblaise1.sovereignfrontier.network.ResearchDefinitionsS2C;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -22,6 +23,15 @@ public final class ClientPayloadHandler {
 
     public static void handleFeedback(ActionFeedbackS2C payload, IPayloadContext context) {
         context.enqueueWork(() -> applyFeedback(payload));
+    }
+
+    public static void handleResearchDefinitions(ResearchDefinitionsS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ClientResearchState.set(payload.tiers());
+            if (Minecraft.getInstance().screen instanceof NationScreen screen) {
+                screen.refresh();
+            }
+        });
     }
 
     private static void applySnapshot(NationSnapshotS2C payload) {

@@ -4,6 +4,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.ActionResult;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.nation.NationRole;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -31,11 +32,27 @@ public final class ModPayloads {
                 (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleSnapshot(payload, context));
         registrar.playToClient(ActionFeedbackS2C.TYPE, ActionFeedbackS2C.STREAM_CODEC,
                 (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleFeedback(payload, context));
+        registrar.playToClient(ResearchDefinitionsS2C.TYPE, ResearchDefinitionsS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleResearchDefinitions(payload, context));
 
         registrar.playToServer(RequestNationDataC2S.TYPE, RequestNationDataC2S.STREAM_CODEC, ModPayloads::onRequest);
         registrar.playToServer(ClaimChunkC2S.TYPE, ClaimChunkC2S.STREAM_CODEC, ModPayloads::onClaim);
         registrar.playToServer(TreasuryTransferC2S.TYPE, TreasuryTransferC2S.STREAM_CODEC, ModPayloads::onTreasury);
         registrar.playToServer(SetRolePermissionC2S.TYPE, SetRolePermissionC2S.STREAM_CODEC, ModPayloads::onSetPermission);
+        registrar.playToServer(StartResearchC2S.TYPE, StartResearchC2S.STREAM_CODEC, ModPayloads::onStartResearch);
+        registrar.playToServer(CancelResearchC2S.TYPE, CancelResearchC2S.STREAM_CODEC, ModPayloads::onCancelResearch);
+    }
+
+    private static void onStartResearch(StartResearchC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            reply(player, ResearchManager.start(player, payload.id()));
+        }
+    }
+
+    private static void onCancelResearch(CancelResearchC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            reply(player, ResearchManager.cancel(player));
+        }
     }
 
     private static void onRequest(RequestNationDataC2S payload, IPayloadContext context) {

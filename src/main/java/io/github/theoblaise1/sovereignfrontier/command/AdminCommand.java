@@ -10,6 +10,9 @@ import io.github.theoblaise1.sovereignfrontier.nation.AdminBypass;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
 import io.github.theoblaise1.sovereignfrontier.nation.NationAdmin;
 import io.github.theoblaise1.sovereignfrontier.nation.NationData;
+import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchTier;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.commands.CommandSourceStack;
@@ -34,6 +37,17 @@ public final class AdminCommand {
                                 .suggests(CommandUtil.NATIONS)
                                 .then(Commands.argument("montant", LongArgumentType.longArg())
                                         .executes(AdminCommand::treasury))))
+                .then(Commands.literal("research")
+                        .then(Commands.argument("nation", StringArgumentType.word())
+                                .suggests(CommandUtil.NATIONS)
+                                .then(Commands.literal("complete")
+                                        .then(Commands.argument("palier", StringArgumentType.string())
+                                                .suggests(ResearchCommand.ALL_TIERS)
+                                                .executes(AdminCommand::researchComplete)))
+                                .then(Commands.literal("finish").executes(AdminCommand::researchFinish))
+                                .then(Commands.literal("points")
+                                        .then(Commands.argument("montant", LongArgumentType.longArg(0))
+                                                .executes(AdminCommand::researchPoints)))))
                 .then(Commands.literal("bypass").executes(ctx -> {
                     boolean on = AdminBypass.toggle(ctx.getSource().getPlayerOrException());
                     ctx.getSource().sendSuccess(() -> Msg.warn(on ? "admin.bypass_on" : "admin.bypass_off"), true);
@@ -66,6 +80,52 @@ public final class AdminCommand {
         }
         long balance = eco.balance(id);
         ctx.getSource().sendSuccess(() -> Msg.ok("admin.money_set", eco.nameOf(id), Money.format(balance)), true);
+        return 1;
+    }
+
+    private static Nation nationArg(CommandContext<CommandSourceStack> ctx) {
+        String name = StringArgumentType.getString(ctx, "nation");
+        Nation nation = NationData.get(ctx.getSource().getServer()).byName(name);
+        if (nation == null) {
+            ctx.getSource().sendFailure(Msg.err("nation.error.unknown", name));
+        }
+        return nation;
+    }
+
+    private static int researchComplete(CommandContext<CommandSourceStack> ctx) {
+        Nation nation = nationArg(ctx);
+        ResearchTier tier = nation == null ? null : ResearchCommand.resolve(ctx);
+        if (tier == null) {
+            return 0;
+        }
+        ResearchManager.adminComplete(ctx.getSource().getServer(), nation, tier);
+        ctx.getSource().sendSuccess(() -> Msg.ok("admin.research_completed", tier.displayName(), nation.name()), true);
+        return 1;
+    }
+
+    private static int researchFinish(CommandContext<CommandSourceStack> ctx) {
+        Nation nation = nationArg(ctx);
+        if (nation == null) {
+            return 0;
+        }
+        NationResearch.Active active = nation.research().active();
+        if (active == null) {
+            ctx.getSource().sendFailure(Msg.err("research.error.no_active"));
+            return 0;
+        }
+        ResearchManager.finish(ctx.getSource().getServer(), nation, active.id());
+        ctx.getSource().sendSuccess(() -> Msg.ok("admin.research_finished", nation.name()), true);
+        return 1;
+    }
+
+    private static int researchPoints(CommandContext<CommandSourceStack> ctx) {
+        Nation nation = nationArg(ctx);
+        if (nation == null) {
+            return 0;
+        }
+        long points = LongArgumentType.getLong(ctx, "montant");
+        ResearchManager.adminSetPoints(ctx.getSource().getServer(), nation, points);
+        ctx.getSource().sendSuccess(() -> Msg.ok("admin.research_points", nation.name(), points), true);
         return 1;
     }
 

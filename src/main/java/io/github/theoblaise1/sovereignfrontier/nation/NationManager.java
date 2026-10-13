@@ -3,6 +3,7 @@ package io.github.theoblaise1.sovereignfrontier.nation;
 import io.github.theoblaise1.sovereignfrontier.SFConfig;
 import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
 import io.github.theoblaise1.sovereignfrontier.network.NationSync;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
@@ -34,13 +35,37 @@ public final class NationManager {
 
     // ------------------------------------------------------------------ utilitaires
 
+    /** Coût brut du chunk suivant : {@code ceil(base × croissance^n)}. */
     public static long claimCost(int alreadyClaimed) {
-        double cost = SFConfig.CLAIM_BASE_COST.get() * Math.pow(SFConfig.CLAIM_COST_GROWTH.get(), alreadyClaimed);
-        return cost >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) Math.ceil(cost);
+        return ceilCost(SFConfig.CLAIM_BASE_COST.get() * Math.pow(SFConfig.CLAIM_COST_GROWTH.get(), alreadyClaimed));
     }
 
+    /** Coût du prochain chunk pour cette nation, réduction de recherche incluse (bornée à -50 %). */
+    public static long claimCost(Nation nation) {
+        double modifier = Math.max(-0.5D, nation.research().bonus(ResearchStat.CLAIM_COST_MULTIPLIER));
+        return ceilCost(SFConfig.CLAIM_BASE_COST.get() * Math.pow(SFConfig.CLAIM_COST_GROWTH.get(), nation.claimCount())
+                * (1.0D + modifier));
+    }
+
+    private static long ceilCost(double cost) {
+        // Tolérance d'arrondi : 100 × 1,08 vaut 108,00000000000001 en double.
+        return cost >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) Math.ceil(cost - 1e-9);
+    }
+
+    /** Revenu versé à chaque cycle : habitants effectifs × revenu par habitant × (1 + bonus de revenu). */
     public static long incomePerCycle(Nation nation) {
-        return nation.population() * SFConfig.INCOME_PER_INHABITANT.get();
+        double multiplier = 1.0D + Math.max(-1.0D, nation.research().bonus(ResearchStat.INCOME_MULTIPLIER));
+        return (long) Math.floor(nation.effectivePopulation() * SFConfig.INCOME_PER_INHABITANT.get() * multiplier + 1e-9);
+    }
+
+    /** Nombre maximal de membres : configuration + bonus de recherche. */
+    public static int maxMembers(Nation nation) {
+        return SFConfig.MAX_MEMBERS.get() + (int) Math.floor(nation.research().bonus(ResearchStat.MAX_MEMBERS) + 1e-9);
+    }
+
+    /** Ajuste la trésorerie (positif = crédit) ; utilisé par les systèmes hors du paquet nation. */
+    public static void adjustTreasury(Nation nation, long delta) {
+        nation.addTreasury(delta);
     }
 
     @Nullable
@@ -123,8 +148,8 @@ public final class NationManager {
         if (data.nationOf(target.getUUID()) != null) {
             return ActionResult.fail(Msg.err("nation.error.target_has_nation", target.getDisplayName()));
         }
-        if (nation.memberCount() >= SFConfig.MAX_MEMBERS.get()) {
-            return ActionResult.fail(Msg.err("nation.error.full", SFConfig.MAX_MEMBERS.get()));
+        if (nation.memberCount() >= maxMembers(nation)) {
+            return ActionResult.fail(Msg.err("nation.error.full", maxMembers(nation)));
         }
         long expiry = TimeUtil.now() + SFConfig.INVITE_EXPIRY_MINUTES.get() * 60_000L;
         nation.invite(target.getUUID(), expiry);
@@ -154,8 +179,8 @@ public final class NationManager {
         if (!nation.hasValidInvite(player.getUUID(), TimeUtil.now())) {
             return ActionResult.fail(Msg.err("nation.error.no_invite", nation.name()));
         }
-        if (nation.memberCount() >= SFConfig.MAX_MEMBERS.get()) {
-            return ActionResult.fail(Msg.err("nation.error.full", SFConfig.MAX_MEMBERS.get()));
+        if (nation.memberCount() >= maxMembers(nation)) {
+            return ActionResult.fail(Msg.err("nation.error.full", maxMembers(nation)));
         }
         data.addMember(nation, player.getUUID(), player.getGameProfile().getName(), NationRole.RECRUE);
         nation.log("join", player.getGameProfile().getName());
@@ -342,7 +367,7 @@ public final class NationManager {
         if (SFConfig.CLAIM_REQUIRE_CONTIGUOUS.get() && nation.hasClaimsIn(dimension) && !touchesOwn(data, nation, dimension, chunk)) {
             return ActionResult.fail(Msg.err("claim.error.not_contiguous"));
         }
-        long cost = claimCost(nation.claimCount());
+        long cost = claimCost(nation);
         if (nation.treasury() < cost) {
             return ActionResult.fail(Msg.err("claim.error.funds", Money.format(cost), Money.format(nation.treasury())));
         }
@@ -352,7 +377,7 @@ public final class NationManager {
                 dimension.location().toString(), Money.format(cost));
         changed(server, nation);
         return ActionResult.ok(Msg.ok("claim.success", chunk.x, chunk.z, Money.format(cost),
-                Money.format(claimCost(nation.claimCount()))));
+                Money.format(claimCost(nation))));
     }
 
     public static ActionResult unclaim(ServerPlayer actor, ResourceKey<Level> dimension, ChunkPos chunk) {
@@ -372,7 +397,7 @@ public final class NationManager {
         int buildingsBefore = nation.population();
         data.unclaim(nation, dimension, key);
         int lostBuildings = buildingsBefore - nation.population();
-        long refund = (long) Math.floor(claimCost(nation.claimCount()) * SFConfig.UNCLAIM_REFUND_RATIO.get());
+        long refund = (long) Math.floor(claimCost(nation) * SFConfig.UNCLAIM_REFUND_RATIO.get());
         if (refund > 0) {
             nation.addTreasury(refund);
         }
@@ -454,7 +479,7 @@ public final class NationManager {
             long income = incomePerCycle(nation);
             if (income > 0) {
                 nation.addTreasury(income);
-                broadcast(server, nation, tag(nation).append(Msg.info("treasury.income", Money.format(income), nation.population())));
+                broadcast(server, nation, tag(nation).append(Msg.info("treasury.income", Money.format(income), nation.effectivePopulation())));
             }
         }
     }
@@ -470,11 +495,11 @@ public final class NationManager {
         c.append("\n").append(Msg.info("nation.info.leader", Msg.hl(nation.memberName(nation.leader()))));
         c.append("\n").append(Msg.info("nation.info.founded", Msg.hl(TimeUtil.date(nation.createdEpochMs()))));
         c.append("\n").append(Msg.info("nation.info.treasury", Msg.money(nation.treasury())));
-        c.append("\n").append(Msg.info("nation.info.territory", Msg.hl(nation.claimCount()), Msg.money(claimCost(nation.claimCount()))));
-        c.append("\n").append(Msg.info("nation.info.population", Msg.hl(nation.population()),
+        c.append("\n").append(Msg.info("nation.info.territory", Msg.hl(nation.claimCount()), Msg.money(claimCost(nation))));
+        c.append("\n").append(Msg.info("nation.info.population", Msg.hl(nation.effectivePopulation()),
                 Msg.hl(nation.buildingCount(BuildingType.HOUSE)), Msg.hl(nation.buildingCount(BuildingType.FARM)),
                 Msg.hl(nation.buildingCount(BuildingType.WORKSHOP))));
-        c.append("\n").append(Msg.info("nation.info.members", Msg.hl(nation.memberCount()), Msg.hl(SFConfig.MAX_MEMBERS.get())));
+        c.append("\n").append(Msg.info("nation.info.members", Msg.hl(nation.memberCount()), Msg.hl(maxMembers(nation))));
         for (Map.Entry<UUID, NationRole> e : nation.members().entrySet()) {
             boolean online = server.getPlayerList().getPlayer(e.getKey()) != null;
             c.append("\n  ").append(Component.literal(online ? "● " : "○ ").withStyle(online ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY))

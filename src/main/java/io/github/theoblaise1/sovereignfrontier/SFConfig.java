@@ -34,6 +34,9 @@ public final class SFConfig {
     public static final ModConfigSpec.IntValue FARM_MIN_FARMLAND;
     public static final ModConfigSpec.IntValue BUILDING_RECHECK_TICKS;
 
+    // Recherche
+    public static final ModConfigSpec.DoubleValue RESEARCH_CANCEL_REFUND;
+
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
 
@@ -81,6 +84,11 @@ public final class SFConfig {
                 .defineInRange("farmMinFarmland", 16, 1, 81);
         BUILDING_RECHECK_TICKS = b.comment("Intervalle entre deux revalidations (une seule par passage, à tour de rôle).")
                 .defineInRange("buildingRecheckTicks", 100, 20, 72000);
+        b.pop();
+
+        b.push("research");
+        RESEARCH_CANCEL_REFUND = b.comment("Part du coût en trésorerie rendue quand une recherche est annulée (les objets sont perdus).")
+                .defineInRange("researchCancelRefund", 0.5D, 0.0D, 1.0D);
         b.pop();
 
         SPEC = b.build();

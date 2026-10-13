@@ -1,5 +1,7 @@
 package io.github.theoblaise1.sovereignfrontier.nation;
 
+import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -54,6 +56,7 @@ public final class Nation {
     private final ArrayDeque<LogEntry> log = new ArrayDeque<>();
     private final LinkedHashMap<GlobalPos, BuildingType> buildings = new LinkedHashMap<>();
     private final SimpleContainer chest = new SimpleContainer(CHEST_SIZE);
+    private NationResearch research = new NationResearch();
     private Runnable dirtyCallback = () -> {
     };
 
@@ -266,8 +269,20 @@ public final class Nation {
 
     // ------------------------------------------------------------------ bâtiments civils
 
+    /** Nombre de bâtiments civils validés (1 habitant chacun, avant bonus). */
     public int population() {
         return buildings.size();
+    }
+
+    /** Habitants effectifs : bâtiments × (1 + bonus de population des recherches), arrondi à l'inférieur. */
+    public int effectivePopulation() {
+        double multiplier = 1.0D + Math.max(-1.0D, research.bonus(ResearchStat.POPULATION_MULTIPLIER));
+        return (int) Math.floor(buildings.size() * multiplier + 1e-9);
+    }
+
+    /** État de recherche (paliers terminés, recherche active, points). Appeler {@link #markDirty()} après mutation. */
+    public NationResearch research() {
+        return research;
     }
 
     public int buildingCount(BuildingType type) {
@@ -406,6 +421,7 @@ public final class Nation {
         CompoundTag chestTag = new CompoundTag();
         ContainerHelper.saveAllItems(chestTag, chest.getItems(), registries);
         tag.put("chest", chestTag);
+        tag.put("research", research.save());
         return tag;
     }
 
@@ -475,6 +491,7 @@ public final class Nation {
         }
 
         ContainerHelper.loadAllItems(tag.getCompound("chest"), n.chest.getItems(), registries);
+        n.research = NationResearch.load(tag.getCompound("research"));
         return n;
     }
 

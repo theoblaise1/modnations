@@ -7,6 +7,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.AdminBypass;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
 import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -192,17 +193,18 @@ public final class TerritoryEvents {
         }
     }
 
-    /** +5 % (configurable) de rendement sur les cultures mûres récoltées en territoire revendiqué. */
+    /** +5 % (configurable, + bonus de recherche de la nation) de rendement des cultures mûres récoltées en territoire. */
     @SubscribeEvent
     public static void onBlockDrops(BlockDropsEvent event) {
         if (!(event.getState().getBlock() instanceof CropBlock crop) || !crop.isMaxAge(event.getState())) {
             return;
         }
         ServerLevel level = event.getLevel();
-        if (NationData.get(level.getServer()).ownerAt(level.dimension(), event.getPos()) == null) {
+        Nation owner = NationData.get(level.getServer()).ownerAt(level.dimension(), event.getPos());
+        if (owner == null) {
             return;
         }
-        double bonus = SFConfig.CROP_YIELD_BONUS.get();
+        double bonus = SFConfig.CROP_YIELD_BONUS.get() + owner.research().bonus(ResearchStat.CROP_YIELD);
         for (ItemEntity drop : event.getDrops()) {
             ItemStack stack = drop.getItem();
             double expected = stack.getCount() * bonus;

@@ -23,4 +23,19 @@ public final class TimeUtil {
     public static String date(long epochMs) {
         return DATE.format(Instant.ofEpochMilli(epochMs));
     }
+
+    /** Durée lisible : « 1 h 05 min », « 12 min 30 s », « 45 s ». */
+    public static String duration(long ms) {
+        long totalSeconds = Math.max(0L, (ms + 999L) / 1000L);
+        long hours = totalSeconds / 3600L;
+        long minutes = (totalSeconds % 3600L) / 60L;
+        long seconds = totalSeconds % 60L;
+        if (hours > 0) {
+            return String.format("%d h %02d min", hours, minutes);
+        }
+        if (minutes > 0) {
+            return String.format("%d min %02d s", minutes, seconds);
+        }
+        return seconds + " s";
+    }
 }

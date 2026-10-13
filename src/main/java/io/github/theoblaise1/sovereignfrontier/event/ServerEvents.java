@@ -5,6 +5,7 @@ import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
 import io.github.theoblaise1.sovereignfrontier.command.AdminCommand;
 import io.github.theoblaise1.sovereignfrontier.command.EconomyCommands;
 import io.github.theoblaise1.sovereignfrontier.command.NationCommand;
+import io.github.theoblaise1.sovereignfrontier.command.ResearchCommand;
 import io.github.theoblaise1.sovereignfrontier.command.TerritoryCommands;
 import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
 import io.github.theoblaise1.sovereignfrontier.nation.AdminBypass;
@@ -14,6 +15,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.TreasurySessions;
 import io.github.theoblaise1.sovereignfrontier.player.PlayerProfile;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.player.TerritoryTracker;
 import io.github.theoblaise1.sovereignfrontier.registry.ModAttachments;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
@@ -44,12 +46,14 @@ public final class ServerEvents {
         TerritoryCommands.register(event.getDispatcher());
         EconomyCommands.register(event.getDispatcher());
         AdminCommand.register(event.getDispatcher());
+        ResearchCommand.register(event.getDispatcher());
     }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         NationManager.tickIncome(event.getServer());
         CivilBuildings.tickRevalidation(event.getServer());
+        ResearchManager.tick(event.getServer());
     }
 
     @SubscribeEvent

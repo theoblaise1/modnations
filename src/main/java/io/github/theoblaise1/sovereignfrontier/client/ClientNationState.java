@@ -11,6 +11,8 @@ import javax.annotation.Nullable;
 public final class ClientNationState {
     @Nullable
     private static NationSnapshot snapshot;
+    /** Instant de réception (horloge client), pour décompter la recherche en cours. */
+    private static long receivedAtMs;
 
     private ClientNationState() {
     }
@@ -22,6 +24,15 @@ public final class ClientNationState {
 
     public static void set(@Nullable NationSnapshot value) {
         snapshot = value;
+        receivedAtMs = System.currentTimeMillis();
+    }
+
+    /** Temps restant estimé de la recherche active, en tenant compte du temps écoulé depuis la réception. */
+    public static long researchRemainingMs() {
+        if (snapshot == null || snapshot.research().active().isEmpty()) {
+            return 0L;
+        }
+        return Math.max(0L, snapshot.research().activeRemainingMs() - (System.currentTimeMillis() - receivedAtMs));
     }
 
     /** À la déconnexion : on oublie l'état du serveur précédent. */

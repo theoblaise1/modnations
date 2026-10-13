@@ -8,16 +8,24 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationRole;
 import io.github.theoblaise1.sovereignfrontier.nation.TreasurySessions;
+import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Construit et envoie les {@link NationSnapshot} personnalisés aux joueurs. */
@@ -73,7 +81,7 @@ public final class NationSync {
             }
             return new NationSnapshot(false, wallet, invitations, "", "", 0L, -1, 0, 0L, false, 0,
                     0L, 0, 0, 0, 0L, SFConfig.INCOME_INTERVAL_TICKS.get(), List.of(),
-                    new int[NationRole.values().length], List.of(), map);
+                    new int[NationRole.values().length], List.of(), map, ResearchView.EMPTY);
         }
 
         NationRole role = nation.roleOf(player.getUUID());
@@ -90,10 +98,31 @@ public final class NationSync {
         return new NationSnapshot(true, wallet, List.of(), nation.name(), nation.memberName(nation.leader()),
                 nation.createdEpochMs(), role == null ? -1 : role.ordinal(),
                 role == null ? 0 : nation.permissionMask(role), nation.treasury(), TreasurySessions.hasAccess(player),
-                nation.claimCount(), NationManager.claimCost(nation.claimCount()),
+                nation.claimCount(), NationManager.claimCost(nation),
                 nation.buildingCount(BuildingType.HOUSE), nation.buildingCount(BuildingType.FARM),
                 nation.buildingCount(BuildingType.WORKSHOP), NationManager.incomePerCycle(nation),
-                SFConfig.INCOME_INTERVAL_TICKS.get(), members, rolePerms, nation.logEntries(), map);
+                SFConfig.INCOME_INTERVAL_TICKS.get(), members, rolePerms, nation.logEntries(), map, buildResearch(nation));
+    }
+
+    private static ResearchView buildResearch(Nation nation) {
+        NationResearch research = nation.research();
+        NationResearch.Active active = research.active();
+        long remaining = active == null ? 0L : Math.max(0L, active.endEpochMs() - TimeUtil.now());
+        Map<ResourceLocation, Integer> counts = new HashMap<>();
+        SimpleContainer chest = nation.chest();
+        for (int i = 0; i < chest.getContainerSize(); i++) {
+            ItemStack stack = chest.getItem(i);
+            if (!stack.isEmpty() && stack.getComponentsPatch().isEmpty()) {
+                counts.merge(BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getCount(), Integer::sum);
+            }
+        }
+        double[] bonuses = new double[ResearchStat.values().length];
+        for (ResearchStat stat : ResearchStat.values()) {
+            bonuses[stat.ordinal()] = research.bonus(stat);
+        }
+        return new ResearchView(new ArrayList<>(research.completed()),
+                active == null ? Optional.empty() : Optional.of(active.id()), remaining,
+                active == null ? 0L : active.totalMs(), research.points(), nation.effectivePopulation(), counts, bonuses);
     }
 
     private static NationSnapshot.MapView buildMap(ServerPlayer player, NationData data, Nation own) {

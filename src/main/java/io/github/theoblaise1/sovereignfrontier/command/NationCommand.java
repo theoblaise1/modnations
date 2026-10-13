@@ -151,7 +151,7 @@ public final class NationCommand {
         MutableComponent c = Msg.tr("nation.list.header", data.nations().size()).withStyle(ChatFormatting.AQUA);
         for (Nation n : data.nations()) {
             c.append("\n - ").append(Component.literal(n.name()).withColor(n.color()))
-                    .append(Msg.info("nation.list.entry", n.memberCount(), n.claimCount(), n.population()));
+                    .append(Msg.info("nation.list.entry", n.memberCount(), n.claimCount(), n.effectivePopulation()));
         }
         ctx.getSource().sendSuccess(() -> c, false);
         return data.nations().size();
