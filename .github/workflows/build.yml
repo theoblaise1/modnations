@@ -46,14 +46,26 @@ jobs:
       - name: Vérification serveur dédié
         run: python tools/check_sides.py
 
-      # Les textures versionnées doivent correspondre à celles produites par le générateur.
+      # Les textures et structures versionnées doivent correspondre à celles des générateurs.
       - name: Vérification des textures générées
         run: python tools/gen_textures.py --check
+
+      - name: Vérification des structures NBT générées
+        run: python tools/gen_structures.py --check
+
+      # Toute clé de traduction utilisée dans le code doit exister dans le fichier de langue.
+      - name: Vérification des traductions
+        run: python tools/check_lang.py
 
       - name: Compilation Gradle
         run: |
           chmod +x gradlew
           ./gradlew build --no-daemon
+
+      # Serveur dédié headless (cible forgeserverdev) : charge le mod sans aucune classe
+      # cliente et exécute les GameTests ; échoue si un test requis échoue.
+      - name: GameTests sur serveur headless
+        run: ./gradlew runGameTestServer --no-daemon
 
       - name: Publication du JAR
         uses: actions/upload-artifact@v4
