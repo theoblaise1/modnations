@@ -26,6 +26,11 @@ Les coûts (objets, trésorerie) sont fixés dans les JSON et vérifiés par `to
 ## Déblocages (`"type": "unlock"`) — consommés par les jalons suivants
 La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unlock.<clé>`.
 
+**Implémentées au J3** (recettes `data/sovereignfrontier/engineering/`) : `station.machines`,
+`energy.cables`, `generator.thermal`, `generator.solar`, `machines.automation`, `drill.gas`,
+`reactor.nuclear`, `reactor.enriched_fuel`, `circuits`. Restent à venir (sans effet pour l'instant) :
+`tools.*`, `drill.survey`, `drill.mechanical`, `drill.deep`, `machines.alloy`.
+
 | clé | effet | jalon |
 |---|---|---|
 | `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national | J4 |

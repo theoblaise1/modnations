@@ -6,8 +6,8 @@ Nom de travail, sans lien avec une marque existante. Aucune ressource n'est copi
 structures sont générées par script, tous les noms sont originaux.
 
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
-> recherche de 65 paliers, onglet Recherche). Les jalons suivants attendent la validation en jeu.
-> Les jalons suivants attendent la validation en jeu du précédent.
+> recherche de 65 paliers, onglet Recherche) ; **J3 livré** (énergie, machines, réacteur, Station
+> d'ingénierie). Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
 
@@ -37,8 +37,8 @@ structures sont générées par script, tous les noms sont originaux.
 | Jalon | Contenu | État |
 |---|---|---|
 | J1 | Nation multi-membres (syst. 1 + 7 hors guerre), trésorerie, territoire, population, écran national | ✅ livré |
-| J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré, à valider en jeu |
-| J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | — |
+| J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré |
+| J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, à valider en jeu |
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | — |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée (syst. 4) | — |
 | J6 | Donjons, boss, armement (syst. 6) | — |
@@ -88,6 +88,24 @@ Touche **N** : écran national (Aperçu, Science, Trésor, Carte, Rôles, Journa
 Une seule recherche active par nation ; les objets sont prélevés dans le **coffre national** ;
 la recherche avance même serveur éteint (horodatages réels).
 
+### Industrie (J3)
+Énergie propre au mod : **énergon (En)**. Les câbles relient les machines adjacentes ; chaque
+générateur sert d'abord les consommateurs, puis le stockage ; le stockage ne sert que les consommateurs.
+
+| Bloc | Rôle | Détail |
+|---|---|---|
+| Station d'ingénierie | Fabrication | Craft vanilla ; onglets Machines (J3), Armement (J6), Aérospatial (J5). Recettes JSON `data/<ns>/engineering/`, débloquées par la recherche, ingrédients pris dans l'inventaire. |
+| Câble d'énergie | Transport | Réseau mis en cache par dimension (≤ 4096 câbles). |
+| Générateur thermique | Production | Brûle un combustible de four : 20 En/t. |
+| Panneau solaire | Production | 8 En/t de jour, ciel visible. |
+| Cellule d'énergie | Stockage | 200 000 En, 400 En/t en entrée et sortie. |
+| Foreuse à gaz | Consommation | 40 En/t ; remplit des bouteilles. Réserve **finie** par dimension (200 000 L). |
+| Réacteur (contrôleur) | Production | Multibloc 5×5×5 : coque de caissons, intérieur de cellules de combustible, dissipateurs ou air. 120 En/t par cellule ; chaleur 4/cellule − 3/dissipateur ; fusion et explosion à 10 000. |
+
+Carte de l'industrie (paliers → déblocages) : `industrie_1` station, `industrie_2` câbles,
+`industrie_3` thermique, `industrie_4` solaire, `industrie_5` cellule, `ressources_8` foreuse et
+bouteilles, `industrie_7` réacteur, `industrie_10` combustible efficace, `technologie_1` circuits.
+
 ### Permissions (identifiants de commande)
 `revendiquer`, `abandonner`, `retirer`, `coffre`, `construire`, `inviter`, `exclure`,
 `rechercher`, `declarer_guerre`, `signer_traite`, `tirer_missile`. Le Chef les a toutes.
@@ -98,7 +116,9 @@ la recherche avance même serveur éteint (horodatages réels).
 `claimCostGrowth`, `requireContiguous`, `unclaimRefundRatio`, `surfaceSpawnYOffset`,
 `cropYieldBonus`, `protectFromExplosions`, `treasuryReach`, `incomeIntervalTicks`,
 `incomePerInhabitant`, `maxBuildingVolume`, `farmMinFarmland`, `buildingRecheckTicks`,
-`researchCancelRefund`.
+`researchCancelRefund` ; section `[energy]` : `thermalOutput`, `solarOutput`, `drillEnergyPerTick`,
+`drillLitersPerCycle`, `gasPerDimension`, `reactorOutputPerCell`, `reactorHeatPerCell`,
+`reactorDissipationPerSink`, `reactorMaxHeat`, `reactorFuelTicks`, `reactorExplosionPower`.
 
 ---
 
@@ -180,6 +200,9 @@ sur serveur headless, et publie le `.jar` à chaque push.
 | `registry/` | Tous les `DeferredRegister` (blocs, objets, onglet créatif, attachments). |
 | `nation/` | Modèle (`Nation`, rôles, permissions), `NationData` (SavedData), `TerritoryIndex` (cache), logique métier (`NationManager`, `CivilBuildings`). |
 | `research/` | Arbre de recherche : définitions JSON, registre rechargé par datapack, état par nation, `ResearchManager`. |
+| `energy/` | Tampons d'énergie, câbles, réseau (`EnergyNetworks`, cache par dimension). |
+| `machine/` | Bloc et entité de machine (`MachineKind`), menu, réacteur multibloc, réserve de gaz (`GasData`). |
+| `engineering/` | Station d'ingénierie, recettes JSON rechargées par datapack, fabrication côté serveur. |
 | `economy/` | `EconomyData` : portefeuilles personnels. |
 | `player/` | DataAttachments joueur. |
 | `block/` | Blocs nationaux et menu du coffre. |
