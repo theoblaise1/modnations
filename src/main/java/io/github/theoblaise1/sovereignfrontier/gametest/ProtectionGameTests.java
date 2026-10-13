@@ -38,6 +38,8 @@ public final class ProtectionGameTests {
 
     /** Fonde une nation dont la capitale est le chunk de la zone ; renvoie le X du premier bloc du territoire. */
     private static ServerPlayer lastChef;
+    /** z au milieu du chunk revendiqué : la zone de test peut chevaucher une limite de chunk. */
+    private static int lastZ;
 
     private static int claimArea(GameTestHelper helper, String name) {
         BlockPos origin = helper.absolutePos(new BlockPos(1, 1, 1));
@@ -50,6 +52,7 @@ public final class ProtectionGameTests {
         var created = NationManager.create(chef, name + Math.floorMod(origin.getX() ^ origin.getZ(), 100000));
         helper.assertTrue(created.success(), "fondation de " + name + " : " + created.message().getString());
         lastChef = chef;
+        lastZ = chunk.getMiddleBlockZ();
         return chunk.getMinBlockX();
     }
 
@@ -80,7 +83,7 @@ public final class ProtectionGameTests {
         ServerLevel level = helper.getLevel();
         int border = claimArea(helper, "TestEau");
         int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
-        int z = helper.absolutePos(new BlockPos(4, 0, 4)).getZ();
+        int z = lastZ;
         floor(level, border - 6, border + 4, y - 1, z);
         BlockPos source = new BlockPos(border - 1, y, z);
         finish(helper, () -> {
@@ -97,7 +100,7 @@ public final class ProtectionGameTests {
         ServerLevel level = helper.getLevel();
         int border = claimArea(helper, "TestDistributeur");
         int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
-        int z = helper.absolutePos(new BlockPos(4, 0, 4)).getZ();
+        int z = lastZ;
         floor(level, border - 4, border + 2, y - 1, z);
         finish(helper, () -> {
             BlockPos toward = dispenser(level, new BlockPos(border - 1, y, z), Direction.EAST);
@@ -125,7 +128,7 @@ public final class ProtectionGameTests {
         ServerLevel level = helper.getLevel();
         int border = claimArea(helper, "TestPiston");
         int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
-        int z = helper.absolutePos(new BlockPos(4, 0, 4)).getZ();
+        int z = lastZ;
         floor(level, border - 6, border + 2, y - 1, z);
         finish(helper, () -> {
             BlockPos blocked = new BlockPos(border - 1, y, z);
