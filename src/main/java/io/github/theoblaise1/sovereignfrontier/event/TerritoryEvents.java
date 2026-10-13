@@ -10,6 +10,19 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
+import io.github.theoblaise1.sovereignfrontier.nation.TerritoryRules;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.level.block.piston.PistonStructureResolver;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.EntityHitResult;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.level.PistonEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -39,6 +52,8 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Effets du territoire revendiqué. Chaque gestionnaire ne fait qu'une recherche O(1) dans le
@@ -88,19 +103,46 @@ public final class TerritoryEvents {
         if (!(event.getLevel() instanceof Level level)) {
             return;
         }
-        Nation owner = ownerAt(level, event.getPos());
-        if (owner == null) {
-            return;
+        // Pose multiple (lit, porte…) : chaque bloc posé est contrôlé, pas seulement le premier.
+        List<BlockPos> positions = new ArrayList<>();
+        if (event instanceof BlockEvent.EntityMultiPlaceEvent multi) {
+            for (BlockSnapshot snapshot : multi.getReplacedBlockSnapshots()) {
+                positions.add(snapshot.getPos());
+            }
+        } else {
+            positions.add(event.getPos());
         }
         Entity entity = event.getEntity();
-        if (entity instanceof Player player) {
-            if (!canBuild(player, owner)) {
-                event.setCanceled(true);
-                deny(player, owner);
+        for (BlockPos pos : positions) {
+            Nation owner = ownerAt(level, pos);
+            if (owner == null) {
+                continue;
             }
-        } else if (entity != null) {
-            // Endermen et autres entités : pas de pose de bloc en territoire revendiqué.
+            if (entity instanceof Player player) {
+                if (!canBuild(player, owner)) {
+                    event.setCanceled(true);
+                    deny(player, owner);
+                    return;
+                }
+            } else if (entity != null) {
+                // Endermen et autres entités : pas de pose de bloc en territoire revendiqué.
+                event.setCanceled(true);
+                return;
+            }
+        }
+    }
+
+    /** Clic gauche : {@code BlockState.attack} (œuf de dragon, bloc musical…) s'exécute avant BreakEvent. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
+        Level level = event.getLevel();
+        if (level.isClientSide()) {
+            return;
+        }
+        Nation owner = ownerAt(level, event.getPos());
+        if (owner != null && !canBuild(event.getEntity(), owner)) {
             event.setCanceled(true);
+            deny(event.getEntity(), owner);
         }
     }
 
@@ -133,7 +175,10 @@ public final class TerritoryEvents {
         if (level.isClientSide() || !(stack.getItem() instanceof BucketItem)) {
             return;
         }
-        BlockHitResult hit = Item.getPlayerPOVHitResult(level, event.getEntity(), ClipContext.Fluid.SOURCE_ONLY);
+        // Même visée que BucketItem#use : sources seulement pour un seau vide, aucun fluide pour un seau plein.
+        ClipContext.Fluid mode = ((BucketItem) stack.getItem()).content == Fluids.EMPTY
+                ? ClipContext.Fluid.SOURCE_ONLY : ClipContext.Fluid.NONE;
+        BlockHitResult hit = Item.getPlayerPOVHitResult(level, event.getEntity(), mode);
         if (hit.getType() != HitResult.Type.BLOCK) {
             return;
         }
@@ -166,6 +211,126 @@ public final class TerritoryEvents {
         }
         NationData data = NationData.get(level.getServer());
         event.getAffectedBlocks().removeIf(pos -> data.ownerAt(level.dimension(), pos) != null);
+        // Cadres, supports d'armure, bétail… ne sont pas soufflés (joueurs et monstres le restent).
+        event.getAffectedEntities().removeIf(e -> isProtectedEntity(e)
+                && data.ownerAt(level.dimension(), e.blockPosition()) != null);
+    }
+
+    /** Entités d'un territoire que seuls les bâtisseurs peuvent frapper ou manipuler. */
+    public static boolean isProtectedEntity(Entity entity) {
+        return !(entity instanceof Player) && !(entity instanceof Enemy) && !(entity instanceof Projectile);
+    }
+
+    /** Frapper une entité protégée (animal, cadre, support d'armure, wagonnet…) en territoire. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onAttackEntity(AttackEntityEvent event) {
+        Entity target = event.getTarget();
+        if (target.level().isClientSide() || !isProtectedEntity(target)) {
+            return;
+        }
+        Nation owner = ownerAt(target.level(), target.blockPosition());
+        if (owner != null && !canBuild(event.getEntity(), owner)) {
+            event.setCanceled(true);
+            deny(event.getEntity(), owner);
+        }
+    }
+
+    /** Clic droit sur une entité (cadre, support d'armure, coffre de bateau, laisse, cisailles…). */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onInteractEntity(PlayerInteractEvent.EntityInteract event) {
+        if (denyEntityInteraction(event.getEntity(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onInteractEntitySpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (denyEntityInteraction(event.getEntity(), event.getTarget())) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+        }
+    }
+
+    private static boolean denyEntityInteraction(Player player, Entity target) {
+        if (target.level().isClientSide() || !isProtectedEntity(target) || target instanceof Merchant) {
+            return false; // commercer avec un villageois reste permis
+        }
+        Nation owner = ownerAt(target.level(), target.blockPosition());
+        if (owner != null && !canBuild(player, owner)) {
+            deny(player, owner);
+            return true;
+        }
+        return false;
+    }
+
+    /** Projectile d'un joueur sans droit de construire : sans effet sur les blocs et entités protégés. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        Projectile projectile = event.getProjectile();
+        if (projectile.level().isClientSide() || !(projectile.getOwner() instanceof Player shooter)) {
+            return;
+        }
+        HitResult hit = event.getRayTraceResult();
+        BlockPos pos;
+        if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+            pos = blockHit.getBlockPos();
+        } else if (hit instanceof EntityHitResult entityHit && isProtectedEntity(entityHit.getEntity())) {
+            pos = entityHit.getEntity().blockPosition();
+        } else {
+            return;
+        }
+        Nation owner = ownerAt(projectile.level(), pos);
+        if (owner != null && !canBuild(shooter, owner)) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** Pistons : rien ne doit être poussé, tiré ou détruit à travers une frontière nationale. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onPiston(PistonEvent.Pre event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+        PistonStructureResolver resolver = event.getStructureHelper();
+        BlockPos piston = event.getPos();
+        if (TerritoryRules.crossesBorder(level, piston, event.getFaceOffsetPos())) {
+            event.setCanceled(true);
+            return;
+        }
+        if (resolver == null || !resolver.resolve()) {
+            return;
+        }
+        Direction move = event.getPistonMoveType().isExtend ? event.getDirection() : event.getDirection().getOpposite();
+        for (BlockPos pos : resolver.getToPush()) {
+            if (TerritoryRules.crossesBorder(level, piston, pos) || TerritoryRules.crossesBorder(level, piston, pos.relative(move))) {
+                event.setCanceled(true);
+                return;
+            }
+        }
+        for (BlockPos pos : resolver.getToDestroy()) {
+            if (TerritoryRules.crossesBorder(level, piston, pos)) {
+                event.setCanceled(true);
+                return;
+            }
+        }
+    }
+
+    /** Lave qui enflamme un bloc d'un territoire voisin. */
+    @SubscribeEvent
+    public static void onFluidPlaceBlock(BlockEvent.FluidPlaceBlockEvent event) {
+        if (TerritoryRules.crossesBorder(event.getLevel(), event.getLiquidPos(), event.getPos())) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** Endermen, et autres mobs qui modifient le monde, à l'intérieur d'un territoire. */
+    @SubscribeEvent
+    public static void onMobGriefing(EntityMobGriefingEvent event) {
+        Entity entity = event.getEntity();
+        if (entity instanceof EnderMan && ownerAt(entity.level(), entity.blockPosition()) != null) {
+            event.setCanGrief(false);
+        }
     }
 
     // ------------------------------------------------------------------ apparitions et cultures

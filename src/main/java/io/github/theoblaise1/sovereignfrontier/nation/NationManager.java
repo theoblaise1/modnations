@@ -394,6 +394,10 @@ public final class NationManager {
         if (data.ownerAt(dimension, key) != nation) {
             return ActionResult.fail(Msg.err("claim.error.not_own"));
         }
+        if (nation.claimCount() <= 1) {
+            // Sans territoire, plus de Trésor national utilisable : la nation serait bloquée.
+            return ActionResult.fail(Msg.err("claim.error.last_chunk"));
+        }
         int buildingsBefore = nation.population();
         data.unclaim(nation, dimension, key);
         int lostBuildings = buildingsBefore - nation.population();

@@ -22,3 +22,7 @@ type = "required"
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+
+# Protections de frontière (fluides, feu, distributeurs) sans événement NeoForge équivalent.
+[[mixins]]
+config = "${mod_id}.mixins.json"

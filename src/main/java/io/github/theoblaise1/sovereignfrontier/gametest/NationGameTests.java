@@ -75,6 +75,7 @@ public final class NationGameTests {
                 "capitale offerte à la fondation");
         moveTo(helper, outsider, capital);
         expect(helper, NationManager.create(outsider, "TestRivale"), false, "fondation sur une capitale déjà prise");
+        expect(helper, NationManager.unclaim(chef, dim, capital), false, "abandon du dernier chunk refusé");
 
         ChunkPos east = new ChunkPos(capital.x + 1, capital.z);
         expect(helper, NationManager.claim(chef, dim, east), false, "claim sans fonds");

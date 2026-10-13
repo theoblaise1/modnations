@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "io.github.theoblaise1.sovereignfrontier.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "DispenserBlockMixin",
+    "FireBlockMixin",
+    "FlowingFluidMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

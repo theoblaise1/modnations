@@ -36,6 +36,7 @@
   "sovereignfrontier.chest.title": "Coffre national — %s",
   "sovereignfrontier.claim.error.already_own": "Ce chunk appartient déjà à votre nation.",
   "sovereignfrontier.claim.error.funds": "Trésorerie insuffisante : ce chunk coûte %s, la trésorerie contient %s.",
+  "sovereignfrontier.claim.error.last_chunk": "Impossible d'abandonner le dernier chunk de la nation : dissolvez-la avec /nation disband confirm si vous voulez partir.",
   "sovereignfrontier.claim.error.not_contiguous": "Le chunk doit toucher (nord, sud, est ou ouest) un chunk déjà revendiqué dans cette dimension.",
   "sovereignfrontier.claim.error.not_own": "Ce chunk n'appartient pas à votre nation.",
   "sovereignfrontier.claim.error.owned_by": "Ce chunk appartient à la nation %s.",
