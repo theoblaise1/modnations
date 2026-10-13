@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "sovereignfrontier:block/coffre_national",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "sovereignfrontier:block/coffre_national"
+    },
+    "facing=south": {
+      "model": "sovereignfrontier:block/coffre_national",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sovereignfrontier:block/coffre_national",
+      "y": 270
+    }
+  }
+}

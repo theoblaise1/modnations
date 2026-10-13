@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "sovereignfrontier:block/blindage_national",
+    "side": "sovereignfrontier:block/tresor_national_side",
+    "top": "sovereignfrontier:block/tresor_national_top"
+  }
+}

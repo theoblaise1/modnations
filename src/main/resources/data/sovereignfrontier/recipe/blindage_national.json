@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "minecraft:smooth_stone"
+    }
+  },
+  "pattern": [
+    "ISI",
+    "SIS",
+    "ISI"
+  ],
+  "result": {
+    "count": 4,
+    "id": "sovereignfrontier:blindage_national"
+  }
+}

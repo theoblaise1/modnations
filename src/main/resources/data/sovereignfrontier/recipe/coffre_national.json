@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "sovereignfrontier:blindage_national"
+    },
+    "C": {
+      "item": "minecraft:chest"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "BIB",
+    "ICI",
+    "BIB"
+  ],
+  "result": {
+    "count": 1,
+    "id": "sovereignfrontier:coffre_national"
+  }
+}

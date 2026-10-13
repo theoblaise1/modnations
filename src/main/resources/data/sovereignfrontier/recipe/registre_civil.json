@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "minecraft:book"
+    },
+    "F": {
+      "item": "minecraft:feather"
+    },
+    "P": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "pattern": [
+    "PBP",
+    "PFP",
+    "PPP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "sovereignfrontier:registre_civil"
+  }
+}

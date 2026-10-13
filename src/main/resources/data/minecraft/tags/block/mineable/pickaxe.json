@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "sovereignfrontier:tresor_national",
+    "sovereignfrontier:coffre_national",
+    "sovereignfrontier:blindage_national"
+  ]
+}

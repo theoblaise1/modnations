@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "sovereignfrontier:block/coffre_national_front",
+    "side": "sovereignfrontier:block/coffre_national_side",
+    "top": "sovereignfrontier:block/coffre_national_top"
+  }
+}
