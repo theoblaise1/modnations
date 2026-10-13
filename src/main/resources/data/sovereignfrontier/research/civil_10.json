@@ -1,0 +1,32 @@
+{
+  "domain": "civil",
+  "tier": 10,
+  "cost": {
+    "treasury": 6300,
+    "items": [
+      {
+        "item": "sovereignfrontier:coffre_national",
+        "count": 2
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 10
+      },
+      {
+        "item": "minecraft:hopper",
+        "count": 8
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      }
+    ]
+  },
+  "min_population": 9,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "storage.expansion_2"
+    }
+  ]
+}

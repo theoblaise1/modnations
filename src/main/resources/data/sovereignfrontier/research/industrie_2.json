@@ -1,0 +1,32 @@
+{
+  "domain": "industrie",
+  "tier": 2,
+  "cost": {
+    "treasury": 850,
+    "items": [
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 48
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 24
+      },
+      {
+        "item": "minecraft:coal",
+        "count": 32
+      },
+      {
+        "item": "minecraft:lightning_rod",
+        "count": 4
+      }
+    ]
+  },
+  "min_population": 2,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "energy.cables"
+    }
+  ]
+}

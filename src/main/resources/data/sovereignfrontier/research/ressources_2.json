@@ -1,0 +1,28 @@
+{
+  "domain": "ressources",
+  "tier": 2,
+  "cost": {
+    "treasury": 550,
+    "items": [
+      {
+        "item": "minecraft:bone_meal",
+        "count": 64
+      },
+      {
+        "item": "minecraft:composter",
+        "count": 4
+      },
+      {
+        "item": "minecraft:wheat_seeds",
+        "count": 32
+      }
+    ]
+  },
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "crop_yield",
+      "amount": 0.03
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "domain": "civil",
+  "tier": 15,
+  "cost": {
+    "treasury": 12000,
+    "items": [
+      {
+        "item": "minecraft:gold_block",
+        "count": 16
+      },
+      {
+        "item": "minecraft:emerald_block",
+        "count": 6
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 2
+      },
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      }
+    ]
+  },
+  "min_population": 15,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "income_multiplier",
+      "amount": 0.2
+    },
+    {
+      "type": "bonus",
+      "stat": "population_multiplier",
+      "amount": 0.1
+    }
+  ]
+}

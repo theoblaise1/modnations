@@ -1,0 +1,35 @@
+{
+  "domain": "ressources",
+  "tier": 12,
+  "cost": {
+    "treasury": 8300,
+    "items": [
+      {
+        "item": "minecraft:copper_block",
+        "count": 32
+      },
+      {
+        "item": "minecraft:blast_furnace",
+        "count": 4
+      },
+      {
+        "item": "minecraft:cauldron",
+        "count": 8
+      },
+      {
+        "item": "minecraft:blaze_rod",
+        "count": 12
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_8"
+  ],
+  "min_population": 10,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "refinery"
+    }
+  ]
+}

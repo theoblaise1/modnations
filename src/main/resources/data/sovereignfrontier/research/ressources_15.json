@@ -1,0 +1,35 @@
+{
+  "domain": "ressources",
+  "tier": 15,
+  "cost": {
+    "treasury": 11600,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      },
+      {
+        "item": "minecraft:blue_ice",
+        "count": 32
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 4
+      },
+      {
+        "item": "minecraft:ender_eye",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:technologie_6"
+  ],
+  "min_population": 13,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "mining.cryogenic"
+    }
+  ]
+}

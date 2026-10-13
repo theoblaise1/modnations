@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 6,
+  "cost": {
+    "treasury": 3550,
+    "items": [
+      {
+        "item": "minecraft:stone_bricks",
+        "count": 128
+      },
+      {
+        "item": "minecraft:cobblestone_wall",
+        "count": 64
+      },
+      {
+        "item": "minecraft:iron_bars",
+        "count": 32
+      },
+      {
+        "item": "sovereignfrontier:blindage_national",
+        "count": 16
+      }
+    ]
+  },
+  "min_population": 5,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "defense.walls"
+    }
+  ]
+}

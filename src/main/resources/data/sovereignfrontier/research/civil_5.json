@@ -1,0 +1,32 @@
+{
+  "domain": "civil",
+  "tier": 5,
+  "cost": {
+    "treasury": 2250,
+    "items": [
+      {
+        "item": "minecraft:chest",
+        "count": 16
+      },
+      {
+        "item": "minecraft:barrel",
+        "count": 16
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 16
+      },
+      {
+        "item": "minecraft:hopper",
+        "count": 4
+      }
+    ]
+  },
+  "min_population": 4,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "storage.expansion_1"
+    }
+  ]
+}

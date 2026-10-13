@@ -1,0 +1,32 @@
+{
+  "domain": "industrie",
+  "tier": 3,
+  "cost": {
+    "treasury": 1550,
+    "items": [
+      {
+        "item": "minecraft:furnace",
+        "count": 8
+      },
+      {
+        "item": "minecraft:bricks",
+        "count": 32
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 24
+      },
+      {
+        "item": "minecraft:coal_block",
+        "count": 12
+      }
+    ]
+  },
+  "min_population": 3,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "generator.thermal"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "domain": "industrie",
+  "tier": 9,
+  "cost": {
+    "treasury": 8100,
+    "items": [
+      {
+        "item": "minecraft:gunpowder",
+        "count": 64
+      },
+      {
+        "item": "minecraft:blaze_powder",
+        "count": 32
+      },
+      {
+        "item": "minecraft:magma_cream",
+        "count": 16
+      },
+      {
+        "item": "minecraft:coal_block",
+        "count": 32
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_12"
+  ],
+  "min_population": 10,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "rocket.fuel"
+    }
+  ]
+}

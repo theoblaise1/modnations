@@ -1,0 +1,36 @@
+{
+  "domain": "civil",
+  "tier": 14,
+  "cost": {
+    "treasury": 10500,
+    "items": [
+      {
+        "item": "minecraft:bookshelf",
+        "count": 16
+      },
+      {
+        "item": "minecraft:enchanting_table",
+        "count": 2
+      },
+      {
+        "item": "minecraft:brewing_stand",
+        "count": 4
+      },
+      {
+        "item": "minecraft:spyglass",
+        "count": 2
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:technologie_3"
+  ],
+  "min_population": 13,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "research_speed",
+      "amount": 0.15
+    }
+  ]
+}

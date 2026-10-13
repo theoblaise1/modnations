@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 14,
+  "cost": {
+    "treasury": 12550,
+    "items": [
+      {
+        "item": "minecraft:ender_eye",
+        "count": 12
+      },
+      {
+        "item": "minecraft:comparator",
+        "count": 16
+      },
+      {
+        "item": "minecraft:compass",
+        "count": 8
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 16
+      }
+    ]
+  },
+  "min_population": 13,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "missile.guided"
+    }
+  ]
+}

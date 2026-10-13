@@ -1,0 +1,38 @@
+{
+  "domain": "civil",
+  "tier": 13,
+  "cost": {
+    "treasury": 9350,
+    "items": [
+      {
+        "item": "minecraft:stone_bricks",
+        "count": 128
+      },
+      {
+        "item": "minecraft:glass",
+        "count": 64
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 12
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 8
+      }
+    ]
+  },
+  "min_population": 12,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "population_multiplier",
+      "amount": 0.1
+    },
+    {
+      "type": "bonus",
+      "stat": "max_members",
+      "amount": 2.0
+    }
+  ]
+}

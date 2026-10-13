@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 2,
+  "cost": {
+    "treasury": 700,
+    "items": [
+      {
+        "item": "minecraft:gunpowder",
+        "count": 16
+      },
+      {
+        "item": "minecraft:charcoal",
+        "count": 32
+      },
+      {
+        "item": "minecraft:flint",
+        "count": 16
+      },
+      {
+        "item": "minecraft:paper",
+        "count": 16
+      }
+    ]
+  },
+  "min_population": 1,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "ammo.basic"
+    }
+  ]
+}

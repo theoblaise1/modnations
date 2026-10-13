@@ -1,0 +1,35 @@
+{
+  "domain": "industrie",
+  "tier": 12,
+  "cost": {
+    "treasury": 12450,
+    "items": [
+      {
+        "item": "minecraft:magma_block",
+        "count": 48
+      },
+      {
+        "item": "minecraft:blaze_rod",
+        "count": 24
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 3
+      },
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:technologie_6"
+  ],
+  "min_population": 13,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "heater.nuclear"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "domain": "militaire",
+  "tier": 13,
+  "cost": {
+    "treasury": 11250,
+    "items": [
+      {
+        "item": "minecraft:obsidian",
+        "count": 48
+      },
+      {
+        "item": "sovereignfrontier:blindage_national",
+        "count": 32
+      },
+      {
+        "item": "minecraft:redstone_block",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 12
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_7"
+  ],
+  "min_population": 12,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "missile.silo"
+    }
+  ]
+}

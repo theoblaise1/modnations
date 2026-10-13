@@ -1,0 +1,35 @@
+{
+  "domain": "technologie",
+  "tier": 1,
+  "cost": {
+    "treasury": 800,
+    "items": [
+      {
+        "item": "minecraft:redstone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 48
+      },
+      {
+        "item": "minecraft:comparator",
+        "count": 8
+      },
+      {
+        "item": "minecraft:gold_ingot",
+        "count": 16
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_5"
+  ],
+  "min_population": 6,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "circuits"
+    }
+  ]
+}

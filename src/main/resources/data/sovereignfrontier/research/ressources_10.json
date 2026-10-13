@@ -1,0 +1,33 @@
+{
+  "domain": "ressources",
+  "tier": 10,
+  "cost": {
+    "treasury": 6300,
+    "items": [
+      {
+        "item": "minecraft:hay_block",
+        "count": 48
+      },
+      {
+        "item": "minecraft:bone_meal",
+        "count": 128
+      },
+      {
+        "item": "minecraft:observer",
+        "count": 8
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 12
+      }
+    ]
+  },
+  "min_population": 8,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "crop_yield",
+      "amount": 0.05
+    }
+  ]
+}

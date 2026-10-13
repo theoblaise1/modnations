@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 3,
+  "cost": {
+    "treasury": 1250,
+    "items": [
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 24
+      },
+      {
+        "item": "minecraft:tripwire_hook",
+        "count": 8
+      },
+      {
+        "item": "minecraft:leather",
+        "count": 12
+      },
+      {
+        "item": "minecraft:gunpowder",
+        "count": 8
+      }
+    ]
+  },
+  "min_population": 2,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "weapon.pistol"
+    }
+  ]
+}

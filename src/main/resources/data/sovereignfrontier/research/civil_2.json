@@ -1,0 +1,29 @@
+{
+  "domain": "civil",
+  "tier": 2,
+  "cost": {
+    "treasury": 550,
+    "items": [
+      {
+        "item": "minecraft:cobblestone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:oak_fence",
+        "count": 32
+      },
+      {
+        "item": "minecraft:map",
+        "count": 1
+      }
+    ]
+  },
+  "min_population": 1,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "claim_cost_multiplier",
+      "amount": -0.05
+    }
+  ]
+}

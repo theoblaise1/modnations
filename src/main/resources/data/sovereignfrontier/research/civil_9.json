@@ -1,0 +1,36 @@
+{
+  "domain": "civil",
+  "tier": 9,
+  "cost": {
+    "treasury": 5400,
+    "items": [
+      {
+        "item": "minecraft:bookshelf",
+        "count": 12
+      },
+      {
+        "item": "minecraft:lapis_lazuli",
+        "count": 32
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 32
+      },
+      {
+        "item": "minecraft:clock",
+        "count": 2
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_4"
+  ],
+  "min_population": 8,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "research_speed",
+      "amount": 0.1
+    }
+  ]
+}

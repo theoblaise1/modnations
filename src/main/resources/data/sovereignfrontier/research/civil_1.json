@@ -1,0 +1,32 @@
+{
+  "domain": "civil",
+  "tier": 1,
+  "cost": {
+    "treasury": 200,
+    "items": [
+      {
+        "item": "minecraft:oak_log",
+        "count": 32
+      },
+      {
+        "item": "minecraft:wheat",
+        "count": 32
+      },
+      {
+        "item": "minecraft:paper",
+        "count": 16
+      },
+      {
+        "item": "sovereignfrontier:registre_civil",
+        "count": 1
+      }
+    ]
+  },
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "population_multiplier",
+      "amount": 0.05
+    }
+  ]
+}

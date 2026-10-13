@@ -1,0 +1,29 @@
+{
+  "domain": "civil",
+  "tier": 6,
+  "cost": {
+    "treasury": 2950,
+    "items": [
+      {
+        "item": "sovereignfrontier:registre_civil",
+        "count": 4
+      },
+      {
+        "item": "minecraft:book",
+        "count": 16
+      },
+      {
+        "item": "minecraft:gold_ingot",
+        "count": 8
+      }
+    ]
+  },
+  "min_population": 5,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "max_members",
+      "amount": 2.0
+    }
+  ]
+}

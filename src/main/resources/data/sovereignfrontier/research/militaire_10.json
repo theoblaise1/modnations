@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 10,
+  "cost": {
+    "treasury": 7600,
+    "items": [
+      {
+        "item": "minecraft:spyglass",
+        "count": 4
+      },
+      {
+        "item": "minecraft:target",
+        "count": 8
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 12
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      }
+    ]
+  },
+  "min_population": 9,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "weapon.sniper"
+    }
+  ]
+}

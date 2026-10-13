@@ -1,0 +1,32 @@
+{
+  "domain": "ressources",
+  "tier": 5,
+  "cost": {
+    "treasury": 2250,
+    "items": [
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 32
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 24
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 16
+      },
+      {
+        "item": "minecraft:compass",
+        "count": 2
+      }
+    ]
+  },
+  "min_population": 3,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "drill.survey"
+    }
+  ]
+}

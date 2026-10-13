@@ -1,0 +1,32 @@
+{
+  "domain": "technologie",
+  "tier": 3,
+  "cost": {
+    "treasury": 4150,
+    "items": [
+      {
+        "item": "minecraft:glass",
+        "count": 64
+      },
+      {
+        "item": "minecraft:moss_block",
+        "count": 32
+      },
+      {
+        "item": "minecraft:copper_block",
+        "count": 12
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      }
+    ]
+  },
+  "min_population": 10,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "oxygen.systems"
+    }
+  ]
+}

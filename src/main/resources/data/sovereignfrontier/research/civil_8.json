@@ -1,0 +1,38 @@
+{
+  "domain": "civil",
+  "tier": 8,
+  "cost": {
+    "treasury": 4550,
+    "items": [
+      {
+        "item": "minecraft:bricks",
+        "count": 64
+      },
+      {
+        "item": "minecraft:glass",
+        "count": 64
+      },
+      {
+        "item": "minecraft:lantern",
+        "count": 16
+      },
+      {
+        "item": "minecraft:map",
+        "count": 2
+      }
+    ]
+  },
+  "min_population": 7,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "claim_cost_multiplier",
+      "amount": -0.05
+    },
+    {
+      "type": "bonus",
+      "stat": "population_multiplier",
+      "amount": 0.05
+    }
+  ]
+}

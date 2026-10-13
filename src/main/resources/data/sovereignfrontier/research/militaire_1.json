@@ -1,0 +1,35 @@
+{
+  "domain": "militaire",
+  "tier": 1,
+  "cost": {
+    "treasury": 250,
+    "items": [
+      {
+        "item": "minecraft:cobblestone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:oak_planks",
+        "count": 48
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 8
+      },
+      {
+        "item": "minecraft:armor_stand",
+        "count": 2
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_1"
+  ],
+  "min_population": 1,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "station.armament"
+    }
+  ]
+}

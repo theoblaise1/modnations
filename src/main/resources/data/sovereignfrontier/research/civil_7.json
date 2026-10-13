@@ -1,0 +1,36 @@
+{
+  "domain": "civil",
+  "tier": 7,
+  "cost": {
+    "treasury": 4000,
+    "items": [
+      {
+        "item": "minecraft:gold_ingot",
+        "count": 32
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 6
+      },
+      {
+        "item": "minecraft:quartz_block",
+        "count": 16
+      },
+      {
+        "item": "sovereignfrontier:tresor_national",
+        "count": 1
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_2"
+  ],
+  "min_population": 6,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "income_multiplier",
+      "amount": 0.1
+    }
+  ]
+}

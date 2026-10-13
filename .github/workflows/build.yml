@@ -53,6 +53,12 @@ jobs:
       - name: Vérification des structures NBT générées
         run: python tools/gen_structures.py --check
 
+      # Paliers de recherche : schéma, séquences, prérequis sans cycle, conformité à docs/recherche.md.
+      - name: Vérification de l'arbre de recherche
+        run: |
+          python tools/check_research.py --self-test
+          python tools/check_research.py
+
       # Toute clé de traduction utilisée dans le code doit exister dans le fichier de langue.
       - name: Vérification des traductions
         run: python tools/check_lang.py

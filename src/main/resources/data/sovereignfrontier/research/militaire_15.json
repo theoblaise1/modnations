@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 15,
+  "cost": {
+    "treasury": 13950,
+    "items": [
+      {
+        "item": "minecraft:obsidian",
+        "count": 64
+      },
+      {
+        "item": "minecraft:crying_obsidian",
+        "count": 24
+      },
+      {
+        "item": "minecraft:glowstone",
+        "count": 32
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 4
+      }
+    ]
+  },
+  "min_population": 14,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "defense.shield"
+    }
+  ]
+}

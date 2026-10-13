@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 7,
+  "cost": {
+    "treasury": 4450,
+    "items": [
+      {
+        "item": "minecraft:iron_block",
+        "count": 8
+      },
+      {
+        "item": "minecraft:gunpowder",
+        "count": 48
+      },
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 32
+      },
+      {
+        "item": "minecraft:flint",
+        "count": 32
+      }
+    ]
+  },
+  "min_population": 6,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "ammo.piercing"
+    }
+  ]
+}

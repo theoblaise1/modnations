@@ -1,0 +1,32 @@
+{
+  "domain": "industrie",
+  "tier": 5,
+  "cost": {
+    "treasury": 3350,
+    "items": [
+      {
+        "item": "minecraft:piston",
+        "count": 16
+      },
+      {
+        "item": "minecraft:hopper",
+        "count": 8
+      },
+      {
+        "item": "minecraft:observer",
+        "count": 8
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 48
+      }
+    ]
+  },
+  "min_population": 5,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "machines.automation"
+    }
+  ]
+}

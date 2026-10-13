@@ -1,0 +1,32 @@
+{
+  "domain": "ressources",
+  "tier": 3,
+  "cost": {
+    "treasury": 1050,
+    "items": [
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 16
+      },
+      {
+        "item": "minecraft:cobblestone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:coal",
+        "count": 32
+      },
+      {
+        "item": "minecraft:grindstone",
+        "count": 2
+      }
+    ]
+  },
+  "min_population": 1,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "tools.reinforced"
+    }
+  ]
+}

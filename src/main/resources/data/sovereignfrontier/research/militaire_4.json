@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 4,
+  "cost": {
+    "treasury": 1900,
+    "items": [
+      {
+        "item": "minecraft:leather",
+        "count": 24
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 16
+      },
+      {
+        "item": "sovereignfrontier:blindage_national",
+        "count": 8
+      },
+      {
+        "item": "minecraft:string",
+        "count": 32
+      }
+    ]
+  },
+  "min_population": 3,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "armor.ballistic_light"
+    }
+  ]
+}

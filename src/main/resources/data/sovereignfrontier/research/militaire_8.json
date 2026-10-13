@@ -1,0 +1,35 @@
+{
+  "domain": "militaire",
+  "tier": 8,
+  "cost": {
+    "treasury": 5450,
+    "items": [
+      {
+        "item": "minecraft:dispenser",
+        "count": 8
+      },
+      {
+        "item": "minecraft:observer",
+        "count": 8
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 48
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_5"
+  ],
+  "min_population": 7,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "defense.turret"
+    }
+  ]
+}

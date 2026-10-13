@@ -1,0 +1,32 @@
+{
+  "domain": "ressources",
+  "tier": 9,
+  "cost": {
+    "treasury": 5400,
+    "items": [
+      {
+        "item": "minecraft:gold_ingot",
+        "count": 24
+      },
+      {
+        "item": "minecraft:quartz",
+        "count": 32
+      },
+      {
+        "item": "minecraft:amethyst_shard",
+        "count": 16
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 8
+      }
+    ]
+  },
+  "min_population": 7,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "tools.precision"
+    }
+  ]
+}

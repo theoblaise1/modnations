@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 16,
+  "cost": {
+    "treasury": 15350,
+    "items": [
+      {
+        "item": "minecraft:tnt",
+        "count": 32
+      },
+      {
+        "item": "minecraft:blaze_rod",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 6
+      },
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 3
+      }
+    ]
+  },
+  "min_population": 15,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "missile.heavy_warhead"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "domain": "civil",
+  "tier": 11,
+  "cost": {
+    "treasury": 7300,
+    "items": [
+      {
+        "item": "minecraft:emerald",
+        "count": 16
+      },
+      {
+        "item": "minecraft:redstone_lamp",
+        "count": 24
+      },
+      {
+        "item": "minecraft:rail",
+        "count": 64
+      }
+    ]
+  },
+  "min_population": 10,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "income_multiplier",
+      "amount": 0.15
+    }
+  ]
+}

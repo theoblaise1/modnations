@@ -1,0 +1,32 @@
+{
+  "domain": "industrie",
+  "tier": 10,
+  "cost": {
+    "treasury": 9500,
+    "items": [
+      {
+        "item": "minecraft:glowstone",
+        "count": 32
+      },
+      {
+        "item": "minecraft:redstone_block",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 12
+      },
+      {
+        "item": "minecraft:ghast_tear",
+        "count": 6
+      }
+    ]
+  },
+  "min_population": 11,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "reactor.enriched_fuel"
+    }
+  ]
+}

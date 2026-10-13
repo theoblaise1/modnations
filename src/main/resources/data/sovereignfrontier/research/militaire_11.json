@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 11,
+  "cost": {
+    "treasury": 8750,
+    "items": [
+      {
+        "item": "minecraft:tnt",
+        "count": 24
+      },
+      {
+        "item": "minecraft:gunpowder",
+        "count": 48
+      },
+      {
+        "item": "minecraft:fire_charge",
+        "count": 16
+      },
+      {
+        "item": "minecraft:redstone_block",
+        "count": 8
+      }
+    ]
+  },
+  "min_population": 10,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "weapon.explosives"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "domain": "technologie",
+  "tier": 5,
+  "cost": {
+    "treasury": 8950,
+    "items": [
+      {
+        "item": "minecraft:blaze_rod",
+        "count": 24
+      },
+      {
+        "item": "minecraft:breeze_rod",
+        "count": 8
+      },
+      {
+        "item": "minecraft:fire_charge",
+        "count": 32
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 3
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_13"
+  ],
+  "min_population": 12,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "propulsion.advanced"
+    }
+  ]
+}

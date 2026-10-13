@@ -1,0 +1,35 @@
+{
+  "domain": "ressources",
+  "tier": 6,
+  "cost": {
+    "treasury": 2950,
+    "items": [
+      {
+        "item": "minecraft:iron_block",
+        "count": 8
+      },
+      {
+        "item": "minecraft:piston",
+        "count": 8
+      },
+      {
+        "item": "minecraft:redstone",
+        "count": 32
+      },
+      {
+        "item": "minecraft:coal_block",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_2"
+  ],
+  "min_population": 4,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "drill.mechanical"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "domain": "ressources",
+  "tier": 7,
+  "cost": {
+    "treasury": 3700,
+    "items": [
+      {
+        "item": "minecraft:glass",
+        "count": 96
+      },
+      {
+        "item": "minecraft:copper_block",
+        "count": 8
+      },
+      {
+        "item": "minecraft:glowstone",
+        "count": 16
+      },
+      {
+        "item": "minecraft:bone_meal",
+        "count": 64
+      }
+    ]
+  },
+  "min_population": 5,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "crop_yield",
+      "amount": 0.05
+    }
+  ]
+}

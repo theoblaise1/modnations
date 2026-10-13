@@ -1,0 +1,29 @@
+{
+  "domain": "civil",
+  "tier": 4,
+  "cost": {
+    "treasury": 1600,
+    "items": [
+      {
+        "item": "minecraft:smooth_stone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 24
+      },
+      {
+        "item": "minecraft:bucket",
+        "count": 4
+      }
+    ]
+  },
+  "min_population": 3,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "population_multiplier",
+      "amount": 0.05
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "domain": "ressources",
+  "tier": 1,
+  "cost": {
+    "treasury": 200,
+    "items": [
+      {
+        "item": "minecraft:wheat",
+        "count": 32
+      },
+      {
+        "item": "minecraft:carrot",
+        "count": 16
+      },
+      {
+        "item": "minecraft:potato",
+        "count": 16
+      },
+      {
+        "item": "minecraft:beetroot_seeds",
+        "count": 16
+      }
+    ]
+  },
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "crop_yield",
+      "amount": 0.02
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "domain": "industrie",
+  "tier": 1,
+  "cost": {
+    "treasury": 300,
+    "items": [
+      {
+        "item": "minecraft:cobblestone",
+        "count": 64
+      },
+      {
+        "item": "minecraft:oak_planks",
+        "count": 64
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 12
+      },
+      {
+        "item": "minecraft:smithing_table",
+        "count": 1
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_1"
+  ],
+  "min_population": 1,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "station.machines"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "domain": "industrie",
+  "tier": 8,
+  "cost": {
+    "treasury": 6800,
+    "items": [
+      {
+        "item": "minecraft:firework_rocket",
+        "count": 64
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 24
+      },
+      {
+        "item": "minecraft:copper_block",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:technologie_1"
+  ],
+  "min_population": 9,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "station.aerospace"
+    },
+    {
+      "type": "unlock",
+      "key": "rocket"
+    }
+  ]
+}

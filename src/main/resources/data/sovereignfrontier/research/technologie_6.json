@@ -1,0 +1,39 @@
+{
+  "domain": "technologie",
+  "tier": 6,
+  "cost": {
+    "treasury": 11750,
+    "items": [
+      {
+        "item": "minecraft:magma_block",
+        "count": 32
+      },
+      {
+        "item": "minecraft:blaze_powder",
+        "count": 32
+      },
+      {
+        "item": "minecraft:copper_block",
+        "count": 24
+      },
+      {
+        "item": "minecraft:leather",
+        "count": 32
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_14"
+  ],
+  "min_population": 13,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "armor.gas_heated"
+    },
+    {
+      "type": "unlock",
+      "key": "boiler.gas"
+    }
+  ]
+}

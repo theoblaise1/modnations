@@ -1,0 +1,35 @@
+{
+  "domain": "militaire",
+  "tier": 12,
+  "cost": {
+    "treasury": 10000,
+    "items": [
+      {
+        "item": "minecraft:blaze_powder",
+        "count": 32
+      },
+      {
+        "item": "minecraft:magma_cream",
+        "count": 16
+      },
+      {
+        "item": "minecraft:gunpowder",
+        "count": 64
+      },
+      {
+        "item": "minecraft:quartz_block",
+        "count": 16
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:technologie_4"
+  ],
+  "min_population": 11,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "ammo.sulfur"
+    }
+  ]
+}

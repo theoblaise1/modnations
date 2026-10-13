@@ -1,0 +1,35 @@
+{
+  "domain": "civil",
+  "tier": 12,
+  "cost": {
+    "treasury": 8300,
+    "items": [
+      {
+        "item": "minecraft:emerald",
+        "count": 32
+      },
+      {
+        "item": "minecraft:gold_block",
+        "count": 8
+      },
+      {
+        "item": "minecraft:white_banner",
+        "count": 8
+      },
+      {
+        "item": "minecraft:ender_pearl",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:militaire_6"
+  ],
+  "min_population": 11,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "diplomacy.embassy"
+    }
+  ]
+}

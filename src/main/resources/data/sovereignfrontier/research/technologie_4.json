@@ -1,0 +1,35 @@
+{
+  "domain": "technologie",
+  "tier": 4,
+  "cost": {
+    "treasury": 6400,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 16
+      },
+      {
+        "item": "minecraft:blaze_rod",
+        "count": 16
+      },
+      {
+        "item": "minecraft:obsidian",
+        "count": 32
+      },
+      {
+        "item": "minecraft:ender_pearl",
+        "count": 16
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_9"
+  ],
+  "min_population": 11,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "dimension.mars"
+    }
+  ]
+}

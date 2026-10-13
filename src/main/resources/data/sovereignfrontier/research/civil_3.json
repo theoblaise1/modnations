@@ -1,0 +1,33 @@
+{
+  "domain": "civil",
+  "tier": 3,
+  "cost": {
+    "treasury": 1050,
+    "items": [
+      {
+        "item": "minecraft:stone_bricks",
+        "count": 64
+      },
+      {
+        "item": "minecraft:coal",
+        "count": 32
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 8
+      },
+      {
+        "item": "minecraft:book",
+        "count": 6
+      }
+    ]
+  },
+  "min_population": 2,
+  "rewards": [
+    {
+      "type": "bonus",
+      "stat": "income_multiplier",
+      "amount": 0.1
+    }
+  ]
+}

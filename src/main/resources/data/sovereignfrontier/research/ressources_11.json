@@ -1,0 +1,35 @@
+{
+  "domain": "ressources",
+  "tier": 11,
+  "cost": {
+    "treasury": 7300,
+    "items": [
+      {
+        "item": "minecraft:iron_block",
+        "count": 24
+      },
+      {
+        "item": "minecraft:obsidian",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 8
+      },
+      {
+        "item": "minecraft:redstone_block",
+        "count": 12
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:industrie_7"
+  ],
+  "min_population": 9,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "drill.deep"
+    }
+  ]
+}

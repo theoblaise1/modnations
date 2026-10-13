@@ -1,0 +1,32 @@
+{
+  "domain": "militaire",
+  "tier": 9,
+  "cost": {
+    "treasury": 6500,
+    "items": [
+      {
+        "item": "sovereignfrontier:blindage_national",
+        "count": 32
+      },
+      {
+        "item": "minecraft:iron_block",
+        "count": 12
+      },
+      {
+        "item": "minecraft:armadillo_scute",
+        "count": 8
+      },
+      {
+        "item": "minecraft:leather",
+        "count": 24
+      }
+    ]
+  },
+  "min_population": 8,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "armor.ballistic_heavy"
+    }
+  ]
+}

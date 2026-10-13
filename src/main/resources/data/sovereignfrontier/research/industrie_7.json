@@ -1,0 +1,35 @@
+{
+  "domain": "industrie",
+  "tier": 7,
+  "cost": {
+    "treasury": 5550,
+    "items": [
+      {
+        "item": "minecraft:obsidian",
+        "count": 24
+      },
+      {
+        "item": "sovereignfrontier:blindage_national",
+        "count": 24
+      },
+      {
+        "item": "minecraft:redstone_block",
+        "count": 8
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:ressources_8"
+  ],
+  "min_population": 8,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "reactor.nuclear"
+    }
+  ]
+}

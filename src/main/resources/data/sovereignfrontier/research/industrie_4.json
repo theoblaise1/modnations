@@ -1,0 +1,35 @@
+{
+  "domain": "industrie",
+  "tier": 4,
+  "cost": {
+    "treasury": 2400,
+    "items": [
+      {
+        "item": "minecraft:glass",
+        "count": 64
+      },
+      {
+        "item": "minecraft:copper_ingot",
+        "count": 32
+      },
+      {
+        "item": "minecraft:daylight_detector",
+        "count": 4
+      },
+      {
+        "item": "minecraft:gold_ingot",
+        "count": 8
+      }
+    ]
+  },
+  "requires": [
+    "sovereignfrontier:civil_3"
+  ],
+  "min_population": 4,
+  "rewards": [
+    {
+      "type": "unlock",
+      "key": "generator.solar"
+    }
+  ]
+}
