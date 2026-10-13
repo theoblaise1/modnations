@@ -50,6 +50,41 @@ La répartition des systèmes 7 à 10 (ajoutés après le découpage initial J1�
 
 ---
 
+## Essayer le mod
+
+Le `.jar` doit être installé **sur le serveur et sur chaque client** (blocs, écrans et paquets
+réseau propres au mod). Prérequis : **Java 21**, **Minecraft 1.21.1**, **NeoForge 21.1.x**
+(testé avec 21.1.219).
+
+### 1. Récupérer le `.jar`
+- **Depuis la CI** : onglet *Actions* du dépôt → dernier run « Build » vert de la branche →
+  section *Artifacts* → `sovereignfrontier-<commit>` (archive zip contenant
+  `sovereignfrontier-<version>.jar`). Il faut être connecté à GitHub.
+- **Ou en local** : `./gradlew build` → `build/libs/sovereignfrontier-<version>.jar`.
+
+### 2. Client (chaque joueur)
+1. Télécharger l'installateur NeoForge 21.1.x (`neoforge-21.1.219-installer.jar` sur
+   neoforged.net), choisir *Install client*.
+2. Copier le `.jar` du mod dans `.minecraft/mods/`.
+3. Lancer le profil « NeoForge 1.21.1 » du lanceur. Le mod apparaît dans *Mods* du menu principal.
+
+### 3. Serveur dédié (auto-hébergé)
+```bash
+java -jar neoforge-21.1.219-installer.jar --installServer   # dans un dossier vide
+cp sovereignfrontier-*.jar mods/
+./run.sh            # run.bat sous Windows ; 1er lancement : passer eula=true dans eula.txt
+```
+Mémoire : `-Xmx4G` dans `user_jvm_args.txt` suffit pour 2 à 10 joueurs. Configuration du mod :
+`world/serverconfig/sovereignfrontier-server.toml` (créée au 1er démarrage, rechargée à chaud).
+
+### 4. Essai rapide en solo ou entre développeurs
+- Sans rien installer : `./gradlew runClient` lance un client avec le mod (Solo → nouveau monde).
+- En jeu, en opérateur (`/op <pseudo>` sur serveur, triches activées en solo) :
+  `/nation create Aurore` → touche **N** ; `/sfadmin money give <joueur> 100000` ;
+  `/sfadmin treasury Aurore 100000` (ajoute au trésor) ; `/sfadmin research Aurore complete industrie_1` (Tab
+  complète les paliers). Le Créatif contient tous les blocs dans l'onglet « Sovereign Frontier ».
+- Suivre ensuite les recettes en jeu `docs/recette/J1.md` à `J3.md`.
+
 ## Contenu du jalon J1
 
 ### Blocs
@@ -177,7 +212,7 @@ des 65 paliers et le catalogue des déblocages sont dans [`docs/recherche.md`](d
 ```bash
 ./gradlew build               # compile et produit build/libs/sovereignfrontier-<version>.jar
 ./gradlew runClient           # client de développement
-./gradlew runServer           # serveur dédié de développement (dossier run/)
+./gradlew runServer           # serveur dédié de développement (dossier runs/server/)
 ./gradlew runGameTestServer   # serveur headless + GameTests (vérification serveur dédié)
 
 python3 tools/gen_textures.py      # régénère les textures 16x16 (Pillow) ; --check en CI ; --preview f.png
