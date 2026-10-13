@@ -46,10 +46,11 @@ def main() -> int:
             used.update({PREFIX + a, PREFIX + b})
         for key in re.findall(r'Component\.translatable\("(sovereignfrontier\.[a-z0-9_.]+)"', src):
             used.add(key)
-        if "Msg.tr(\"gui.\" + key" in src:
-            # Aide locale tr("x") de l'écran national, préfixée par « gui. ».
+        helper = re.search(r'Msg\.tr\("([a-z0-9_.]+\.)" \+ key', src)
+        if helper:
+            # Aide locale tr("x") d'un écran, qui préfixe ses clés (ex. « gui. », « gui.research. »).
             for key in re.findall(r'(?<![\w.])tr\("([a-z0-9_.]*[a-z0-9_])"\s*[,)]', src):
-                used.add(PREFIX + "gui." + key)
+                used.add(PREFIX + helper.group(1) + key)
         for key in re.findall(r'new KeyMapping\(\s*"([a-z0-9_.]+)"', src):
             used.add(key)
         for key in re.findall(r'"(key\.categories\.[a-z0-9_.]+)"', src):

@@ -95,6 +95,8 @@ public class NationScreen extends Screen {
     private static final long FEEDBACK_MS = 5000L;
 
     private NationTab tab;
+    /** État de l'onglet Recherche (domaine et palier sélectionnés), conservé entre deux rafraîchissements. */
+    private final ResearchTab researchTab = new ResearchTab();
     private int left;
     private int top;
     /** Défilement (en lignes) de la liste des membres ou du journal. */
@@ -130,6 +132,9 @@ public class NationScreen extends Screen {
         NationSnapshot s = ClientNationState.get();
         if (s != null && s.hasNation() && tab == NationTab.TREASURY) {
             initTreasury(s);
+        }
+        if (s != null && s.hasNation() && tab == NationTab.RESEARCH) {
+            researchTab.init(w -> addRenderableWidget(w), contentLeft(), contentTop(), CONTENT_W, CONTENT_H, s);
         }
     }
 
@@ -265,7 +270,13 @@ public class NationScreen extends Screen {
         } else {
             switch (tab) {
                 case OVERVIEW -> renderOverview(g, s);
-                case RESEARCH -> renderPlaceholder(g, "research");
+                case RESEARCH -> {
+                    if (s.hasNation()) {
+                        researchTab.render(g, s, mouseX, mouseY, this::setTooltipForNextRenderPass);
+                    } else {
+                        renderNeedNation(g);
+                    }
+                }
                 case TREASURY -> renderTreasury(g, s);
                 case TERRITORY -> renderTerritory(g, s, mouseX, mouseY);
                 case ROLES -> renderRoles(g, s, mouseX, mouseY);
@@ -681,11 +692,17 @@ public class NationScreen extends Screen {
         if (tab == NationTab.ROLES && button == 0) {
             return clickRole(s, mouseX, mouseY);
         }
+        if (tab == NationTab.RESEARCH && s.hasNation()) {
+            return researchTab.mouseClicked(mouseX, mouseY, button);
+        }
         return false;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (tab == NationTab.RESEARCH && researchTab.mouseScrolled(mouseX, mouseY, scrollY)) {
+            return true;
+        }
         int max = maxScroll(ClientNationState.get());
         if (max > 0 && scrollY != 0) {
             int step = tab == NationTab.JOURNAL ? 3 : 1;
