@@ -6,7 +6,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/** Opérateurs ayant activé {@code /sfadmin bypass} : ignorent la protection du territoire (non persistant). */
+/**
+ * Opérateurs ayant activé {@code /sfadmin bypass} : ignorent la protection du territoire. Le mode prend fin à la
+ * déconnexion de l'opérateur ({@link #forget}) ou à l'arrêt du serveur ({@link #clear}) : il n'est jamais persistant.
+ */
 public final class AdminBypass {
     private static final Set<UUID> ACTIVE = new HashSet<>();
 
@@ -23,6 +26,11 @@ public final class AdminBypass {
 
     public static boolean isActive(ServerPlayer player) {
         return ACTIVE.contains(player.getUUID()) && player.hasPermissions(2);
+    }
+
+    /** Déconnexion : la reconnexion ne doit pas réactiver silencieusement la protection contournée. */
+    public static void forget(UUID player) {
+        ACTIVE.remove(player);
     }
 
     public static void clear() {

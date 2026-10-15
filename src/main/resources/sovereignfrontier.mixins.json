@@ -4,11 +4,13 @@
   "package": "io.github.theoblaise1.sovereignfrontier.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BasePressurePlateBlockMixin",
     "ChestBlockMixin",
     "DispenserBlockMixin",
     "FireBlockMixin",
     "FlowingFluidMixin",
-    "SpongeBlockMixin"
+    "SpongeBlockMixin",
+    "TurtleEggBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -26,7 +26,9 @@ import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -91,6 +93,7 @@ public final class ServerEvents {
         TreasurySessions.close(event.getEntity().getUUID());
         EngineeringManager.close(event.getEntity().getUUID());
         NationSync.forget(event.getEntity().getUUID());
+        AdminBypass.forget(event.getEntity().getUUID());
         if (event.getEntity() instanceof ServerPlayer player) {
             // Envoi groupé ultérieur : le joueur aura quitté la liste (et hasDisconnected() est déjà vrai).
             Nation nation = NationData.get(player.server).nationOf(player.getUUID());
@@ -116,14 +119,15 @@ public final class ServerEvents {
             return;
         }
         TerritoryTracker tracker = player.getData(ModAttachments.TERRITORY_TRACKER);
+        // Pas de raccourci par chunk : le propriétaire peut changer sous un joueur immobile (revendication ou
+        // abandon), et un passage de portail peut arriver à des coordonnées de chunk identiques.
+        ResourceKey<Level> dimension = player.level().dimension();
         long chunk = player.chunkPosition().toLong();
-        if (tracker.initialized && tracker.lastChunk == chunk) {
-            return;
-        }
-        Nation owner = NationData.get(player.server).ownerAt(player.level().dimension(), chunk);
+        Nation owner = NationData.get(player.server).ownerAt(dimension, chunk);
         UUID ownerId = owner == null ? null : owner.id();
-        boolean changed = !tracker.initialized || !java.util.Objects.equals(ownerId, tracker.lastOwner);
-        tracker.lastChunk = chunk;
+        boolean changed = !tracker.initialized || !dimension.equals(tracker.lastDimension)
+                || !java.util.Objects.equals(ownerId, tracker.lastOwner);
+        tracker.lastDimension = dimension;
         tracker.lastOwner = ownerId;
         boolean first = !tracker.initialized;
         tracker.initialized = true;

@@ -3,15 +3,18 @@ package io.github.theoblaise1.sovereignfrontier.block;
 import com.mojang.serialization.MapCodec;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
 import io.github.theoblaise1.sovereignfrontier.nation.NationData;
+import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.registry.ModBlocks;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -37,6 +41,14 @@ public class NationalChestBlock extends HorizontalDirectionalBlock implements Na
     public NationalChestBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, net.minecraft.core.Direction.NORTH));
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (level instanceof ServerLevel serverLevel) {
+            NationManager.coreAdded(serverLevel, pos);
+        }
     }
 
     @Override

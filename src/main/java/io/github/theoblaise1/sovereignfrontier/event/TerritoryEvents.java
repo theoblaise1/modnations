@@ -37,6 +37,7 @@ import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.SweepAttackEvent;
 import net.neoforged.neoforge.event.level.PistonEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,13 +47,19 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BoatItem;
 import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.FireChargeItem;
+import net.minecraft.world.item.FlintAndSteelItem;
+import net.minecraft.world.item.HangingEntityItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.EventPriority;
@@ -214,7 +221,10 @@ public final class TerritoryEvents {
             // moitié donne accès à l'autre, dont le propriétaire compte donc aussi.
             owner = chestPartnerOwner(level, event.getPos(), state);
             if (owner == null || canBuild(event.getEntity(), owner)) {
-                return;
+                owner = placedNextToOwner(event);
+                if (owner == null || canBuild(event.getEntity(), owner)) {
+                    return;
+                }
             }
         } else if (state.getBlock() instanceof NationAccessBlock) {
             // Le bloc national vérifie lui-même la permission adéquate ; on bloque seulement l'objet tenu.
@@ -236,20 +246,35 @@ public final class TerritoryEvents {
     }
 
     /**
-     * Seaux, nénuphars et frai de grenouille : posés par {@code Item#use} sans événement de pose,
-     * on vérifie la case visée et la case voisine.
+     * Briquet, boule de feu, cadres et tableaux : l'effet ou l'entité naît sur la case voisine de la face
+     * cliquée, sans événement de pose. Renvoie le propriétaire de cette case, s'il y en a un.
+     */
+    @Nullable
+    private static Nation placedNextToOwner(PlayerInteractEvent.RightClickBlock event) {
+        Item item = event.getItemStack().getItem();
+        if (!(item instanceof FlintAndSteelItem || item instanceof FireChargeItem || item instanceof HangingEntityItem)) {
+            return null;
+        }
+        return ownerAt(event.getLevel(), event.getPos().relative(event.getFace()));
+    }
+
+    /**
+     * Seaux, nénuphars, frai de grenouille, bateaux et œufs d'apparition : posés par {@code Item#use} sans
+     * événement de pose, on vérifie la case visée et la case voisine.
      */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         Level level = event.getLevel();
         Item item = event.getItemStack().getItem();
-        if (level.isClientSide() || !(item instanceof BucketItem || item instanceof PlaceOnWaterBlockItem)) {
+        if (level.isClientSide() || !(item instanceof BucketItem || item instanceof PlaceOnWaterBlockItem
+                || item instanceof BoatItem || item instanceof SpawnEggItem)) {
             return;
         }
-        // Même visée que BucketItem#use : sources seulement pour un seau vide, aucun fluide pour un
-        // seau plein ; PlaceOnWaterBlockItem#use vise une source et pose le bloc juste au-dessus.
+        // Même visée que chaque Item#use : seau vide et œuf = sources seulement, seau plein = aucun fluide,
+        // bateau = tout fluide ; PlaceOnWaterBlockItem vise une source et pose le bloc juste au-dessus.
         ClipContext.Fluid mode = item instanceof BucketItem bucket && bucket.content != Fluids.EMPTY
-                ? ClipContext.Fluid.NONE : ClipContext.Fluid.SOURCE_ONLY;
+                ? ClipContext.Fluid.NONE
+                : item instanceof BoatItem ? ClipContext.Fluid.ANY : ClipContext.Fluid.SOURCE_ONLY;
         BlockHitResult hit = Item.getPlayerPOVHitResult(level, event.getEntity(), mode);
         if (hit.getType() != HitResult.Type.BLOCK) {
             return;
@@ -300,6 +325,18 @@ public final class TerritoryEvents {
     }
 
     /** Entités d'un territoire que seuls les bâtisseurs peuvent frapper ou manipuler. */
+    /**
+     * Plaque de pression et œuf de tortue : déclenchés par le simple contact, sans événement de pose. Un joueur sans
+     * droit de construction sur le territoire ne doit pas les actionner, comme il ne peut pas ouvrir une porte.
+     */
+    public static boolean blocksTrigger(Entity entity, Level level, BlockPos pos) {
+        if (!(entity instanceof ServerPlayer player)) {
+            return false;
+        }
+        Nation owner = ownerAt(level, pos);
+        return owner != null && !canBuild(player, owner);
+    }
+
     public static boolean isProtectedEntity(Entity entity) {
         return !(entity instanceof Player) && !(entity instanceof Enemy) && !(entity instanceof Projectile);
     }
@@ -554,6 +591,31 @@ public final class TerritoryEvents {
         Nation nation = data.nationOf(victim.getUUID());
         if (nation != null && nation == data.nationOf(attacker.getUUID())) {
             event.setCanceled(true);
+        }
+    }
+
+    /**
+     * Balayage d'épée : Player#attack frappe directement les entités voisines de la cible, sans
+     * AttackEntityEvent. Si le balayage toucherait une entité protégée (animal, villageois, armure) dans un
+     * territoire où le joueur ne peut pas construire, il est annulé entier. La cible elle-même est déjà
+     * couverte par {@link #onAttackEntity}.
+     */
+    @SubscribeEvent
+    public static void onSweep(SweepAttackEvent event) {
+        if (!event.isSweeping() || !(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        // Même boîte que Player#attack : la cible élargie d'un bloc en largeur et d'un quart en hauteur.
+        AABB box = event.getTarget().getBoundingBox().inflate(1.0D, 0.25D, 1.0D);
+        for (LivingEntity near : player.level().getEntitiesOfClass(LivingEntity.class, box)) {
+            if (near == player || near == event.getTarget() || !isProtectedEntity(near)) {
+                continue;
+            }
+            Nation owner = ownerAt(player.level(), near.blockPosition());
+            if (owner != null && !canBuild(player, owner)) {
+                event.setSweeping(false);
+                return;
+            }
         }
     }
 }

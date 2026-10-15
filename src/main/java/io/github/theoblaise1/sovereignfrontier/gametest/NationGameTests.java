@@ -3,6 +3,7 @@ package io.github.theoblaise1.sovereignfrontier.gametest;
 import com.mojang.authlib.GameProfile;
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
 import io.github.theoblaise1.sovereignfrontier.block.NationalChestBlock;
+import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
 import io.github.theoblaise1.sovereignfrontier.event.TerritoryEvents;
 import io.github.theoblaise1.sovereignfrontier.nation.ActionResult;
 import io.github.theoblaise1.sovereignfrontier.nation.BuildingType;
@@ -14,6 +15,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.nation.NationRole;
+import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,6 +26,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BedBlock;
@@ -36,6 +39,8 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -304,6 +309,65 @@ public final class NationGameTests {
         helper.assertTrue(NationalChestBlock.isStructureValid(helper.getLevel(), helper.absolutePos(core)), "socle complet");
         helper.setBlock(core.offset(1, -1, 1), Blocks.STONE);
         helper.assertFalse(NationalChestBlock.isStructureValid(helper.getLevel(), helper.absolutePos(core)), "socle incomplet");
+        helper.succeed();
+    }
+
+    /** Un Trésor posé sur la parcelle en interdit l'abandon ; une fois le bloc retiré, l'abandon redevient possible. */
+    @GameTest(template = AREA, batch = "sf_core")
+    public static void unclaimRefusedWhileTreasuryStands(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ResourceKey<Level> dim = helper.getLevel().dimension();
+        BlockPos core = helper.absolutePos(new BlockPos(4, 2, 4));
+        ChunkPos capital = new ChunkPos(core);
+        ServerPlayer chef = fakePlayer(helper, "sf_coeur");
+        moveTo(helper, chef, capital);
+        expect(helper, NationManager.create(chef, "TestCoeur" + Math.floorMod(core.asLong(), 100000)), true, "création");
+        try {
+            Nation nation = NationData.get(server).nationOf(chef.getUUID());
+            NationAdmin.adjustTreasury(server, nation, 10_000L);
+            expect(helper, NationManager.claim(chef, dim, new ChunkPos(capital.x + 1, capital.z)), true, "second chunk");
+
+            // Pose d'un Trésor : le bloc l'enregistre comme cœur de la nation (comme le fait le joueur).
+            var treasury = ModBlocks.TREASURY.get();
+            helper.getLevel().setBlock(core, treasury.defaultBlockState(), 3);
+            treasury.setPlacedBy(helper.getLevel(), core, treasury.defaultBlockState(), null, ItemStack.EMPTY);
+            expect(helper, NationManager.unclaim(chef, dim, capital), false, "abandon refusé : Trésor sur la parcelle");
+
+            // Bloc retiré : l'entrée périmée est purgée et l'abandon redevient possible.
+            helper.getLevel().setBlock(core, Blocks.AIR.defaultBlockState(), 3);
+            expect(helper, NationManager.unclaim(chef, dim, capital), true, "abandon après retrait du Trésor");
+        } finally {
+            NationManager.disband(chef);
+        }
+        helper.succeed();
+    }
+
+    /** Au-delà du plafond d'une fenêtre, un joueur ne peut plus enchaîner les actions de nation. */
+    @GameTest(template = AREA)
+    public static void mutationBurstIsCapped(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper, "sf_rafale");
+        for (int i = 0; i < NationSync.MUTATIONS_PER_WINDOW; i++) {
+            helper.assertTrue(NationSync.allowMutation(player), "action " + (i + 1) + " acceptée");
+        }
+        helper.assertFalse(NationSync.allowMutation(player), "action au-delà du plafond refusée");
+        helper.succeed();
+    }
+
+    /** Deux noms ne différant que par la casse : le nom exact désigne un seul compte, une autre casse est ambiguë. */
+    @GameTest(template = AREA)
+    public static void accountNamesResolveExactlyOrAreAmbiguous(GameTestHelper helper) {
+        EconomyData eco = EconomyData.get(helper.getLevel().getServer());
+        int n = Math.floorMod(helper.absolutePos(BlockPos.ZERO).asLong(), 100000);
+        String lower = "sfcasse" + n;
+        String upper = "SFCASSE" + n;
+        // UUID déterministes : le monde de test persiste, les comptes ne doivent pas s'accumuler à chaque exécution.
+        UUID lowerId = UUID.nameUUIDFromBytes(("lower" + lower).getBytes(StandardCharsets.UTF_8));
+        UUID upperId = UUID.nameUUIDFromBytes(("upper" + upper).getBytes(StandardCharsets.UTF_8));
+        eco.ensureAccount(lowerId, lower, 0L);
+        eco.ensureAccount(upperId, upper, 0L);
+        helper.assertTrue(eco.findByName(lower).equals(List.of(lowerId)), "nom exact minuscules : un seul compte");
+        helper.assertTrue(eco.findByName(upper).equals(List.of(upperId)), "nom exact majuscules : un seul compte");
+        helper.assertTrue(eco.findByName("SfCasse" + n).size() == 2, "autre casse : ambigu, les deux comptes");
         helper.succeed();
     }
 
