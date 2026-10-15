@@ -11,6 +11,7 @@ import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,10 +34,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * la structure du réacteur n'est revalidée que toutes les 40 ticks.
  */
 public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuProvider {
-    /** Vrai pendant l'explosion d'un réacteur : la protection du territoire ne s'applique pas à sa propre nation. */
-    public static boolean meltdownInProgress;
+    /**
+     * Centre de l'explosion d'un réacteur en cours, sinon {@code null} : cette explosion-là (reconnue
+     * à son centre) ignore la protection du territoire de la nation du réacteur, et d'elle seule.
+     */
+    @javax.annotation.Nullable
+    public static net.minecraft.world.phys.Vec3 meltdownInProgress;
 
-    public static final int DATA_SIZE = 11;
+    public static final int DATA_SIZE = 15;
     public static final int FLAG_RUNNING = 1;
     public static final int FLAG_VALID = 2;
     public static final int FLAG_ACTIVE = 4;
@@ -52,7 +57,8 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
     private int progress;
     private int gasTank;
     private int fuelTicks;
-    private boolean running = true;
+    /** Arrêté à la pose : le réacteur ne démarre qu'au bouton « Démarrer ». */
+    private boolean running;
     private boolean valid;
     private int cells;
     private int sinks;
@@ -184,6 +190,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
     }
 
     private void tickReactor(ServerLevel level, BlockPos pos, BlockState state) {
+        int before = heat;
         if (counter % 40 == 1) {
             ReactorStructure.Result r = ReactorStructure.validate(level, pos, state.getValue(MachineBlock.FACING));
             valid = r.valid();
@@ -209,13 +216,16 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         progress = active ? 100 : 0;
         heat = Math.max(0, heat - 1 - (valid ? sinks * SFConfig.REACTOR_DISSIPATION_PER_SINK.get() : 0));
         int max = SFConfig.REACTOR_MAX_HEAT.get();
-        if (heat >= max) {
-            meltdown(level, pos);
-        } else if (heat >= max * 3 / 4 && counter % 100 == 0) {
-            Component warning = Msg.err("reactor.warning", heat * 100 / max);
+        int warnAt = max * 3 / 4;
+        // Avertissement au tick où le seuil est franchi (une montée rapide ne saute pas la fenêtre), puis toutes les 100 ticks.
+        if (heat >= warnAt && (before < warnAt || counter % 100 == 0)) {
+            Component warning = Msg.err("reactor.warning", Math.min(100, heat * 100 / max));
             for (ServerPlayer p : level.getPlayers(p -> p.distanceToSqr(pos.getCenter()) < 48 * 48)) {
                 p.displayClientMessage(warning, true);
             }
+        }
+        if (heat >= max) {
+            meltdown(level, pos);
         }
     }
 
@@ -223,18 +233,22 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         heat = 0;
         fuelTicks = 0;
         level.removeBlock(pos, false);
-        meltdownInProgress = true;
+        net.minecraft.world.phys.Vec3 core = pos.getCenter();
+        meltdownInProgress = core;
         try {
-            level.explode(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+            level.explode(null, core.x, core.y, core.z,
                     SFConfig.REACTOR_EXPLOSION_POWER.get().floatValue(), Level.ExplosionInteraction.BLOCK);
         } finally {
-            meltdownInProgress = false;
+            meltdownInProgress = null;
         }
     }
 
     // ------------------------------------------------------------------ menu et synchronisation
 
-    /** Valeurs synchronisées vers l'interface ; les longs sont découpés en deux moitiés de 16 bits. */
+    /**
+     * Valeurs synchronisées vers l'interface. Les valeurs 32 bits sont découpées en deux moitiés de 16 bits
+     * (énergie 0-3, chaleur 4-5, chaleur maximale 8-9), la réserve de gaz 64 bits en quatre quarts (11-14).
+     */
     private final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -243,14 +257,18 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
                 case 1 -> hi(energy.stored());
                 case 2 -> lo(energy.capacity());
                 case 3 -> hi(energy.capacity());
-                case 4 -> Math.min(heat, 0xFFFF);
-                case 5 -> Math.min(SFConfig.REACTOR_MAX_HEAT.get(), 0xFFFF);
+                case 4 -> lo(heat);
+                case 5 -> hi(heat);
                 case 6 -> kind == MachineKind.THERMAL ? (burnTotal == 0 ? 0 : burn * 100 / burnTotal)
                         : kind == MachineKind.GAS_DRILL ? progress * 5 : progress;
                 case 7 -> kind == MachineKind.REACTOR ? cells * 100 + sinks : gasTank;
-                case 8 -> lo(dimensionGas);
-                case 9 -> hi(dimensionGas);
+                case 8 -> lo(SFConfig.REACTOR_MAX_HEAT.get());
+                case 9 -> hi(SFConfig.REACTOR_MAX_HEAT.get());
                 case 10 -> (running ? FLAG_RUNNING : 0) | (valid ? FLAG_VALID : 0) | (progress > 0 || burn > 0 ? FLAG_ACTIVE : 0);
+                case 11 -> quarter(dimensionGas, 0);
+                case 12 -> quarter(dimensionGas, 1);
+                case 13 -> quarter(dimensionGas, 2);
+                case 14 -> quarter(dimensionGas, 3);
                 default -> 0;
             };
         }
@@ -273,6 +291,11 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         return (int) ((Math.min(v, 0xFFFFFFFFL) >>> 16) & 0xFFFF);
     }
 
+    /** Quart de 16 bits d'une valeur 64 bits, sans plafond : {@code part} vaut 0 (bits 0-15) à 3 (bits 48-63). */
+    private static int quarter(long v, int part) {
+        return (int) ((v >>> (16 * part)) & 0xFFFF);
+    }
+
     @Override
     public Component getDisplayName() {
         return Msg.tr("machine." + kind.id());
@@ -281,6 +304,16 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return new MachineMenu(id, inventory, this, data);
+    }
+
+    /**
+     * Données lues par le client à l'ouverture (voir {@link MachineMenu}). Écrites ici pour tous les chemins
+     * d'ouverture, y compris le mode spectateur : sans elles, le client ne sait pas construire le menu.
+     */
+    @Override
+    public void writeClientSideData(AbstractContainerMenu menu, RegistryFriendlyByteBuf buffer) {
+        buffer.writeBlockPos(worldPosition);
+        buffer.writeVarInt(kind.ordinal());
     }
 
     @Override
@@ -306,6 +339,6 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         heat = tag.getInt("heat");
         gasTank = tag.getInt("gasTank");
         fuelTicks = tag.getInt("fuelTicks");
-        running = !tag.contains("running") || tag.getBoolean("running");
+        running = tag.getBoolean("running");
     }
 }

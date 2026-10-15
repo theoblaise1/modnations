@@ -5,9 +5,9 @@ import io.github.theoblaise1.sovereignfrontier.machine.MachineBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -40,9 +40,12 @@ public class CableBlock extends PipeBlock {
         return state.getBlock() instanceof CableBlock || state.getBlock() instanceof MachineBlock;
     }
 
-    private BlockState withConnections(BlockGetter level, BlockPos pos, BlockState state) {
+    /** Un voisin dans un chunk non chargé n'est pas lu : le câble ne s'y raccorde pas. */
+    private BlockState withConnections(LevelReader level, BlockPos pos, BlockState state) {
         for (Direction d : Direction.values()) {
-            state = state.setValue(PROPERTY_BY_DIRECTION.get(d), connects(level.getBlockState(pos.relative(d))));
+            BlockPos n = pos.relative(d);
+            boolean link = level.hasChunkAt(n) && connects(level.getBlockState(n));
+            state = state.setValue(PROPERTY_BY_DIRECTION.get(d), link);
         }
         return state;
     }

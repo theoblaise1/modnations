@@ -2,12 +2,19 @@ package io.github.theoblaise1.sovereignfrontier.energy;
 
 import net.minecraft.nbt.CompoundTag;
 
-/** Réserve d'énergie (unité du mod : l'énergon, « En ») avec débits maximaux d'entrée et de sortie par tick. */
+/**
+ * Réserve d'énergie (unité du mod : l'énergon, « En ») avec débits maximaux d'entrée et de sortie par tick.
+ * Le débit d'entrée est un total par tick de jeu : plusieurs sources qui poussent dans le même tick se
+ * partagent {@code maxIn}, elles ne l'obtiennent pas chacune.
+ */
 public final class EnergyBuffer {
     private final long capacity;
     private final long maxIn;
     private final long maxOut;
     private long stored;
+    /** Tick de jeu de la dernière réception, et quantité reçue pendant ce tick. */
+    private long inputTick = Long.MIN_VALUE;
+    private long inputThisTick;
 
     public EnergyBuffer(long capacity, long maxIn, long maxOut) {
         this.capacity = capacity;
@@ -38,10 +45,21 @@ public final class EnergyBuffer {
         return added;
     }
 
-    /** Réception depuis le réseau : limitée au débit d'entrée. */
-    public long receive(long amount) {
-        long added = Math.min(Math.min(Math.max(0, amount), maxIn), space());
+    /** Quantité que la réserve accepte encore pendant le tick de jeu {@code gameTime} : place libre et débit d'entrée restant. */
+    public long acceptable(long gameTime) {
+        long room = gameTime == inputTick ? maxIn - inputThisTick : maxIn;
+        return Math.max(0, Math.min(space(), room));
+    }
+
+    /** Réception depuis le réseau : limitée à {@link #acceptable(long)} pour ce tick de jeu. */
+    public long receive(long amount, long gameTime) {
+        long added = Math.min(Math.max(0, amount), acceptable(gameTime));
+        if (gameTime != inputTick) {
+            inputTick = gameTime;
+            inputThisTick = 0;
+        }
         stored += added;
+        inputThisTick += added;
         return added;
     }
 

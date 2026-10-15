@@ -88,10 +88,8 @@ public class MachineBlock extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineBlockEntity be) {
-            ((ServerPlayer) player).openMenu(be, buf -> {
-                buf.writeBlockPos(pos);
-                buf.writeVarInt(kind.ordinal());
-            });
+            // Les données du client viennent de MachineBlockEntity#writeClientSideData, quel que soit le chemin d'ouverture.
+            ((ServerPlayer) player).openMenu(be);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

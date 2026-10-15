@@ -4,6 +4,7 @@ import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.machine.MachineKind;
 import io.github.theoblaise1.sovereignfrontier.machine.MachineMenu;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -51,13 +52,13 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
         }
         long energy = menu.wide(0);
         long capacity = Math.max(1, menu.wide(2));
-        bar(g, 8, 16, 160, 6, (float) energy / capacity, COL_ENERGY);
+        bar(g, 8, 16, 160, 4, (float) energy / capacity, COL_ENERGY);
         if (menu.kind() == MachineKind.REACTOR) {
-            bar(g, 8, 25, 160, 6, (float) menu.value(4) / Math.max(1, menu.value(5)), COL_HEAT);
+            bar(g, 8, 22, 160, 4, (float) menu.wide(4) / Math.max(1, menu.wide(8)), COL_HEAT);
         } else if (menu.kind() == MachineKind.GAS_DRILL) {
-            bar(g, 8, 25, 160, 6, (float) menu.value(7) / MachineBlockEntity.GAS_TANK, COL_GAS);
+            bar(g, 8, 22, 160, 4, (float) menu.value(7) / MachineBlockEntity.GAS_TANK, COL_GAS);
         } else if (menu.kind() == MachineKind.THERMAL) {
-            bar(g, 8, 25, 160, 3, menu.value(6) / 100f, COL_HEAT);
+            bar(g, 8, 22, 160, 3, menu.value(6) / 100f, COL_HEAT);
         }
     }
 
@@ -70,18 +71,33 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, title, 8, 6, COL_TEXT, false);
         g.drawString(font, playerInventoryTitle, 8, inventoryLabelY, COL_TEXT, false);
-        long energy = menu.wide(0);
-        String energyText = Msg.tr("gui.machine.energy", energy, menu.wide(2)).getString();
-        g.drawString(font, energyText, 8, 34, COL_TEXT, false);
-        Component line = switch (menu.kind()) {
-            case REACTOR -> Msg.tr("gui.machine.reactor", menu.value(4), menu.value(5), menu.value(7) / 100, menu.value(7) % 100,
-                    Msg.tr((menu.value(10) & MachineBlockEntity.FLAG_VALID) != 0 ? "gui.machine.valid" : "gui.machine.invalid"));
-            case GAS_DRILL -> Msg.tr("gui.machine.gas", menu.value(7), MachineBlockEntity.GAS_TANK, menu.wide(8));
-            case SOLAR -> Msg.tr(menu.value(6) > 0 ? "gui.machine.solar_on" : "gui.machine.solar_off");
-            case THERMAL -> Msg.tr(menu.value(6) > 0 ? "gui.machine.burning" : "gui.machine.idle");
-            case BATTERY -> Msg.tr("gui.machine.battery");
+        g.drawString(font, Msg.tr("gui.machine.energy", menu.wide(0), menu.wide(2)).getString(), 8, 28, COL_TEXT, false);
+        Component[] lines = statusLines();
+        for (int i = 0; i < lines.length; i++) {
+            g.drawString(font, lines[i], 8, 37 + 9 * i, COL_TEXT, false);
+        }
+    }
+
+    /**
+     * Lignes d'état, au plus deux, dessinées sans troncature : chaque texte est découpé en clés assez courtes
+     * pour tenir dans les 160 px disponibles (police vanilla), y compris pour les valeurs usuelles.
+     */
+    private Component[] statusLines() {
+        return switch (menu.kind()) {
+            case REACTOR -> {
+                boolean valid = (menu.value(10) & MachineBlockEntity.FLAG_VALID) != 0;
+                yield new Component[]{
+                        Msg.tr(valid ? "gui.machine.reactor_valid" : "gui.machine.reactor_invalid", menu.value(7) / 100)
+                                .withStyle(valid ? ChatFormatting.GREEN : ChatFormatting.RED),
+                        Msg.tr("gui.machine.reactor_heat", menu.wide(4), menu.wide(8), menu.value(7) % 100)};
+            }
+            case GAS_DRILL -> new Component[]{
+                    Msg.tr("gui.machine.gas_tank", menu.value(7), MachineBlockEntity.GAS_TANK),
+                    Msg.tr("gui.machine.gas_reserve", menu.wide64(11))};
+            case SOLAR -> new Component[]{Msg.tr(menu.value(6) > 0 ? "gui.machine.solar_on" : "gui.machine.solar_off")};
+            case THERMAL -> new Component[]{Msg.tr(menu.value(6) > 0 ? "gui.machine.burning" : "gui.machine.idle")};
+            case BATTERY -> new Component[]{Msg.tr("gui.machine.battery")};
         };
-        g.drawString(font, font.plainSubstrByWidth(line.getString(), 160), 8, 44, COL_TEXT, false);
     }
 
     @Override

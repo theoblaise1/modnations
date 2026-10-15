@@ -10,47 +10,53 @@ import net.minecraft.world.level.saveddata.SavedData;
 /**
  * Réserve de gaz FINIE d'une dimension (SavedData propre à chaque niveau). Décrémentée par chaque
  * foreuse ; une fois épuisée, il faut aller chercher le gaz ailleurs (moteur vers l'espace).
+ * Seul le gaz extrait est sauvegardé : la réserve restante se déduit de la configuration à chaque
+ * lecture, si bien qu'un changement de {@code gasPerDimension} s'applique aussitôt.
  */
 public final class GasData extends SavedData {
     private static final String FILE = SovereignFrontier.MODID + "_gas";
-    private long remaining = -1L;
+    private long extracted;
 
     public static GasData get(ServerLevel level) {
         return level.getDataStorage().computeIfAbsent(new SavedData.Factory<>(GasData::new, GasData::load, null), FILE);
     }
 
+    /** Litres restants : {@code gasPerDimension} moins le gaz déjà extrait, jamais négatif. */
     public long remaining() {
-        if (remaining < 0) {
-            remaining = SFConfig.GAS_PER_DIMENSION.get();
-            setDirty();
-        }
-        return remaining;
+        return Math.max(0, SFConfig.GAS_PER_DIMENSION.get() - extracted);
     }
 
     /** Prélève jusqu'à {@code liters} ; renvoie la quantité réellement extraite. */
     public long extract(long liters) {
         long got = Math.min(Math.max(0, liters), remaining());
         if (got > 0) {
-            remaining -= got;
+            extracted += got;
             setDirty();
         }
         return got;
     }
 
+    /** Fixe la réserve restante (bornée par la configuration) ; réservé aux tests. */
     public void setRemaining(long liters) {
-        remaining = Math.max(0, liters);
+        extracted = Math.max(0, SFConfig.GAS_PER_DIMENSION.get() - Math.max(0, liters));
         setDirty();
     }
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        tag.putLong("remaining", remaining);
+        tag.putLong("extracted", extracted);
         return tag;
     }
 
     private static GasData load(CompoundTag tag, HolderLookup.Provider registries) {
         GasData data = new GasData();
-        data.remaining = tag.contains("remaining") ? tag.getLong("remaining") : -1L;
+        if (tag.contains("extracted")) {
+            data.extracted = tag.getLong("extracted");
+        } else if (tag.contains("remaining")) {
+            // Ancien format : réserve restante absolue (-1 = jamais initialisée), convertie en gaz extrait.
+            long remaining = tag.getLong("remaining");
+            data.extracted = remaining < 0 ? 0 : Math.max(0, SFConfig.GAS_PER_DIMENSION.get() - remaining);
+        }
         return data;
     }
 }

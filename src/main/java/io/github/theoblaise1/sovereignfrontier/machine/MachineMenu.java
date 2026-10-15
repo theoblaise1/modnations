@@ -91,6 +91,11 @@ public class MachineMenu extends AbstractContainerMenu {
         return (data.get(lowIndex) & 0xFFFFL) | ((data.get(lowIndex + 1) & 0xFFFFL) << 16);
     }
 
+    /** Valeur 64 bits reconstituée à partir de quatre quarts synchronisés (deux valeurs 32 bits consécutives). */
+    public long wide64(int lowIndex) {
+        return wide(lowIndex) | (wide(lowIndex + 2) << 32);
+    }
+
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (id == BUTTON_TOGGLE && machine != null && kind == MachineKind.REACTOR) {

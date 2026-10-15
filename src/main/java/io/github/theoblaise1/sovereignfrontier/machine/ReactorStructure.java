@@ -19,6 +19,10 @@ public final class ReactorStructure {
     private ReactorStructure() {
     }
 
+    /**
+     * Une position dans un chunk non chargé n'est jamais lue (la lecture chargerait le chunk de force) : la
+     * structure est alors jugée invalide, et revérifiée dès que le chunk revient.
+     */
     public static Result validate(Level level, BlockPos controller, Direction facing) {
         BlockPos center = controller.relative(facing.getOpposite(), 2);
         int cells = 0;
@@ -29,6 +33,9 @@ public final class ReactorStructure {
                     BlockPos pos = center.offset(dx, dy, dz);
                     if (pos.equals(controller)) {
                         continue;
+                    }
+                    if (!level.isLoaded(pos)) {
+                        return new Result(false, 0, 0, pos.immutable());
                     }
                     BlockState state = level.getBlockState(pos);
                     boolean shell = Math.abs(dx) == 2 || Math.abs(dy) == 2 || Math.abs(dz) == 2;
