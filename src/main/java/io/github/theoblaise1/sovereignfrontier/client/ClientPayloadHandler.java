@@ -9,6 +9,8 @@ import io.github.theoblaise1.sovereignfrontier.network.NationSnapshotS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationTab;
 import io.github.theoblaise1.sovereignfrontier.network.ResearchDefinitionsS2C;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -31,7 +33,11 @@ public final class ClientPayloadHandler {
     public static void handleResearchDefinitions(ResearchDefinitionsS2C payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientResearchState.set(payload.tiers());
-            if (Minecraft.getInstance().screen instanceof NationScreen screen) {
+            // Les déblocages (et donc les recettes verrouillées) se déduisent des définitions de recherche
+            Screen current = Minecraft.getInstance().screen;
+            if (current instanceof NationScreen screen) {
+                screen.refresh();
+            } else if (current instanceof EngineeringScreen screen) {
                 screen.refresh();
             }
         });
@@ -48,7 +54,8 @@ public final class ClientPayloadHandler {
             } else {
                 screen.refresh();
             }
-        } else if (payload.openScreen()) {
+        } else if (payload.openScreen() && !(mc.screen instanceof AbstractContainerScreen<?>)) {
+            // Jamais par-dessus un conteneur : remplacé sans closeContainer(), son menu resterait ouvert côté serveur
             mc.setScreen(new NationScreen(tab));
         } else if (mc.screen instanceof EngineeringScreen screen) {
             screen.refresh();
@@ -65,10 +72,22 @@ public final class ClientPayloadHandler {
     }
 
     public static void handleEngineeringRecipes(EngineeringRecipesS2C payload, IPayloadContext context) {
-        context.enqueueWork(() -> ClientEngineeringState.set(payload.recipes()));
+        context.enqueueWork(() -> {
+            ClientEngineeringState.set(payload.recipes());
+            // Après un /reload : l'écran ouvert relit les recettes (sélection résolue à nouveau par identifiant)
+            if (Minecraft.getInstance().screen instanceof EngineeringScreen screen) {
+                screen.refresh();
+            }
+        });
     }
 
     public static void handleOpenEngineering(OpenEngineeringS2C payload, IPayloadContext context) {
-        context.enqueueWork(() -> Minecraft.getInstance().setScreen(new EngineeringScreen(payload.pos())));
+        context.enqueueWork(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            // Même garde que pour l'écran national : un conteneur ouvert entre-temps garde la main
+            if (!(mc.screen instanceof AbstractContainerScreen<?>)) {
+                mc.setScreen(new EngineeringScreen(payload.pos()));
+            }
+        });
     }
 }

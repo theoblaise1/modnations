@@ -30,6 +30,11 @@ public final class ClientEngineeringState {
         registry = new EngineeringRegistry(recipes);
     }
 
+    /** À la déconnexion : on oublie les recettes du serveur précédent. */
+    public static void clear() {
+        registry = new EngineeringRegistry(List.of());
+    }
+
     /** Clés de déblocage accordées par les paliers terminés de la nation du joueur. */
     public static Set<String> unlocks() {
         Set<String> keys = new HashSet<>();

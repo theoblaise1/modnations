@@ -38,6 +38,7 @@ public final class ClientEvents {
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientNationState.clear();
         ClientResearchState.clear();
+        ClientEngineeringState.clear();
     }
 
     /** Évite d'envoyer le paquet à un serveur qui n'a pas le mod. */

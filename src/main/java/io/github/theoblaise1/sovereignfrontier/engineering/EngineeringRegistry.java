@@ -15,11 +15,12 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Recettes de la Station d'ingénierie, rechargées avec les datapacks (rejet strict des fichiers invalides). */
+/** Recettes de la Station d'ingénierie, rechargées avec les datapacks (rejet strict des fichiers invalides, tri par identifiant). */
 public final class EngineeringRegistry {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static volatile EngineeringRegistry server = new EngineeringRegistry(List.of());
@@ -27,7 +28,10 @@ public final class EngineeringRegistry {
     private final Map<ResourceLocation, EngineeringRecipe> byId = new LinkedHashMap<>();
 
     public EngineeringRegistry(Collection<EngineeringRecipe> recipes) {
-        for (EngineeringRecipe r : recipes) {
+        // Ordre stable par identifiant (serveur et client) : celui des datapacks dépend d'un HashMap.
+        List<EngineeringRecipe> sorted = new ArrayList<>(recipes);
+        sorted.sort(Comparator.comparing(EngineeringRecipe::id));
+        for (EngineeringRecipe r : sorted) {
             byId.put(r.id(), r);
         }
     }
