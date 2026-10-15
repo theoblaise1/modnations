@@ -17,8 +17,16 @@ import java.util.Set;
  * Les mutations passent par {@code Nation}, qui marque les données à sauvegarder.
  */
 public final class NationResearch {
-    /** Recherche en cours ; {@code endEpochMs} est fixé au lancement (bonus de vitesse inclus). */
-    public record Active(ResourceLocation id, long startEpochMs, long endEpochMs) {
+    /**
+     * Recherche en cours ; {@code endEpochMs} est fixé au lancement (bonus de vitesse inclus).
+     * {@code paidTreasury} est la trésorerie réellement prélevée au lancement, base du remboursement
+     * en cas d'annulation (la définition a pu changer ou disparaître depuis, après un {@code /reload}) ;
+     * {@link #PAID_UNKNOWN} pour une recherche lancée avant que ce montant soit enregistré.
+     */
+    public record Active(ResourceLocation id, long startEpochMs, long endEpochMs, long paidTreasury) {
+        /** Montant payé inconnu (sauvegarde antérieure) : le remboursement retombe sur la définition courante. */
+        public static final long PAID_UNKNOWN = -1L;
+
         public long totalMs() {
             return Math.max(1L, endEpochMs - startEpochMs);
         }
@@ -120,6 +128,7 @@ public final class NationResearch {
             a.putString("id", active.id().toString());
             a.putLong("start", active.startEpochMs());
             a.putLong("end", active.endEpochMs());
+            a.putLong("paid", active.paidTreasury());
             tag.put("active", a);
         }
         tag.putLong("points", points);
@@ -139,7 +148,8 @@ public final class NationResearch {
             CompoundTag a = tag.getCompound("active");
             ResourceLocation id = ResourceLocation.tryParse(a.getString("id"));
             if (id != null) {
-                r.active = new Active(id, a.getLong("start"), a.getLong("end"));
+                long paid = a.contains("paid", Tag.TAG_LONG) ? a.getLong("paid") : Active.PAID_UNKNOWN;
+                r.active = new Active(id, a.getLong("start"), a.getLong("end"), paid);
             }
         }
         r.points = Math.max(0L, tag.getLong("points"));

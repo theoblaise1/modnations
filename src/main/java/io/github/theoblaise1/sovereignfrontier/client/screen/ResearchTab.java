@@ -9,6 +9,7 @@ import io.github.theoblaise1.sovereignfrontier.network.ResearchView;
 import io.github.theoblaise1.sovereignfrontier.network.StartResearchC2S;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchDefinition;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchDomain;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchManager.Status;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchRegistry;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchReward;
@@ -24,12 +25,15 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.ConfirmScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -38,6 +42,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -122,8 +127,10 @@ final class ResearchTab {
         boolean canResearch = (s.myPermissions() & NationPermission.START_RESEARCH.bit()) != 0;
         int by = y + h - BAR_H + 2;
         if (view.active().isPresent()) {
-            Button cancel = Button.builder(tr("cancel"), btn -> PacketDistributor.sendToServer(CancelResearchC2S.INSTANCE))
-                    .bounds(x + w - 60, by, 60, 18).build();
+            // À gauche de la barre, loin de « Lancer » : un second clic de trop tombe sur la barre inerte.
+            ResourceLocation activeId = view.active().get();
+            Button cancel = Button.builder(tr("cancel"), btn -> confirmCancel(registry, activeId))
+                    .bounds(x, by, 60, 18).build();
             cancel.active = canResearch;
             add.accept(cancel);
         } else {
@@ -136,6 +143,34 @@ final class ResearchTab {
                 add.accept(start);
             }
         }
+    }
+
+    /**
+     * Annuler détruit les objets prélevés et ne rend qu'une partie de la trésorerie : confirmation
+     * obligatoire. Sans elle, un double-clic sur « Lancer » pouvait tomber sur « Annuler », reconstruit
+     * dès le retour du serveur, et annuler aussitôt la recherche qui venait d'être lancée.
+     */
+    private static void confirmCancel(ResearchRegistry registry, ResourceLocation activeId) {
+        Minecraft mc = Minecraft.getInstance();
+        Screen parent = mc.screen;
+        ResearchTier tier = registry.get(activeId);
+        Component name = tier == null ? Component.literal(activeId.toString()) : tier.displayName();
+        ConfirmScreen confirm = new ConfirmScreen(ok -> {
+            if (ok) {
+                // La recherche a pu se terminer, et un autre membre en lancer une autre, pendant la confirmation.
+                NationSnapshot now = ClientNationState.get();
+                if (now != null && now.hasNation() && now.research().active().filter(activeId::equals).isPresent()) {
+                    PacketDistributor.sendToServer(new CancelResearchC2S(activeId));
+                } else if (parent instanceof NationScreen screen) {
+                    screen.showFeedback(Msg.err("research.error.cancel_changed", name), false);
+                }
+            }
+            // Retour à l'écran national : init() le reconstruit avec le dernier snapshot reçu.
+            mc.setScreen(parent);
+        }, tr("cancel_confirm.title", name), tr("cancel_confirm.message"));
+        mc.setScreen(confirm);
+        // Boutons inertes une demi-seconde (après init, qui les crée) : un clic de trop ne confirme rien.
+        confirm.setDelay(10);
     }
 
     private void ensureSelection(ResearchRegistry registry, ResearchView view) {
@@ -259,11 +294,11 @@ final class ResearchTab {
             lines.add(tr("points", def.cost().points(), view.points())
                     .withStyle(done || view.points() >= def.cost().points() ? ChatFormatting.GREEN : ChatFormatting.RED));
         }
-        for (ResearchDefinition.ItemCost cost : def.cost().items()) {
-            int have = view.chestCounts().getOrDefault(BuiltInRegistries.ITEM.getKey(cost.item()), 0);
-            boolean ok = done || have >= cost.count();
+        for (Map.Entry<Item, Integer> cost : ResearchManager.itemTotals(def.cost()).entrySet()) {
+            int have = view.chestCounts().getOrDefault(BuiltInRegistries.ITEM.getKey(cost.getKey()), 0);
+            boolean ok = done || have >= cost.getValue();
             lines.add(Component.literal(ok ? "✔ " : "✘ ").withStyle(ok ? ChatFormatting.GREEN : ChatFormatting.RED)
-                    .append(tr("item", cost.count(), cost.item().getDescription(), have).withStyle(ChatFormatting.WHITE)));
+                    .append(tr("item", cost.getValue(), cost.getKey().getDescription(), have).withStyle(ChatFormatting.WHITE)));
         }
         if (def.minPopulation() > 0) {
             boolean ok = done || view.effectivePopulation() >= def.minPopulation();
@@ -289,15 +324,17 @@ final class ResearchTab {
         int textY = by + 7;
         int barW = w - 66;
         if (view.active().isPresent()) {
+            // Barre à droite du bouton « Annuler » (placé à gauche, voir init).
+            int barX = x + 66;
             ResearchTier active = registry.get(view.active().get());
             long remaining = ClientNationState.researchRemainingMs();
             long total = Math.max(1L, view.activeTotalMs());
             float progress = Mth.clamp(1.0F - (float) remaining / total, 0.0F, 1.0F);
-            g.fill(x, by + 4, x + barW, by + 18, COL_BAR_BG);
-            g.fill(x, by + 4, x + (int) (barW * progress), by + 18, COL_BAR);
+            g.fill(barX, by + 4, barX + barW, by + 18, COL_BAR_BG);
+            g.fill(barX, by + 4, barX + (int) (barW * progress), by + 18, COL_BAR);
             Component name = active == null ? Component.literal(view.active().get().toString()) : active.displayName();
             Component label = tr("active", name, (int) (progress * 100), TimeUtil.duration(remaining));
-            g.drawString(font(), trim(label, barW - 6), x + 3, textY, COL_TEXT);
+            g.drawString(font(), trim(label, barW - 6), barX + 3, textY, COL_TEXT);
             return;
         }
         Component hint;
@@ -391,9 +428,9 @@ final class ResearchTab {
         if (view.effectivePopulation() < def.minPopulation()) {
             out.add("population");
         }
-        for (ResearchDefinition.ItemCost cost : def.cost().items()) {
-            if (view.chestCounts().getOrDefault(BuiltInRegistries.ITEM.getKey(cost.item()), 0) < cost.count()) {
-                out.add(cost.item().toString());
+        for (Map.Entry<Item, Integer> cost : ResearchManager.itemTotals(def.cost()).entrySet()) {
+            if (view.chestCounts().getOrDefault(BuiltInRegistries.ITEM.getKey(cost.getKey()), 0) < cost.getValue()) {
+                out.add(cost.getKey().toString());
             }
         }
         return out;

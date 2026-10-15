@@ -3,6 +3,7 @@ package io.github.theoblaise1.sovereignfrontier.gametest;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
+import io.github.theoblaise1.sovereignfrontier.SFConfig;
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
 import io.github.theoblaise1.sovereignfrontier.nation.ActionResult;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
@@ -17,18 +18,27 @@ import io.github.theoblaise1.sovereignfrontier.research.ResearchReloadListener;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchTier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.Fireworks;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -83,10 +93,17 @@ public final class ResearchGameTests {
     public static void researchLifecycle(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         ResearchRegistry registry = ResearchRegistry.server();
-        ServerPlayer chef = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "sf_chercheur"));
-        BlockPos center = new ChunkPos(helper.absolutePos(BlockPos.ZERO)).getMiddleBlockPosition(helper.absolutePos(BlockPos.ZERO).getY());
-        chef.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D);
-        expect(helper, NationManager.create(chef, "TestRecherche"), true, "création");
+        ServerPlayer chef = founder(helper, "sf_chercheur");
+        expect(helper, NationManager.create(chef, uniqueName(helper, "TestRecherche")), true, "création");
+        try {
+            lifecycle(helper, server, registry, chef);
+        } finally {
+            NationManager.disband(chef);
+        }
+        helper.succeed();
+    }
+
+    private static void lifecycle(GameTestHelper helper, MinecraftServer server, ResearchRegistry registry, ServerPlayer chef) {
         Nation nation = NationData.get(server).nationOf(chef.getUUID());
 
         ResearchTier civil1 = registry.get(id("civil_1"));
@@ -113,7 +130,8 @@ public final class ResearchGameTests {
         fund(server, nation, civil1);
         expect(helper, ResearchManager.start(chef, civil1.id()), true, "relance de civil_1");
         NationResearch.Active active = nation.research().active();
-        nation.research().setActive(new NationResearch.Active(active.id(), active.startEpochMs() - 10_000_000L, active.startEpochMs() - 1L));
+        nation.research().setActive(new NationResearch.Active(active.id(), active.startEpochMs() - 10_000_000L,
+                active.startEpochMs() - 1L, active.paidTreasury()));
         ResearchManager.completeDue(server, System.currentTimeMillis());
         helper.assertTrue(nation.research().isCompleted(civil1.id()), "recherche terminée à l'échéance (epoch)");
         helper.assertTrue(Math.abs(nation.research().bonus(ResearchStat.POPULATION_MULTIPLIER) - 0.05D) < 1e-9, "bonus de population +5 %");
@@ -122,9 +140,138 @@ public final class ResearchGameTests {
         ResearchManager.adminComplete(server, nation, civil2);
         helper.assertTrue(NationManager.claimCost(nation) == 103L, "claim_cost_multiplier -5 % : ceil(108 × 0,95) = 103, obtenu "
                 + NationManager.claimCost(nation));
+    }
 
-        expect(helper, NationManager.disband(chef), true, "dissolution");
+    /** L'annulation rend une part de la trésorerie réellement payée au lancement, pas du coût courant. */
+    @GameTest(template = AREA, batch = "sf_research_refund")
+    public static void cancelRefundsAmountPaid(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ResearchTier civil1 = ResearchRegistry.server().get(id("civil_1"));
+        helper.assertTrue(civil1 != null, "civil_1 chargé");
+        ServerPlayer chef = founder(helper, "sf_rembourse");
+        expect(helper, NationManager.create(chef, uniqueName(helper, "TestRembourse")), true, "création");
+        try {
+            Nation nation = NationData.get(server).nationOf(chef.getUUID());
+            double rate = SFConfig.RESEARCH_CANCEL_REFUND.get();
+            long cost = civil1.definition().cost().treasury();
+
+            fund(server, nation, civil1);
+            expect(helper, ResearchManager.start(chef, civil1.id()), true, "lancement de civil_1");
+            NationResearch.Active active = nation.research().active();
+            helper.assertTrue(active != null && active.paidTreasury() == cost, "montant payé enregistré au lancement");
+
+            // Coût du palier modifié depuis le lancement (datapack + /reload) : seul le montant payé compte.
+            nation.research().setActive(new NationResearch.Active(active.id(), active.startEpochMs(), active.endEpochMs(), 300L));
+            long before = nation.treasury();
+            expect(helper, ResearchManager.cancel(chef), true, "annulation");
+            helper.assertTrue(nation.treasury() == before + (long) Math.floor(300L * rate),
+                    "remboursement calculé sur le montant payé, obtenu " + (nation.treasury() - before));
+
+            // Palier retiré du registre : le montant payé reste remboursé.
+            long now = System.currentTimeMillis();
+            nation.research().setActive(new NationResearch.Active(id("palier_retire"), now, now + 60_000L, 800L));
+            before = nation.treasury();
+            expect(helper, ResearchManager.cancel(chef), true, "annulation d'un palier retiré");
+            helper.assertTrue(nation.treasury() == before + (long) Math.floor(800L * rate),
+                    "palier retiré : remboursement conservé, obtenu " + (nation.treasury() - before));
+
+            // Recherche d'une sauvegarde antérieure (montant inconnu) : repli sur la définition courante.
+            nation.research().setActive(new NationResearch.Active(civil1.id(), now, now + 60_000L, NationResearch.Active.PAID_UNKNOWN));
+            before = nation.treasury();
+            expect(helper, ResearchManager.cancel(chef), true, "annulation d'une recherche d'ancienne sauvegarde");
+            helper.assertTrue(nation.treasury() == before + (long) Math.floor(cost * rate),
+                    "ancienne sauvegarde : repli sur le coût de la définition, obtenu " + (nation.treasury() - before));
+
+            // Écran Science : seule la recherche affichée peut être annulée.
+            nation.research().setActive(new NationResearch.Active(civil1.id(), now, now + 60_000L, cost));
+            expect(helper, ResearchManager.cancel(chef, id("civil_2")), false, "annulation d'un palier qui n'est pas en cours");
+            helper.assertTrue(nation.research().active() != null, "la recherche en cours n'est pas annulée");
+            expect(helper, ResearchManager.cancel(chef, civil1.id()), true, "annulation du palier affiché");
+        } finally {
+            NationManager.disband(chef);
+        }
         helper.succeed();
+    }
+
+    @GameTest(template = AREA)
+    public static void activeResearchSavesAmountPaid(GameTestHelper helper) {
+        NationResearch research = new NationResearch();
+        research.setActive(new NationResearch.Active(id("civil_3"), 1_000L, 61_000L, 1234L));
+        CompoundTag tag = research.save();
+        NationResearch.Active loaded = NationResearch.load(tag).active();
+        helper.assertTrue(loaded != null && loaded.paidTreasury() == 1234L, "montant payé conservé par la sauvegarde");
+        tag.getCompound("active").remove("paid");
+        NationResearch.Active old = NationResearch.load(tag).active();
+        helper.assertTrue(old != null && old.paidTreasury() == NationResearch.Active.PAID_UNKNOWN,
+                "sauvegarde sans montant payé : montant inconnu");
+        helper.succeed();
+    }
+
+    /** Un même objet cité deux fois dans un coût (datapack) est exigé pour la somme des quantités. */
+    @GameTest(template = AREA, batch = "sf_research_items")
+    public static void duplicateItemCostsAreSummed(GameTestHelper helper) {
+        Map<ResourceLocation, JsonElement> files = new LinkedHashMap<>();
+        files.put(id("t/industrie_1"), json("{\"domain\":\"industrie\",\"tier\":1,\"cost\":{\"items\":["
+                + "{\"item\":\"minecraft:iron_ingot\",\"count\":32},{\"item\":\"minecraft:iron_ingot\",\"count\":32}]}}"));
+        ResearchRegistry registry = ResearchReloadListener.build(files);
+        ResearchTier tier = registry.get(id("t/industrie_1"));
+        helper.assertTrue(tier != null, "palier de test chargé");
+        int total = ResearchManager.itemTotals(tier.definition().cost()).getOrDefault(Items.IRON_INGOT, 0);
+        helper.assertTrue(total == 64, "quantités additionnées : 64 attendus, obtenu " + total);
+        ServerPlayer chef = founder(helper, "sf_doublons");
+        expect(helper, NationManager.create(chef, uniqueName(helper, "TestDoublons")), true, "création");
+        try {
+            Nation nation = NationData.get(helper.getLevel().getServer()).nationOf(chef.getUUID());
+            nation.chest().addItem(new ItemStack(Items.IRON_INGOT, 32));
+            helper.assertTrue(!ResearchManager.blockers(nation, registry, tier).isEmpty(),
+                    "32 lingots ne couvrent pas 2 × 32 lingots");
+            nation.chest().addItem(new ItemStack(Items.IRON_INGOT, 32));
+            helper.assertTrue(ResearchManager.blockers(nation, registry, tier).isEmpty(), "64 lingots suffisent");
+        } finally {
+            NationManager.disband(chef);
+        }
+        helper.succeed();
+    }
+
+    /** Seuls les objets endommagés, renommés ou enchantés sont écartés : une fusée de vol 3 compte. */
+    @GameTest(template = AREA)
+    public static void chestCountIgnoresHarmlessComponents(GameTestHelper helper) {
+        SimpleContainer chest = new SimpleContainer(9);
+        ItemStack longFlight = new ItemStack(Items.FIREWORK_ROCKET, 16);
+        longFlight.set(DataComponents.FIREWORKS, new Fireworks(3, List.of()));
+        ItemStack renamed = new ItemStack(Items.FIREWORK_ROCKET, 16);
+        renamed.set(DataComponents.CUSTOM_NAME, Component.literal("Fusée"));
+        chest.setItem(0, new ItemStack(Items.FIREWORK_ROCKET, 16));
+        chest.setItem(1, longFlight);
+        chest.setItem(2, renamed);
+        int rockets = ResearchManager.count(chest, Items.FIREWORK_ROCKET);
+        helper.assertTrue(rockets == 32, "fusées : vol 3 comptées, renommées écartées ; 32 attendues, obtenu " + rockets);
+
+        ItemStack damaged = new ItemStack(Items.CROSSBOW);
+        damaged.setDamageValue(10);
+        ItemStack enchanted = new ItemStack(Items.CROSSBOW);
+        enchanted.enchant(helper.getLevel().registryAccess().registryOrThrow(Registries.ENCHANTMENT)
+                .getHolderOrThrow(Enchantments.UNBREAKING), 1);
+        chest.setItem(3, new ItemStack(Items.CROSSBOW));
+        chest.setItem(4, damaged);
+        chest.setItem(5, enchanted);
+        int crossbows = ResearchManager.count(chest, Items.CROSSBOW);
+        helper.assertTrue(crossbows == 1, "arbalètes endommagée et enchantée écartées ; 1 attendue, obtenu " + crossbows);
+        helper.succeed();
+    }
+
+    /** Joueur factice placé au centre du chunk de la zone de test, qui deviendra la capitale. */
+    private static ServerPlayer founder(GameTestHelper helper, String name) {
+        ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
+        BlockPos center = new ChunkPos(helper.absolutePos(BlockPos.ZERO)).getMiddleBlockPosition(helper.absolutePos(BlockPos.ZERO).getY());
+        player.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D);
+        return player;
+    }
+
+    /** Le monde de test persiste entre deux exécutions : nom de nation dérivé de la position de la zone. */
+    private static String uniqueName(GameTestHelper helper, String prefix) {
+        BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+        return prefix + Math.floorMod(origin.getX() ^ origin.getZ(), 100000);
     }
 
     /** Remplit le coffre national et la trésorerie pour pouvoir lancer {@code tier}. */

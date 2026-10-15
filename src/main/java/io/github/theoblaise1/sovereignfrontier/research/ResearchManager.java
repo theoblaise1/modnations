@@ -11,6 +11,7 @@ import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -18,9 +19,15 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Cycle de vie des recherches d'une nation : une seule recherche active à la fois (tous domaines
@@ -94,13 +101,25 @@ public final class ResearchManager {
         if (research.points() < def.cost().points()) {
             reasons.add(Msg.err("research.error.points", def.cost().points(), research.points()));
         }
-        for (ResearchDefinition.ItemCost cost : def.cost().items()) {
-            int have = count(nation.chest(), cost.item());
-            if (have < cost.count()) {
-                reasons.add(Msg.err("research.error.items", cost.count() - have, cost.item().getDescription()));
+        for (Map.Entry<Item, Integer> cost : itemTotals(def.cost()).entrySet()) {
+            int have = count(nation.chest(), cost.getKey());
+            if (have < cost.getValue()) {
+                reasons.add(Msg.err("research.error.items", cost.getValue() - have, cost.getKey().getDescription()));
             }
         }
         return reasons;
+    }
+
+    /**
+     * Quantité totale exigée par objet. Un datapack peut citer deux fois le même objet : vérifier et
+     * consommer chaque entrée séparément ferait payer une seule fois le stock du coffre.
+     */
+    public static Map<Item, Integer> itemTotals(ResearchDefinition.Cost cost) {
+        Map<Item, Integer> totals = new LinkedHashMap<>();
+        for (ResearchDefinition.ItemCost item : cost.items()) {
+            totals.merge(item.item(), item.count(), (a, b) -> (int) Math.min(Integer.MAX_VALUE, (long) a + b));
+        }
+        return totals;
     }
 
     public static ActionResult start(ServerPlayer player, ResourceLocation id) {
@@ -122,8 +141,8 @@ public final class ResearchManager {
             return ActionResult.fail(reasons.get(0));
         }
         ResearchDefinition def = tier.definition();
-        for (ResearchDefinition.ItemCost cost : def.cost().items()) {
-            consume(nation.chest(), cost.item(), cost.count());
+        for (Map.Entry<Item, Integer> cost : itemTotals(def.cost()).entrySet()) {
+            consume(nation.chest(), cost.getKey(), cost.getValue());
         }
         if (def.cost().treasury() > 0) {
             NationManager.adjustTreasury(nation, -def.cost().treasury());
@@ -132,7 +151,7 @@ public final class ResearchManager {
         research.setPoints(research.points() - def.cost().points());
         long now = TimeUtil.now();
         long duration = durationMs(nation, tier);
-        research.setActive(new NationResearch.Active(tier.id(), now, now + duration));
+        research.setActive(new NationResearch.Active(tier.id(), now, now + duration, def.cost().treasury()));
         nation.markDirty();
         String name = "@" + tier.translationKey();
         nation.log("research_start", player.getGameProfile().getName(), name, TimeUtil.duration(duration));
@@ -143,6 +162,15 @@ public final class ResearchManager {
     }
 
     public static ActionResult cancel(ServerPlayer player) {
+        return cancel(player, null);
+    }
+
+    /**
+     * Annule la recherche active. Avec {@code expected} (palier affiché par l'écran Science), refuse
+     * si la recherche en cours n'est plus celle-là : la précédente a pu se terminer et un autre membre
+     * en lancer une nouvelle entre l'affichage et le clic.
+     */
+    public static ActionResult cancel(ServerPlayer player, @Nullable ResourceLocation expected) {
         MinecraftServer server = player.server;
         Nation nation = NationData.get(server).nationOf(player.getUUID());
         if (nation == null) {
@@ -156,9 +184,18 @@ public final class ResearchManager {
         if (active == null) {
             return ActionResult.fail(Msg.err("research.error.no_active"));
         }
-        ResearchTier tier = ResearchRegistry.server().get(active.id());
-        long refund = tier == null ? 0L
-                : (long) Math.floor(tier.definition().cost().treasury() * SFConfig.RESEARCH_CANCEL_REFUND.get());
+        ResearchRegistry registry = ResearchRegistry.server();
+        if (expected != null && !active.id().equals(expected)) {
+            ResearchTier shown = registry.get(expected);
+            return ActionResult.fail(Msg.err("research.error.cancel_changed",
+                    shown == null ? Component.literal(expected.toString()) : shown.displayName()));
+        }
+        ResearchTier tier = registry.get(active.id());
+        // Remboursement calculé sur ce qui a été réellement payé : la définition courante a pu changer
+        // ou disparaître depuis le lancement (datapack modifié puis /reload).
+        long paid = active.paidTreasury() >= 0L ? active.paidTreasury()
+                : tier == null ? 0L : tier.definition().cost().treasury();
+        long refund = (long) Math.floor(paid * SFConfig.RESEARCH_CANCEL_REFUND.get());
         research.setActive(null);
         if (refund > 0) {
             NationManager.adjustTreasury(nation, refund);
@@ -252,8 +289,24 @@ public final class ResearchManager {
         chest.setChanged();
     }
 
-    /** Seuls les objets « bruts » comptent : ni endommagés, ni renommés, ni enchantés. */
     private static boolean isPlain(ItemStack stack, Item item) {
-        return !stack.isEmpty() && stack.is(item) && stack.getComponentsPatch().isEmpty();
+        return stack.is(item) && isPlain(stack);
+    }
+
+    /**
+     * Seuls les objets « bruts » comptent : ni endommagés, ni renommés, ni enchantés, ni porteurs d'un
+     * contenu (inventaire d'un coffre, d'un sac). Les autres composants ne comptent pas : une fusée de
+     * vol 2 ou 3 reste une fusée ordinaire. Règle partagée avec l'onglet Science ({@code NationSync}),
+     * pour que l'écran compte exactement ce que le serveur consommera.
+     */
+    public static boolean isPlain(ItemStack stack) {
+        return !stack.isEmpty()
+                && !stack.isDamaged()
+                && !stack.has(DataComponents.CUSTOM_NAME)
+                && !stack.isEnchanted()
+                && stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).isEmpty()
+                && !stack.has(DataComponents.BLOCK_ENTITY_DATA)
+                && stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY).nonEmptyStream().findAny().isEmpty()
+                && stack.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY).isEmpty();
     }
 }

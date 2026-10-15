@@ -80,9 +80,14 @@ public final class ResearchCommand {
                         .executes(ctx -> send(ctx.getSource(), ResearchManager.cancel(ctx.getSource().getPlayerOrException())))));
     }
 
-    /** Identifiant court (« industrie_8 ») pour l'espace de noms du mod, complet sinon. */
+    /**
+     * Identifiant court (« industrie_8 ») pour l'espace de noms du mod, complet sinon. Mis entre
+     * guillemets si besoin (« : », « / » interdits hors guillemets dans l'argument « palier ») :
+     * suggestions et liens cliquables restent analysables.
+     */
     static String shortId(ResourceLocation id) {
-        return id.getNamespace().equals(SovereignFrontier.MODID) ? id.getPath() : id.toString();
+        return StringArgumentType.escapeIfRequired(
+                id.getNamespace().equals(SovereignFrontier.MODID) ? id.getPath() : id.toString());
     }
 
     /** Résout l'argument « palier » ; envoie une erreur explicite et renvoie null s'il est inconnu. */

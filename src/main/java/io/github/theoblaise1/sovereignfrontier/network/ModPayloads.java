@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * Écouteur ajouté explicitement sur le bus du mod dans {@code SovereignFrontier}.
  */
 public final class ModPayloads {
-    public static final String PROTOCOL_VERSION = "1";
+    public static final String PROTOCOL_VERSION = "2";
 
     private ModPayloads() {
     }
@@ -63,17 +63,14 @@ public final class ModPayloads {
 
     private static void onCancelResearch(CancelResearchC2S payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
-            reply(player, ResearchManager.cancel(player));
+            reply(player, ResearchManager.cancel(player, payload.id()));
         }
     }
 
+    /** Quelques octets suffisent à exiger un instantané complet : débit limité par joueur. */
     private static void onRequest(RequestNationDataC2S payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
-            if (payload.open()) {
-                NationSync.openScreen(player, NationTab.byOrdinal(payload.tab()));
-            } else {
-                NationSync.refreshPlayer(player, false);
-            }
+            NationSync.request(player, payload.open(), NationTab.byOrdinal(payload.tab()));
         }
     }
 
@@ -83,7 +80,7 @@ public final class ModPayloads {
         }
         ChunkPos here = player.chunkPosition();
         if (Math.abs(payload.chunkX() - here.x) > NationSync.MAP_RADIUS || Math.abs(payload.chunkZ() - here.z) > NationSync.MAP_RADIUS) {
-            NationSync.refreshPlayer(player, false);
+            NationSync.request(player, false, NationTab.TERRITORY);
             return;
         }
         ChunkPos target = new ChunkPos(payload.chunkX(), payload.chunkZ());
@@ -115,7 +112,7 @@ public final class ModPayloads {
 
     /**
      * Envoie le résultat dans le chat et dans la barre d'état de l'écran. En cas de succès, {@link NationManager} a déjà
-     * rafraîchi tous les membres ; en cas d'échec on renvoie l'état pour resynchroniser l'écran.
+     * rafraîchi tous les membres ; en cas d'échec on renvoie l'état pour resynchroniser l'écran (débit limité).
      */
     private static void reply(ServerPlayer player, ActionResult result) {
         player.sendSystemMessage(result.message());
@@ -123,7 +120,7 @@ public final class ModPayloads {
             PacketDistributor.sendToPlayer(player, new ActionFeedbackS2C(result.message(), result.success()));
         }
         if (!result.success()) {
-            NationSync.refreshPlayer(player, false);
+            NationSync.request(player, false, NationTab.OVERVIEW);
         }
     }
 }
