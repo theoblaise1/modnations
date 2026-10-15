@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * Écouteur ajouté explicitement sur le bus du mod dans {@code SovereignFrontier}.
  */
 public final class ModPayloads {
-    public static final String PROTOCOL_VERSION = "2";
+    public static final String PROTOCOL_VERSION = "3";
 
     private ModPayloads() {
     }
@@ -49,21 +49,23 @@ public final class ModPayloads {
         registrar.playToServer(CancelResearchC2S.TYPE, CancelResearchC2S.STREAM_CODEC, ModPayloads::onCancelResearch);
     }
 
+    // Les paquets qui modifient la nation passent par NationSync.allowMutation : au-delà du plafond, ils sont ignorés.
+
     private static void onStartResearch(StartResearchC2S payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)) {
             reply(player, ResearchManager.start(player, payload.id()));
         }
     }
 
     private static void onEngineeringCraft(EngineeringCraftC2S payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)) {
             reply(player, EngineeringManager.craft(player, payload.id()));
         }
     }
 
     private static void onCancelResearch(CancelResearchC2S payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
-            reply(player, ResearchManager.cancel(player, payload.id()));
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)) {
+            reply(player, ResearchManager.cancel(player, payload.id(), payload.startMs()));
         }
     }
 
@@ -75,11 +77,13 @@ public final class ModPayloads {
     }
 
     private static void onClaim(ClaimChunkC2S payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        if (!(context.player() instanceof ServerPlayer player) || !NationSync.allowMutation(player)) {
             return;
         }
         ChunkPos here = player.chunkPosition();
-        if (Math.abs(payload.chunkX() - here.x) > NationSync.MAP_RADIUS || Math.abs(payload.chunkZ() - here.z) > NationSync.MAP_RADIUS) {
+        // En long : la différence de deux int peut déborder (Math.abs(Integer.MIN_VALUE) reste négatif).
+        if (Math.abs((long) payload.chunkX() - here.x) > NationSync.MAP_RADIUS
+                || Math.abs((long) payload.chunkZ() - here.z) > NationSync.MAP_RADIUS) {
             NationSync.request(player, false, NationTab.TERRITORY);
             return;
         }
@@ -91,7 +95,7 @@ public final class ModPayloads {
     }
 
     private static void onTreasury(TreasuryTransferC2S payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)) {
             ActionResult result = payload.deposit()
                     ? NationManager.deposit(player, payload.amount())
                     : NationManager.withdraw(player, payload.amount());
@@ -100,7 +104,7 @@ public final class ModPayloads {
     }
 
     private static void onSetPermission(SetRolePermissionC2S payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        if (!(context.player() instanceof ServerPlayer player) || !NationSync.allowMutation(player)) {
             return;
         }
         NationPermission permission = NationPermission.byOrdinal(payload.permission());

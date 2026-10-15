@@ -129,7 +129,8 @@ final class ResearchTab {
         if (view.active().isPresent()) {
             // À gauche de la barre, loin de « Lancer » : un second clic de trop tombe sur la barre inerte.
             ResourceLocation activeId = view.active().get();
-            Button cancel = Button.builder(tr("cancel"), btn -> confirmCancel(registry, activeId))
+            long activeStart = view.activeStartMs();
+            Button cancel = Button.builder(tr("cancel"), btn -> confirmCancel(registry, activeId, activeStart))
                     .bounds(x, by, 60, 18).build();
             cancel.active = canResearch;
             add.accept(cancel);
@@ -150,17 +151,19 @@ final class ResearchTab {
      * obligatoire. Sans elle, un double-clic sur « Lancer » pouvait tomber sur « Annuler », reconstruit
      * dès le retour du serveur, et annuler aussitôt la recherche qui venait d'être lancée.
      */
-    private static void confirmCancel(ResearchRegistry registry, ResourceLocation activeId) {
+    private static void confirmCancel(ResearchRegistry registry, ResourceLocation activeId, long activeStart) {
         Minecraft mc = Minecraft.getInstance();
         Screen parent = mc.screen;
         ResearchTier tier = registry.get(activeId);
         Component name = tier == null ? Component.literal(activeId.toString()) : tier.displayName();
         ConfirmScreen confirm = new ConfirmScreen(ok -> {
             if (ok) {
-                // La recherche a pu se terminer, et un autre membre en lancer une autre, pendant la confirmation.
+                // La recherche a pu se terminer, et un autre membre en relancer une (même palier, nouveau début)
+                // pendant la confirmation : seul le début identifie la recherche affichée.
                 NationSnapshot now = ClientNationState.get();
-                if (now != null && now.hasNation() && now.research().active().filter(activeId::equals).isPresent()) {
-                    PacketDistributor.sendToServer(new CancelResearchC2S(activeId));
+                if (now != null && now.hasNation() && now.research().active().filter(activeId::equals).isPresent()
+                        && now.research().activeStartMs() == activeStart) {
+                    PacketDistributor.sendToServer(new CancelResearchC2S(activeId, activeStart));
                 } else if (parent instanceof NationScreen screen) {
                     screen.showFeedback(Msg.err("research.error.cancel_changed", name), false);
                 }

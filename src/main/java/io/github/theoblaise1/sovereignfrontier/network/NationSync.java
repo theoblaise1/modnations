@@ -13,12 +13,14 @@ import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -51,6 +53,10 @@ public final class NationSync {
     public static final int FLUSH_INTERVAL_TICKS = 20;
     /** Intervalle minimal entre deux instantanés demandés par un même client (anti-abus). */
     public static final int REQUEST_COOLDOWN_TICKS = 5;
+    /** Actions de nation (paquets qui modifient la nation) acceptées par joueur et par fenêtre. */
+    public static final int MUTATIONS_PER_WINDOW = 5;
+    /** Durée de la fenêtre du plafond d'actions (1 s). */
+    public static final int MUTATION_WINDOW_TICKS = 20;
 
     /** Nations à rafraîchir au prochain envoi groupé. */
     private static final Set<UUID> PENDING_NATIONS = new LinkedHashSet<>();
@@ -60,10 +66,22 @@ public final class NationSync {
     private static final Map<UUID, Integer> LAST_REQUEST_TICK = new HashMap<>();
     /** Demande reçue pendant le délai, servie à son expiration (une seule par joueur). */
     private static final Map<UUID, Request> DEFERRED = new HashMap<>();
+    /** Compteur d'actions de chaque joueur dans sa fenêtre courante. */
+    private static final Map<UUID, MutationWindow> MUTATIONS = new HashMap<>();
     /** Ticks écoulés depuis le dernier envoi groupé (plafonné à l'intervalle). */
     private static int ticksSinceFlush = FLUSH_INTERVAL_TICKS;
 
     private record Request(boolean open, NationTab tab) {
+    }
+
+    /** Début de la fenêtre (tick serveur) et nombre d'actions déjà acceptées dans cette fenêtre. */
+    private static final class MutationWindow {
+        int start;
+        int used;
+
+        MutationWindow(int start) {
+            this.start = start;
+        }
     }
 
     private NationSync() {
@@ -127,6 +145,26 @@ public final class NationSync {
     public static void scheduleRefresh(ServerPlayer player) {
         if (canReceive(player)) {
             PENDING_PLAYERS.add(player.getUUID());
+        }
+    }
+
+    /**
+     * Un changement de territoire recolore la carte de tous les joueurs proches, y compris ceux d'autres nations.
+     * Parcourt les joueurs en ligne seulement (jamais les nations ni les chunks) ; l'envoi reste groupé.
+     *
+     * @param chunk clé de chunk ({@link ChunkPos#toLong()}) de la revendication ou de l'abandon
+     */
+    public static void scheduleTerritoryRefresh(MinecraftServer server, ResourceKey<Level> dimension, long chunk) {
+        int x = ChunkPos.getX(chunk);
+        int z = ChunkPos.getZ(chunk);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (!p.level().dimension().equals(dimension)) {
+                continue;
+            }
+            ChunkPos here = p.chunkPosition();
+            if (Math.abs((long) here.x - x) <= MAP_RADIUS && Math.abs((long) here.z - z) <= MAP_RADIUS) {
+                scheduleRefresh(p);
+            }
         }
     }
 
@@ -206,11 +244,31 @@ public final class NationSync {
         }
     }
 
+    /**
+     * Vrai si le joueur peut encore lancer une action de nation dans la fenêtre courante. Au-delà, le paquet
+     * est ignoré sans réponse : une rafale ne produit ni message ni instantané, et n'épuise pas la trésorerie
+     * plus vite que le plafond ne le permet.
+     */
+    public static boolean allowMutation(ServerPlayer player) {
+        int now = player.server.getTickCount();
+        MutationWindow window = MUTATIONS.computeIfAbsent(player.getUUID(), id -> new MutationWindow(now));
+        if (now - window.start >= MUTATION_WINDOW_TICKS) {
+            window.start = now;
+            window.used = 0;
+        }
+        if (window.used >= MUTATIONS_PER_WINDOW) {
+            return false;
+        }
+        window.used++;
+        return true;
+    }
+
     /** Oublie les limites et demandes en attente d'un joueur qui se déconnecte. */
     public static void forget(UUID player) {
         LAST_REQUEST_TICK.remove(player);
         DEFERRED.remove(player);
         PENDING_PLAYERS.remove(player);
+        MUTATIONS.remove(player);
     }
 
     /** Arrêt du serveur : rien ne doit survivre d'une partie à l'autre (solo). */
@@ -219,6 +277,7 @@ public final class NationSync {
         PENDING_PLAYERS.clear();
         LAST_REQUEST_TICK.clear();
         DEFERRED.clear();
+        MUTATIONS.clear();
         ticksSinceFlush = FLUSH_INTERVAL_TICKS;
     }
 
@@ -280,7 +339,7 @@ public final class NationSync {
         }
         return new ResearchView(new ArrayList<>(research.completed()),
                 active == null ? Optional.empty() : Optional.of(active.id()), remaining,
-                active == null ? 0L : active.totalMs(), research.points(), nation.effectivePopulation(), counts, bonuses);
+                active == null ? 0L : active.totalMs(), active == null ? 0L : active.startEpochMs(), research.points(), nation.effectivePopulation(), counts, bonuses);
     }
 
     private static NationSnapshot.MapView buildMap(ServerPlayer player, NationData data, Nation own) {

@@ -261,6 +261,34 @@ public final class ResearchGameTests {
     }
 
     /** Joueur factice placé au centre du chunk de la zone de test, qui deviendra la capitale. */
+    /** Une confirmation restée ouverte ne doit pas annuler une recherche relancée sur le même palier. */
+    @GameTest(template = AREA, batch = "sf_research_stale")
+    public static void cancelRefusesRestartedRun(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
+        ResearchTier civil1 = ResearchRegistry.server().get(id("civil_1"));
+        helper.assertTrue(civil1 != null, "civil_1 chargé");
+        ServerPlayer chef = founder(helper, "sf_relance");
+        expect(helper, NationManager.create(chef, uniqueName(helper, "TestRelance")), true, "création");
+        try {
+            Nation nation = NationData.get(server).nationOf(chef.getUUID());
+            fund(server, nation, civil1);
+            expect(helper, ResearchManager.start(chef, civil1.id()), true, "premier lancement");
+            long firstStart = nation.research().active().startEpochMs();
+            expect(helper, ResearchManager.cancel(chef), true, "annulation");
+
+            fund(server, nation, civil1);
+            expect(helper, ResearchManager.start(chef, civil1.id()), true, "relance du même palier");
+            long secondStart = nation.research().active().startEpochMs();
+            // Confirmation périmée : même palier, mais un autre début que celui de la recherche en cours.
+            expect(helper, ResearchManager.cancel(chef, civil1.id(), firstStart - 1L), false, "début périmé refusé");
+            helper.assertTrue(nation.research().active() != null, "la recherche relancée n'est pas annulée");
+            expect(helper, ResearchManager.cancel(chef, civil1.id(), secondStart), true, "début affiché accepté");
+        } finally {
+            NationManager.disband(chef);
+        }
+        helper.succeed();
+    }
+
     private static ServerPlayer founder(GameTestHelper helper, String name) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
         BlockPos center = new ChunkPos(helper.absolutePos(BlockPos.ZERO)).getMiddleBlockPosition(helper.absolutePos(BlockPos.ZERO).getY());

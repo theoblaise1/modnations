@@ -4,6 +4,7 @@ import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import io.github.theoblaise1.sovereignfrontier.block.NationAccessBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
@@ -18,6 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -29,6 +32,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +60,8 @@ public final class Nation {
     private final Map<UUID, Long> invites = new HashMap<>();
     private final ArrayDeque<LogEntry> log = new ArrayDeque<>();
     private final LinkedHashMap<GlobalPos, BuildingType> buildings = new LinkedHashMap<>();
+    /** Trésors et coffres nationaux posés (enregistrés à la pose) : interdisent d'abandonner leur parcelle. */
+    private final Set<GlobalPos> cores = new LinkedHashSet<>();
     private final SimpleContainer chest = new SimpleContainer(CHEST_SIZE);
     private NationResearch research = new NationResearch();
     private Runnable dirtyCallback = () -> {
@@ -316,6 +322,36 @@ public final class Nation {
         markDirty();
     }
 
+    /** Trésor ou coffre national posé sur le territoire de la nation. */
+    public void addCore(GlobalPos pos) {
+        cores.add(pos);
+        markDirty();
+    }
+
+    /**
+     * Vrai si un Trésor ou un coffre national de la nation se trouve dans ce chunk. Une position dont le bloc a
+     * disparu (explosion, bloc cassé hors événement) est retirée ; un chunk non chargé compte comme occupé,
+     * sans être chargé pour la vérifier.
+     */
+    boolean holdsCoreIn(ServerLevel level, long chunk) {
+        boolean holds = false;
+        Iterator<GlobalPos> it = cores.iterator();
+        while (it.hasNext()) {
+            GlobalPos core = it.next();
+            BlockPos pos = core.pos();
+            if (!core.dimension().equals(level.dimension()) || ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4) != chunk) {
+                continue;
+            }
+            if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4) || level.getBlockState(pos).getBlock() instanceof NationAccessBlock) {
+                holds = true;
+            } else {
+                it.remove();
+                markDirty();
+            }
+        }
+        return holds;
+    }
+
     @Nullable
     BuildingType removeBuilding(GlobalPos pos) {
         BuildingType removed = buildings.remove(pos);
@@ -430,6 +466,15 @@ public final class Nation {
         }
         tag.put("buildings", buildingList);
 
+        ListTag coreList = new ListTag();
+        for (GlobalPos core : cores) {
+            CompoundTag c = new CompoundTag();
+            c.putString("dim", core.dimension().location().toString());
+            c.putLong("pos", core.pos().asLong());
+            coreList.add(c);
+        }
+        tag.put("cores", coreList);
+
         CompoundTag chestTag = new CompoundTag();
         ContainerHelper.saveAllItems(chestTag, chest.getItems(), registries);
         tag.put("chest", chestTag);
@@ -500,6 +545,15 @@ public final class Nation {
             }
             GlobalPos gp = GlobalPos.of(ResourceKey.create(Registries.DIMENSION, loc), BlockPos.of(b.getLong("pos")));
             n.buildings.put(gp, BuildingType.byId(b.getString("type")));
+        }
+
+        ListTag coreList = tag.getList("cores", Tag.TAG_COMPOUND);
+        for (int i = 0; i < coreList.size(); i++) {
+            CompoundTag c = coreList.getCompound(i);
+            ResourceLocation loc = ResourceLocation.tryParse(c.getString("dim"));
+            if (loc != null) {
+                n.cores.add(GlobalPos.of(ResourceKey.create(Registries.DIMENSION, loc), BlockPos.of(c.getLong("pos"))));
+            }
         }
 
         ContainerHelper.loadAllItems(tag.getCompound("chest"), n.chest.getItems(), registries);

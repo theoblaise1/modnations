@@ -157,20 +157,24 @@ public final class ResearchManager {
         nation.log("research_start", player.getGameProfile().getName(), name, TimeUtil.duration(duration));
         NationManager.broadcast(server, nation, Msg.info("research.broadcast.started", player.getDisplayName(),
                 tier.displayName(), TimeUtil.duration(duration)));
-        NationSync.refreshNation(server, nation);
+        NationSync.scheduleRefresh(nation);
         return ActionResult.ok(Msg.ok("research.started", tier.displayName(), TimeUtil.duration(duration)));
     }
 
     public static ActionResult cancel(ServerPlayer player) {
-        return cancel(player, null);
+        return cancel(player, null, null);
+    }
+
+    public static ActionResult cancel(ServerPlayer player, @Nullable ResourceLocation expected) {
+        return cancel(player, expected, null);
     }
 
     /**
-     * Annule la recherche active. Avec {@code expected} (palier affiché par l'écran Science), refuse
-     * si la recherche en cours n'est plus celle-là : la précédente a pu se terminer et un autre membre
-     * en lancer une nouvelle entre l'affichage et le clic.
+     * Annule la recherche active. Avec {@code expected} et {@code expectedStart} (palier et début affichés
+     * par l'écran Science), refuse si la recherche en cours n'est plus celle-là : elle a pu se terminer, ou
+     * un autre membre en relancer une du même palier (même id, nouveau début) entre l'affichage et le clic.
      */
-    public static ActionResult cancel(ServerPlayer player, @Nullable ResourceLocation expected) {
+    public static ActionResult cancel(ServerPlayer player, @Nullable ResourceLocation expected, @Nullable Long expectedStart) {
         MinecraftServer server = player.server;
         Nation nation = NationData.get(server).nationOf(player.getUUID());
         if (nation == null) {
@@ -185,10 +189,18 @@ public final class ResearchManager {
             return ActionResult.fail(Msg.err("research.error.no_active"));
         }
         ResearchRegistry registry = ResearchRegistry.server();
-        if (expected != null && !active.id().equals(expected)) {
-            ResearchTier shown = registry.get(expected);
+        boolean changed = (expected != null && !active.id().equals(expected))
+                || (expectedStart != null && active.startEpochMs() != expectedStart);
+        if (changed) {
+            ResourceLocation shownId = expected != null ? expected : active.id();
+            ResearchTier shown = registry.get(shownId);
             return ActionResult.fail(Msg.err("research.error.cancel_changed",
-                    shown == null ? Component.literal(expected.toString()) : shown.displayName()));
+                    shown == null ? Component.literal(shownId.toString()) : shown.displayName()));
+        }
+        // Le décompte n'est remis à jour qu'à la vérification périodique : une recherche échue est terminée
+        // par elle, pas annulée (l'annulation rembourserait la moitié et détruirait les objets).
+        if (TimeUtil.now() >= active.endEpochMs()) {
+            return ActionResult.fail(Msg.err("research.error.just_finished"));
         }
         ResearchTier tier = registry.get(active.id());
         // Remboursement calculé sur ce qui a été réellement payé : la définition courante a pu changer
@@ -204,7 +216,10 @@ public final class ResearchManager {
         Component name = tier == null ? Component.literal(active.id().toString()) : tier.displayName();
         nation.log("research_cancel", player.getGameProfile().getName(),
                 tier == null ? active.id().toString() : "@" + tier.translationKey(), Money.format(refund));
-        NationSync.refreshNation(server, nation);
+        // Les autres membres perdent les objets prélevés : ils doivent le savoir (comme pour le lancement).
+        NationManager.broadcast(server, nation, Msg.warn("research.broadcast.cancelled",
+                player.getDisplayName(), name, Money.format(refund)));
+        NationSync.scheduleRefresh(nation);
         return ActionResult.ok(Msg.warn("research.cancelled", name, Money.format(refund)));
     }
 

@@ -15,6 +15,7 @@ import java.util.Optional;
  * @param active              palier en cours, s'il y en a un
  * @param activeRemainingMs   temps restant au moment de l'envoi (le client décompte à partir de la réception)
  * @param activeTotalMs       durée totale de la recherche en cours
+ * @param activeStartMs       début de la recherche en cours : identifie la run (un palier relancé change de début)
  * @param points              points de recherche de la nation
  * @param effectivePopulation habitants effectifs (bonus inclus), comparés à {@code min_population}
  * @param chestCounts         nombre d'objets « bruts » par identifiant d'objet dans le coffre national
@@ -25,12 +26,13 @@ public record ResearchView(
         Optional<ResourceLocation> active,
         long activeRemainingMs,
         long activeTotalMs,
+        long activeStartMs,
         long points,
         int effectivePopulation,
         Map<ResourceLocation, Integer> chestCounts,
         double[] bonuses) {
 
-    public static final ResearchView EMPTY = new ResearchView(List.of(), Optional.empty(), 0L, 0L, 0L, 0, Map.of(),
+    public static final ResearchView EMPTY = new ResearchView(List.of(), Optional.empty(), 0L, 0L, 0L, 0L, 0, Map.of(),
             new double[0]);
 
     public void write(FriendlyByteBuf buf) {
@@ -38,6 +40,7 @@ public record ResearchView(
         buf.writeOptional(active, FriendlyByteBuf::writeResourceLocation);
         buf.writeVarLong(activeRemainingMs);
         buf.writeVarLong(activeTotalMs);
+        buf.writeVarLong(activeStartMs);
         buf.writeVarLong(points);
         buf.writeVarInt(effectivePopulation);
         buf.writeMap(chestCounts, FriendlyByteBuf::writeResourceLocation, FriendlyByteBuf::writeVarInt);
@@ -52,6 +55,7 @@ public record ResearchView(
         Optional<ResourceLocation> active = buf.readOptional(FriendlyByteBuf::readResourceLocation);
         long remaining = buf.readVarLong();
         long total = buf.readVarLong();
+        long start = buf.readVarLong();
         long points = buf.readVarLong();
         int population = buf.readVarInt();
         Map<ResourceLocation, Integer> counts = buf.readMap(HashMap::new, FriendlyByteBuf::readResourceLocation, FriendlyByteBuf::readVarInt);
@@ -60,6 +64,6 @@ public record ResearchView(
         for (int i = 0; i < n; i++) {
             bonuses[i] = buf.readDouble();
         }
-        return new ResearchView(completed, active, remaining, total, points, population, counts, bonuses);
+        return new ResearchView(completed, active, remaining, total, start, points, population, counts, bonuses);
     }
 }

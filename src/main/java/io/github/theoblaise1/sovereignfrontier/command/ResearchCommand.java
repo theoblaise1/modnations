@@ -127,7 +127,8 @@ public final class ResearchCommand {
         } else {
             ResearchTier tier = registry.get(active.id());
             long remaining = Math.max(0L, active.endEpochMs() - TimeUtil.now());
-            int percent = (int) Math.min(100L, 100L - remaining * 100L / active.totalMs());
+            // Bornée des deux côtés : si l'horloge du serveur recule, le restant peut dépasser la durée totale.
+            int percent = (int) Math.max(0L, Math.min(100L, 100L - remaining * 100L / active.totalMs()));
             c.append("\n").append(Msg.info("research.status.active",
                     tier == null ? Component.literal(active.id().toString()) : tier.displayName().withStyle(ChatFormatting.WHITE),
                     percent, TimeUtil.duration(remaining)));

@@ -8,17 +8,21 @@ import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
-import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -68,14 +72,22 @@ public final class NationManager {
         nation.addTreasury(delta);
     }
 
-    @Nullable
-    public static UUID findMember(Nation nation, String name) {
+    /**
+     * Membres portant ce nom : la correspondance exacte prime, sinon la casse est ignorée. Plusieurs
+     * résultats = nom ambigu, à refuser (hors ligne, deux membres peuvent ne différer que par la casse).
+     */
+    public static List<UUID> findMembers(Nation nation, String name) {
+        List<UUID> exact = new ArrayList<>();
+        List<UUID> loose = new ArrayList<>();
         for (UUID id : nation.members().keySet()) {
-            if (nation.memberName(id).equalsIgnoreCase(name)) {
-                return id;
+            String member = nation.memberName(id);
+            if (member.equals(name)) {
+                exact.add(id);
+            } else if (member.equalsIgnoreCase(name)) {
+                loose.add(id);
             }
         }
-        return null;
+        return exact.isEmpty() ? loose : exact;
     }
 
     /** Envoie un message à tous les membres connectés d'une nation. */
@@ -92,8 +104,22 @@ public final class NationManager {
         return Component.literal("[" + nation.name() + "] ").withStyle(ChatFormatting.AQUA);
     }
 
-    private static void changed(MinecraftServer server, Nation nation) {
-        NationSync.refreshNation(server, nation);
+    /**
+     * Enregistre un Trésor ou un coffre national posé sur le territoire de sa nation. Appelé par les blocs à la pose.
+     */
+    public static void coreAdded(ServerLevel level, BlockPos pos) {
+        Nation owner = NationData.get(level.getServer()).ownerAt(level.dimension(), pos);
+        if (owner != null) {
+            owner.addCore(GlobalPos.of(level.dimension(), pos));
+        }
+    }
+
+    /**
+     * Après une action qui modifie la nation : envoi groupé à ses membres (au plus une fois par seconde),
+     * pour qu'une rafale d'actions ne déclenche pas un instantané complet par action et par membre.
+     */
+    private static void changed(Nation nation) {
+        NationSync.scheduleRefresh(nation);
     }
 
     // ------------------------------------------------------------------ cycle de vie
@@ -125,10 +151,11 @@ public final class NationManager {
         }
         Nation nation = data.create(name, player.getUUID(), player.getGameProfile().getName(), TimeUtil.now());
         data.claim(nation, dimension, capital.toLong());
+        NationSync.scheduleTerritoryRefresh(server, dimension, capital.toLong());
         nation.log("create", player.getGameProfile().getName(), name);
         nation.log("capital", capital.x + ", " + capital.z, dimension.location().toString());
         server.getPlayerList().broadcastSystemMessage(Msg.info("nation.broadcast.created", player.getDisplayName(), name), false);
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("nation.created", name, capital.x, capital.z));
     }
 
@@ -154,6 +181,8 @@ public final class NationManager {
         long expiry = TimeUtil.now() + SFConfig.INVITE_EXPIRY_MINUTES.get() * 60_000L;
         nation.invite(target.getUUID(), expiry);
         nation.log("invite", actor.getGameProfile().getName(), target.getGameProfile().getName());
+        // Le journal des officiers doit montrer l'invitation sans attendre leur prochain rafraîchissement.
+        NationSync.scheduleRefresh(nation);
 
         String command = "/nation join " + nation.name();
         MutableComponent button = Msg.tr("nation.invite.accept_button").withStyle(style -> style
@@ -185,7 +214,7 @@ public final class NationManager {
         data.addMember(nation, player.getUUID(), player.getGameProfile().getName(), NationRole.RECRUE);
         nation.log("join", player.getGameProfile().getName());
         broadcast(server, nation, tag(nation).append(Msg.ok("nation.member_joined", player.getDisplayName())));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("nation.joined", nation.name()));
     }
 
@@ -199,10 +228,14 @@ public final class NationManager {
         if (!nation.hasPermission(actor.getUUID(), NationPermission.KICK)) {
             return noPermission(NationPermission.KICK);
         }
-        UUID target = findMember(nation, targetName);
-        if (target == null) {
+        List<UUID> matches = findMembers(nation, targetName);
+        if (matches.isEmpty()) {
             return ActionResult.fail(Msg.err("nation.error.not_member", targetName));
         }
+        if (matches.size() > 1) {
+            return ActionResult.fail(Msg.err("nation.error.ambiguous_member", targetName));
+        }
+        UUID target = matches.get(0);
         if (target.equals(actor.getUUID())) {
             return ActionResult.fail(Msg.err("nation.error.kick_self"));
         }
@@ -220,7 +253,7 @@ public final class NationManager {
             kicked.sendSystemMessage(Msg.err("nation.you_were_kicked", nation.name()));
             NationSync.refreshPlayer(kicked, false);
         }
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("nation.kicked", name));
     }
 
@@ -237,7 +270,7 @@ public final class NationManager {
         data.removeMember(nation, player.getUUID());
         nation.log("leave", player.getGameProfile().getName());
         broadcast(server, nation, tag(nation).append(Msg.warn("nation.member_left", player.getDisplayName())));
-        changed(server, nation);
+        changed(nation);
         NationSync.refreshPlayer(player, false);
         return ActionResult.ok(Msg.ok("nation.left", nation.name()));
     }
@@ -252,10 +285,14 @@ public final class NationManager {
         if (nation.roleOf(actor.getUUID()) != NationRole.CHEF) {
             return ActionResult.fail(Msg.err("nation.error.leader_only"));
         }
-        UUID target = findMember(nation, targetName);
-        if (target == null) {
+        List<UUID> matches = findMembers(nation, targetName);
+        if (matches.isEmpty()) {
             return ActionResult.fail(Msg.err("nation.error.not_member", targetName));
         }
+        if (matches.size() > 1) {
+            return ActionResult.fail(Msg.err("nation.error.ambiguous_member", targetName));
+        }
+        UUID target = matches.get(0);
         if (target.equals(actor.getUUID())) {
             return ActionResult.fail(Msg.err("nation.error.transfer_self"));
         }
@@ -263,7 +300,7 @@ public final class NationManager {
         String name = nation.memberName(target);
         nation.log("transfer", actor.getGameProfile().getName(), name);
         broadcast(server, nation, tag(nation).append(Msg.warn("nation.leader_changed", name)));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("nation.transferred", name));
     }
 
@@ -285,6 +322,12 @@ public final class NationManager {
             EconomyData.get(server).add(actor.getUUID(), refund);
         }
         var formerMembers = java.util.List.copyOf(nation.members().keySet());
+        // Le territoire disparaît : les cartes des joueurs proches doivent se recolorer.
+        for (var claims : nation.claims().entrySet()) {
+            for (long chunk : claims.getValue()) {
+                NationSync.scheduleTerritoryRefresh(server, claims.getKey(), chunk);
+            }
+        }
         data.remove(nation);
         server.getPlayerList().broadcastSystemMessage(Msg.warn("nation.broadcast.disbanded", nation.name()), false);
         for (UUID id : formerMembers) {
@@ -310,10 +353,14 @@ public final class NationManager {
         if (role == NationRole.CHEF) {
             return ActionResult.fail(Msg.err("nation.error.use_transfer"));
         }
-        UUID target = findMember(nation, targetName);
-        if (target == null) {
+        List<UUID> matches = findMembers(nation, targetName);
+        if (matches.isEmpty()) {
             return ActionResult.fail(Msg.err("nation.error.not_member", targetName));
         }
+        if (matches.size() > 1) {
+            return ActionResult.fail(Msg.err("nation.error.ambiguous_member", targetName));
+        }
+        UUID target = matches.get(0);
         if (target.equals(actor.getUUID())) {
             return ActionResult.fail(Msg.err("nation.error.role_self"));
         }
@@ -324,7 +371,7 @@ public final class NationManager {
         }
         nation.log("role", actor.getGameProfile().getName(), name, "@role." + role.id());
         broadcast(server, nation, tag(nation).append(Msg.info("nation.role_changed", name, role.displayName())));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("nation.role_set", name, role.displayName()));
     }
 
@@ -346,7 +393,7 @@ public final class NationManager {
                     permission.displayName(), role.displayName()));
         }
         nation.log(granted ? "perm_grant" : "perm_revoke", actor.getGameProfile().getName(), "@perm." + permission.id(), "@role." + role.id());
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok(granted ? "nation.perm_granted" : "nation.perm_revoked",
                 permission.displayName(), role.displayName()));
     }
@@ -380,9 +427,10 @@ public final class NationManager {
         }
         nation.addTreasury(-cost);
         data.claim(nation, dimension, key);
+        NationSync.scheduleTerritoryRefresh(server, dimension, key);
         nation.log("claim", actor.getGameProfile().getName(), chunk.x + ", " + chunk.z,
                 dimension.location().toString(), Money.format(cost));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("claim.success", chunk.x, chunk.z, Money.format(cost),
                 Money.format(claimCost(nation))));
     }
@@ -405,15 +453,21 @@ public final class NationManager {
             // Sans territoire, plus de Trésor national utilisable : la nation serait bloquée.
             return ActionResult.fail(Msg.err("claim.error.last_chunk"));
         }
+        ServerLevel level = actor.server.getLevel(dimension);
+        if (level != null && nation.holdsCoreIn(level, key)) {
+            // Abandonner cette parcelle rendrait le Trésor ou le coffre inaccessible, et ouvrirait sa casse.
+            return ActionResult.fail(Msg.err("claim.error.holds_core"));
+        }
         int buildingsBefore = nation.population();
         data.unclaim(nation, dimension, key);
+        NationSync.scheduleTerritoryRefresh(server, dimension, key);
         int lostBuildings = buildingsBefore - nation.population();
         long refund = (long) Math.floor(claimCost(nation) * SFConfig.UNCLAIM_REFUND_RATIO.get());
         if (refund > 0) {
             nation.addTreasury(refund);
         }
         nation.log("unclaim", actor.getGameProfile().getName(), chunk.x + ", " + chunk.z, dimension.location().toString());
-        changed(server, nation);
+        changed(nation);
         MutableComponent msg = Msg.ok("unclaim.success", chunk.x, chunk.z, Money.format(refund));
         if (lostBuildings > 0) {
             msg.append(" ").append(Msg.warn("unclaim.lost_buildings", lostBuildings));
@@ -447,7 +501,7 @@ public final class NationManager {
         }
         nation.addTreasury(amount);
         nation.log("deposit", actor.getGameProfile().getName(), Money.format(amount));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("treasury.deposited", Money.format(amount), Money.format(nation.treasury())));
     }
 
@@ -472,7 +526,7 @@ public final class NationManager {
         nation.addTreasury(-amount);
         EconomyData.get(server).add(actor.getUUID(), amount);
         nation.log("withdraw", actor.getGameProfile().getName(), Money.format(amount));
-        changed(server, nation);
+        changed(nation);
         return ActionResult.ok(Msg.ok("treasury.withdrawn", Money.format(amount), Money.format(nation.treasury())));
     }
 
