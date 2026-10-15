@@ -4,9 +4,11 @@
   "package": "io.github.theoblaise1.sovereignfrontier.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ChestBlockMixin",
     "DispenserBlockMixin",
     "FireBlockMixin",
-    "FlowingFluidMixin"
+    "FlowingFluidMixin",
+    "SpongeBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

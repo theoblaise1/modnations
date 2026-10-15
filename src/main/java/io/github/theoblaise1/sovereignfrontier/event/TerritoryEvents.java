@@ -13,15 +13,29 @@ import net.minecraft.core.BlockPos;
 import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.nation.TerritoryRules;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Rabbit;
+import net.minecraft.world.entity.monster.Blaze;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Ravager;
+import net.minecraft.world.entity.monster.Silverfish;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.PlaceOnWaterBlockItem;
 import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.piston.PistonStructureResolver;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityMobGriefingEvent;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDestroyBlockEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.level.PistonEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -55,6 +69,7 @@ import net.neoforged.neoforge.event.level.ExplosionEvent;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Effets du territoire revendiqué. Chaque gestionnaire ne fait qu'une recherche O(1) dans le
@@ -62,6 +77,14 @@ import java.util.List;
  */
 @EventBusSubscriber(modid = SovereignFrontier.MODID)
 public final class TerritoryEvents {
+    /**
+     * Portée, en blocs, des actions qui débordent de leur case : prise d'un enderman, signal de
+     * redstone transmis à travers un bloc conducteur. Au plus 4 chunks couvrent un tel carré.
+     */
+    private static final int NEAR_RADIUS = 2;
+    /** Nation d'origine (identifiant, ou vide hors territoire) d'un projectile sans tireur joueur. */
+    private static final String ORIGIN_TAG = SovereignFrontier.MODID + ":origin";
+
     private TerritoryEvents() {
     }
 
@@ -71,6 +94,27 @@ public final class TerritoryEvents {
             return null;
         }
         return NationData.get(serverLevel.getServer()).ownerAt(level.dimension(), pos);
+    }
+
+    /**
+     * Première nation vérifiant {@code filter} parmi les chunks (au plus 4) qui couvrent le carré
+     * de rayon {@link #NEAR_RADIUS} autour de {@code pos} ; coût constant, sans parcours des nations.
+     */
+    @Nullable
+    private static Nation ownerNear(Level level, BlockPos pos, Predicate<Nation> filter) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        NationData data = NationData.get(serverLevel.getServer());
+        for (int cx = (pos.getX() - NEAR_RADIUS) >> 4; cx <= (pos.getX() + NEAR_RADIUS) >> 4; cx++) {
+            for (int cz = (pos.getZ() - NEAR_RADIUS) >> 4; cz <= (pos.getZ() + NEAR_RADIUS) >> 4; cz++) {
+                Nation owner = data.ownerAt(level.dimension(), ChunkPos.asLong(cx, cz));
+                if (owner != null && filter.test(owner)) {
+                    return owner;
+                }
+            }
+        }
+        return null;
     }
 
     /** Vrai si le joueur peut construire/interagir dans un chunk appartenant à {@code owner}. */
@@ -116,19 +160,29 @@ public final class TerritoryEvents {
         Entity entity = event.getEntity();
         for (BlockPos pos : positions) {
             Nation owner = ownerAt(level, pos);
-            if (owner == null) {
-                continue;
-            }
-            if (entity instanceof Player player) {
-                if (!canBuild(player, owner)) {
+            if (owner != null) {
+                if (entity instanceof Player player) {
+                    if (!canBuild(player, owner)) {
+                        event.setCanceled(true);
+                        deny(player, owner);
+                        return;
+                    }
+                } else if (entity != null) {
+                    // Endermen et autres entités : pas de pose de bloc en territoire revendiqué.
                     event.setCanceled(true);
-                    deny(player, owner);
                     return;
                 }
-            } else if (entity != null) {
-                // Endermen et autres entités : pas de pose de bloc en territoire revendiqué.
-                event.setCanceled(true);
-                return;
+            }
+            // Composant de redstone (levier, poussoir, fil, répéteur, observateur…) : son signal
+            // porte jusqu'à deux blocs (à travers un bloc conducteur) et ouvrirait les portes ou
+            // déclencherait les mécanismes du territoire voisin.
+            if (entity instanceof Player player && level.getBlockState(pos).isSignalSource()) {
+                Nation near = ownerNear(level, pos, n -> !canBuild(player, n));
+                if (near != null) {
+                    event.setCanceled(true);
+                    player.displayClientMessage(Msg.err("protect.redstone", near.name()), true);
+                    return;
+                }
             }
         }
     }
@@ -154,11 +208,15 @@ public final class TerritoryEvents {
             return;
         }
         Nation owner = ownerAt(level, event.getPos());
-        if (owner == null || canBuild(event.getEntity(), owner)) {
-            return;
-        }
         BlockState state = level.getBlockState(event.getPos());
-        if (state.getBlock() instanceof NationAccessBlock) {
+        if (owner == null || canBuild(event.getEntity(), owner)) {
+            // Double coffre à cheval sur une frontière (chunk revendiqué après coup) : ouvrir une
+            // moitié donne accès à l'autre, dont le propriétaire compte donc aussi.
+            owner = chestPartnerOwner(level, event.getPos(), state);
+            if (owner == null || canBuild(event.getEntity(), owner)) {
+                return;
+            }
+        } else if (state.getBlock() instanceof NationAccessBlock) {
             // Le bloc national vérifie lui-même la permission adéquate ; on bloque seulement l'objet tenu.
             event.setUseItem(TriState.FALSE);
             return;
@@ -168,22 +226,36 @@ public final class TerritoryEvents {
         deny(event.getEntity(), owner);
     }
 
-    /** Seaux (et autres objets visant un bloc à distance) : vérifie le bloc visé et la case voisine. */
+    /** Propriétaire de l'autre moitié d'un double coffre, ou {@code null} (coffre simple, autre bloc). */
+    @Nullable
+    private static Nation chestPartnerOwner(Level level, BlockPos pos, BlockState state) {
+        if (!(state.getBlock() instanceof ChestBlock) || state.getValue(ChestBlock.TYPE) == ChestType.SINGLE) {
+            return null;
+        }
+        return ownerAt(level, pos.relative(ChestBlock.getConnectedDirection(state)));
+    }
+
+    /**
+     * Seaux, nénuphars et frai de grenouille : posés par {@code Item#use} sans événement de pose,
+     * on vérifie la case visée et la case voisine.
+     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         Level level = event.getLevel();
-        ItemStack stack = event.getItemStack();
-        if (level.isClientSide() || !(stack.getItem() instanceof BucketItem)) {
+        Item item = event.getItemStack().getItem();
+        if (level.isClientSide() || !(item instanceof BucketItem || item instanceof PlaceOnWaterBlockItem)) {
             return;
         }
-        // Même visée que BucketItem#use : sources seulement pour un seau vide, aucun fluide pour un seau plein.
-        ClipContext.Fluid mode = ((BucketItem) stack.getItem()).content == Fluids.EMPTY
-                ? ClipContext.Fluid.SOURCE_ONLY : ClipContext.Fluid.NONE;
+        // Même visée que BucketItem#use : sources seulement pour un seau vide, aucun fluide pour un
+        // seau plein ; PlaceOnWaterBlockItem#use vise une source et pose le bloc juste au-dessus.
+        ClipContext.Fluid mode = item instanceof BucketItem bucket && bucket.content != Fluids.EMPTY
+                ? ClipContext.Fluid.NONE : ClipContext.Fluid.SOURCE_ONLY;
         BlockHitResult hit = Item.getPlayerPOVHitResult(level, event.getEntity(), mode);
         if (hit.getType() != HitResult.Type.BLOCK) {
             return;
         }
-        for (BlockPos pos : new BlockPos[]{hit.getBlockPos(), hit.getBlockPos().relative(hit.getDirection())}) {
+        BlockPos target = item instanceof PlaceOnWaterBlockItem ? hit.getBlockPos().above() : hit.getBlockPos();
+        for (BlockPos pos : new BlockPos[]{target, target.relative(hit.getDirection())}) {
             Nation owner = ownerAt(level, pos);
             if (owner != null && !canBuild(event.getEntity(), owner)) {
                 event.setCanceled(true);
@@ -207,16 +279,24 @@ public final class TerritoryEvents {
 
     @SubscribeEvent
     public static void onExplosion(ExplosionEvent.Detonate event) {
-        // L'explosion d'un réacteur en surchauffe frappe aussi le territoire de sa propre nation.
-        if (!SFConfig.PROTECT_FROM_EXPLOSIONS.get() || MachineBlockEntity.meltdownInProgress
-                || !(event.getLevel() instanceof ServerLevel level)) {
+        if (!SFConfig.PROTECT_FROM_EXPLOSIONS.get() || !(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
         NationData data = NationData.get(level.getServer());
-        event.getAffectedBlocks().removeIf(pos -> data.ownerAt(level.dimension(), pos) != null);
+        // L'explosion d'un réacteur en surchauffe (reconnue à son centre) frappe aussi le territoire
+        // de la nation du réacteur, et lui seul : les autres nations restent protégées.
+        Vec3 core = MachineBlockEntity.meltdownInProgress;
+        Nation exposed = core != null && core.equals(event.getExplosion().center())
+                ? data.ownerAt(level.dimension(), BlockPos.containing(core)) : null;
+        event.getAffectedBlocks().removeIf(pos -> {
+            Nation owner = data.ownerAt(level.dimension(), pos);
+            return owner != null && owner != exposed;
+        });
         // Cadres, supports d'armure, bétail… ne sont pas soufflés (joueurs et monstres le restent).
-        event.getAffectedEntities().removeIf(e -> isProtectedEntity(e)
-                && data.ownerAt(level.dimension(), e.blockPosition()) != null);
+        event.getAffectedEntities().removeIf(e -> {
+            Nation owner = isProtectedEntity(e) ? data.ownerAt(level.dimension(), e.blockPosition()) : null;
+            return owner != null && owner != exposed;
+        });
     }
 
     /** Entités d'un territoire que seuls les bâtisseurs peuvent frapper ou manipuler. */
@@ -267,26 +347,74 @@ public final class TerritoryEvents {
         return false;
     }
 
-    /** Projectile d'un joueur sans droit de construire : sans effet sur les blocs et entités protégés. */
+    /**
+     * Projectile sans tireur joueur (distributeur, mob) : on retient la nation du chunk où il
+     * apparaît. Une seule recherche O(1) ; un projectile rechargé depuis le disque garde la sienne.
+     */
+    @SubscribeEvent
+    public static void onEntityJoin(EntityJoinLevelEvent event) {
+        if (event.loadedFromDisk() || !(event.getEntity() instanceof Projectile projectile)
+                || !(event.getLevel() instanceof ServerLevel level) || projectile.getOwner() instanceof Player
+                || projectile.getPersistentData().contains(ORIGIN_TAG)) {
+            return;
+        }
+        Nation origin = NationData.get(level.getServer()).ownerAt(level.dimension(), projectile.blockPosition());
+        projectile.getPersistentData().putString(ORIGIN_TAG, origin == null ? "" : origin.id().toString());
+    }
+
+    /**
+     * Projectile d'un joueur sans droit de construire, ou projectile sans tireur joueur venu d'ailleurs
+     * (distributeur, squelette, blaze…) : sans effet sur les blocs et entités protégés d'un territoire.
+     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onProjectileImpact(ProjectileImpactEvent event) {
         Projectile projectile = event.getProjectile();
-        if (projectile.level().isClientSide() || !(projectile.getOwner() instanceof Player shooter)) {
+        Level level = projectile.level();
+        if (level.isClientSide()) {
             return;
         }
         HitResult hit = event.getRayTraceResult();
         BlockPos pos;
+        BlockPos front = null;
         if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
             pos = blockHit.getBlockPos();
+            // Boule de feu : le feu naît sur la case devant la face touchée.
+            front = pos.relative(blockHit.getDirection());
         } else if (hit instanceof EntityHitResult entityHit && isProtectedEntity(entityHit.getEntity())) {
             pos = entityHit.getEntity().blockPosition();
         } else {
             return;
         }
-        Nation owner = ownerAt(projectile.level(), pos);
-        if (owner != null && !canBuild(shooter, owner)) {
-            event.setCanceled(true);
+        if (projectile.getOwner() instanceof Player shooter) {
+            Nation owner = ownerAt(level, pos);
+            if (owner != null && !canBuild(shooter, owner)) {
+                stopProjectile(event, projectile);
+            }
+            return;
         }
+        // Sans tireur joueur : seul le territoire de sa nation d'origine (marque absente = hors territoire).
+        String origin = projectile.getPersistentData().getString(ORIGIN_TAG);
+        if (isForeign(level, pos, origin) || isForeign(level, front, origin)) {
+            stopProjectile(event, projectile);
+        }
+    }
+
+    /** Vrai si {@code pos} appartient à une nation autre que celle d'identifiant {@code origin}. */
+    private static boolean isForeign(Level level, @Nullable BlockPos pos, String origin) {
+        Nation owner = pos == null ? null : ownerAt(level, pos);
+        return owner != null && !owner.id().toString().equals(origin);
+    }
+
+    /**
+     * Annule l'impact et retire le projectile : annulé seul, il poursuivrait sa course à travers le
+     * bloc ou l'entité protégés. Une flèche ou un trident ramassables sont rendus en objet.
+     */
+    private static void stopProjectile(ProjectileImpactEvent event, Projectile projectile) {
+        event.setCanceled(true);
+        if (projectile instanceof AbstractArrow arrow && arrow.pickup == AbstractArrow.Pickup.ALLOWED) {
+            arrow.spawnAtLocation(arrow.getPickupItemStackOrigin().copy(), 0.1F);
+        }
+        projectile.discard();
     }
 
     /** Pistons : rien ne doit être poussé, tiré ou détruit à travers une frontière nationale. */
@@ -301,9 +429,16 @@ public final class TerritoryEvents {
             event.setCanceled(true);
             return;
         }
-        if (resolver == null || !resolver.resolve()) {
+        // Un piston simple qui se rétracte ne retire que sa tête (vérifiée ci-dessus) : il ne tire rien.
+        if (!event.getPistonMoveType().isExtend && !event.getState().is(Blocks.STICKY_PISTON)) {
             return;
         }
+        if (resolver == null) {
+            return;
+        }
+        // Même quand la résolution échoue (ex. piston collant qui ne peut pas tout tirer), les listes
+        // contiennent déjà les blocs retenus : elles sont contrôlées, la rétraction ne tire rien à travers la frontière.
+        resolver.resolve();
         Direction move = event.getPistonMoveType().isExtend ? event.getDirection() : event.getDirection().getOpposite();
         for (BlockPos pos : resolver.getToPush()) {
             if (TerritoryRules.crossesBorder(level, piston, pos) || TerritoryRules.crossesBorder(level, piston, pos.relative(move))) {
@@ -319,20 +454,39 @@ public final class TerritoryEvents {
         }
     }
 
-    /** Lave qui enflamme un bloc d'un territoire voisin. */
+    /**
+     * Lave qui enflamme un bloc d'un territoire voisin. NeoForge ignore l'annulation de cet
+     * événement : on remet donc l'état d'origine (l'air) à la place du feu.
+     */
     @SubscribeEvent
     public static void onFluidPlaceBlock(BlockEvent.FluidPlaceBlockEvent event) {
         if (TerritoryRules.crossesBorder(event.getLevel(), event.getLiquidPos(), event.getPos())) {
-            event.setCanceled(true);
+            event.setNewState(event.getOriginalState());
         }
     }
 
-    /** Endermen, et autres mobs qui modifient le monde, à l'intérieur d'un territoire. */
+    /**
+     * Mobs qui modifient des blocs autour d'eux (l'enderman prend un bloc jusqu'à 2 blocs de
+     * distance, le ravageur arrache les feuilles, le poisson d'argent s'infiltre, le lapin mange
+     * les carottes, le blaze met le feu) : rien à moins de 2 blocs d'un territoire.
+     */
     @SubscribeEvent
     public static void onMobGriefing(EntityMobGriefingEvent event) {
         Entity entity = event.getEntity();
-        if (entity instanceof EnderMan && ownerAt(entity.level(), entity.blockPosition()) != null) {
+        if ((entity instanceof EnderMan || entity instanceof Ravager || entity instanceof Silverfish
+                || entity instanceof Rabbit || entity instanceof Blaze)
+                && ownerNear(entity.level(), entity.blockPosition(), owner -> true) != null) {
             event.setCanGrief(false);
+        }
+    }
+
+    /** Porte défoncée par un zombie, blocs brisés par le Wither ou le dragon : jamais en territoire. */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void onLivingDestroyBlock(LivingDestroyBlockEvent event) {
+        LivingEntity entity = event.getEntity();
+        Nation owner = ownerAt(entity.level(), event.getPos());
+        if (owner != null && !(entity instanceof Player player && canBuild(player, owner))) {
+            event.setCanceled(true);
         }
     }
 

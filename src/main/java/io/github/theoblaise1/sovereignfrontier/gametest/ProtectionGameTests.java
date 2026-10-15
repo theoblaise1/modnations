@@ -2,6 +2,7 @@ package io.github.theoblaise1.sovereignfrontier.gametest;
 
 import com.mojang.authlib.GameProfile;
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
+import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -9,15 +10,37 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.SmallFireball;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
+import net.minecraft.world.level.block.piston.PistonHeadBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.world.level.block.state.properties.PistonType;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.event.EventHooks;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -76,6 +99,13 @@ public final class ProtectionGameTests {
                 }
             }
         }
+    }
+
+    /** Joueur sans nation (donc étranger au territoire de test), tourné vers le sud et regardant vers le bas. */
+    private static ServerPlayer outsider(GameTestHelper helper, String name) {
+        ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
+        player.moveTo(0.0D, 0.0D, 0.0D, 0.0F, 90.0F);
+        return player;
     }
 
     @GameTest(template = AREA, batch = "sf_protection_eau")
@@ -150,5 +180,315 @@ public final class ProtectionGameTests {
         level.setBlock(piston.below(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
         // Événement d'extension déclenché directement (0 = extension), comme après un signal redstone.
         level.getBlockState(piston).triggerEvent(level, piston, 0, facing.get3DDataValue());
+    }
+
+    /** Un piston simple ne tire rien : à la frontière, il se rétracte quand même (le collant reste bloqué). */
+    @GameTest(template = AREA, batch = "sf_protection_piston_simple")
+    public static void plainPistonRetractsAtBorder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestPistonSimple");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 4, border + 2, y - 1, z);
+        finish(helper, () -> {
+            BlockPos plain = new BlockPos(border - 2, y, z);
+            BlockPos sticky = new BlockPos(border - 2, y, z + 2);
+            extendedPiston(level, plain, Blocks.PISTON, PistonType.DEFAULT);
+            extendedPiston(level, sticky, Blocks.STICKY_PISTON, PistonType.STICKY);
+            // Événements de rétraction déclenchés directement (1 = rétraction), comme à la coupure du signal.
+            level.getBlockState(plain).triggerEvent(level, plain, 1, Direction.EAST.get3DDataValue());
+            level.getBlockState(sticky).triggerEvent(level, sticky, 1, Direction.EAST.get3DDataValue());
+            helper.assertFalse(level.getBlockState(plain.east()).is(Blocks.PISTON_HEAD), "piston simple bloqué en extension");
+            helper.assertTrue(level.getBlockState(plain.east(2)).is(Blocks.COBBLESTONE), "bloc du territoire déplacé");
+            helper.assertTrue(level.getBlockState(sticky).is(Blocks.STICKY_PISTON)
+                    && level.getBlockState(sticky.east(2)).is(Blocks.COBBLESTONE), "piston collant : bloc tiré hors du territoire");
+        });
+    }
+
+    /** Piston déployé vers l'est en {@code pos}, avec un bloc du territoire juste devant sa tête. */
+    private static void extendedPiston(ServerLevel level, BlockPos pos, Block piston, PistonType type) {
+        level.setBlock(pos.east(2), Blocks.COBBLESTONE.defaultBlockState(), 3);
+        level.setBlock(pos, piston.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.EAST)
+                .setValue(PistonBaseBlock.EXTENDED, true), 3);
+        level.setBlock(pos.east(), Blocks.PISTON_HEAD.defaultBlockState().setValue(PistonHeadBlock.FACING, Direction.EAST)
+                .setValue(PistonHeadBlock.TYPE, type), 3);
+    }
+
+    /** La lave hors territoire n'allume aucun feu de l'autre côté de la frontière. */
+    @GameTest(template = AREA, batch = "sf_protection_lave")
+    public static void lavaDoesNotIgniteTerritory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestLave");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 4, border + 3, y - 1, z);
+        BlockPos lava = new BlockPos(border - 1, y, z);
+        finish(helper, () -> {
+            for (int dz = -1; dz <= 1; dz++) {
+                level.setBlock(new BlockPos(border, y, z + dz), Blocks.OAK_PLANKS.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(border - 2, y, z + dz), Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            }
+            level.setBlock(lava, Blocks.LAVA.defaultBlockState(), 3);
+            // Ticks aléatoires de la lave déclenchés directement ; le serveur de test coupe doFireTick.
+            GameRules.BooleanValue fireTick = level.getGameRules().getRule(GameRules.RULE_DOFIRETICK);
+            boolean previous = fireTick.get();
+            fireTick.set(true, level.getServer());
+            try {
+                for (int i = 0; i < 300; i++) {
+                    level.getFluidState(lava).randomTick(level, lava, level.getRandom());
+                }
+            } finally {
+                fireTick.set(previous, level.getServer());
+            }
+            boolean witness = false;
+            BlockPos burning = null;
+            for (BlockPos cursor : BlockPos.betweenClosed(border - 2, y, z - 2, border + 2, y + 2, z + 2)) {
+                BlockPos pos = cursor.immutable();
+                if (level.getBlockState(pos).is(Blocks.FIRE)) {
+                    if (pos.getX() < border) {
+                        witness = true;
+                    } else if (burning == null) {
+                        burning = pos;
+                    }
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+            level.setBlock(lava, Blocks.AIR.defaultBlockState(), 3);
+            helper.assertTrue(witness, "témoin : la lave enflamme le bois hors territoire");
+            helper.assertTrue(burning == null, "feu allumé dans le territoire en " + burning);
+        });
+    }
+
+    /** Un coffre posé hors territoire ne s'assemble pas avec un coffre du territoire. */
+    @GameTest(template = AREA, batch = "sf_protection_coffre")
+    public static void chestDoesNotPairAcrossBorder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestCoffre");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 6, border + 2, y - 1, z);
+        finish(helper, () -> {
+            ServerPlayer intruder = outsider(helper, "sf_intrus_coffre");
+            BlockState single = Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH);
+            // Coffre de la nation au bord ouest du territoire ; l'intrus (tourné vers le sud) pose le sien à côté.
+            BlockPos national = new BlockPos(border, y, z);
+            level.setBlock(national, single, 3);
+            placeOn(intruder, national.west().below(), Items.CHEST);
+            BlockPos wild = new BlockPos(border - 4, y, z);
+            level.setBlock(wild, single, 3);
+            placeOn(intruder, wild.west().below(), Items.CHEST);
+            helper.assertTrue(level.getBlockState(wild.west()).is(Blocks.CHEST)
+                    && level.getBlockState(wild.west()).getValue(ChestBlock.TYPE) != ChestType.SINGLE, "témoin : double coffre hors territoire");
+            helper.assertTrue(level.getBlockState(national.west()).is(Blocks.CHEST), "coffre de l'intrus non posé");
+            helper.assertTrue(level.getBlockState(national.west()).getValue(ChestBlock.TYPE) == ChestType.SINGLE
+                    && level.getBlockState(national).getValue(ChestBlock.TYPE) == ChestType.SINGLE, "double coffre à cheval sur la frontière");
+            // Double coffre déjà à cheval (chunk revendiqué après coup) : sa moitié hors territoire reste fermée.
+            BlockPos left = new BlockPos(border - 1, y, z + 3);
+            level.setBlock(left, single.setValue(ChestBlock.TYPE, ChestType.LEFT), 3);
+            level.setBlock(left.east(), single.setValue(ChestBlock.TYPE, ChestType.RIGHT), 3);
+            helper.assertTrue(rightClick(intruder, left).isCanceled(), "moitié hors territoire d'un double coffre ouverte");
+            helper.assertFalse(rightClick(intruder, wild).isCanceled(), "témoin : double coffre hors territoire ouvert");
+        });
+    }
+
+    /** Clic droit du joueur sur la face supérieure de {@code below}, objet {@code item} en main (pose d'un bloc). */
+    private static void placeOn(ServerPlayer player, BlockPos below, Item item) {
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(item));
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(below).add(0.0D, 0.5D, 0.0D), Direction.UP, below, false);
+        player.getMainHandItem().useOn(new UseOnContext(player, InteractionHand.MAIN_HAND, hit));
+    }
+
+    private static PlayerInteractEvent.RightClickBlock rightClick(ServerPlayer player, BlockPos pos) {
+        return CommonHooks.onRightClickBlock(player, InteractionHand.MAIN_HAND, pos,
+                new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
+    }
+
+    /** Projectiles venus d'ailleurs : arrêtés au mur de la nation, sans le traverser ni y mettre le feu. */
+    @GameTest(template = AREA, batch = "sf_protection_projectile")
+    public static void projectilesStopAtBorder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestProjectile");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 6, border + 4, y - 1, z);
+        finish(helper, () -> {
+            BlockPos wall = new BlockPos(border + 1, y, z);
+            BlockPos wildWall = new BlockPos(border - 4, y, z);
+            level.setBlock(wall, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            level.setBlock(wildWall, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            // Boule de feu sans tireur (distributeur) partie hors territoire.
+            SmallFireball foreign = fireball(level, border - 2.5D, y + 0.5D, z + 0.5D);
+            helper.assertTrue(impact(foreign, wall, Direction.WEST) && foreign.isRemoved(), "boule de feu étrangère non arrêtée");
+            // Témoins : impact hors territoire, et boule de feu d'un distributeur de la nation elle-même.
+            SmallFireball wild = fireball(level, border - 2.5D, y + 0.5D, z + 0.5D);
+            SmallFireball home = fireball(level, border + 3.5D, y + 0.5D, z + 0.5D);
+            boolean wildStopped = impact(wild, wildWall, Direction.EAST);
+            boolean homeStopped = impact(home, wall, Direction.EAST);
+            wild.discard();
+            home.discard();
+            helper.assertFalse(wildStopped, "témoin : impact hors territoire annulé");
+            helper.assertFalse(homeStopped, "témoin : impact du distributeur de la nation annulé");
+            // Flèche d'un étranger : arrêtée au mur (et non plus traversante).
+            ServerPlayer archer = outsider(helper, "sf_archer");
+            archer.moveTo(border - 3.5D, y, z + 0.5D);
+            Arrow arrow = new Arrow(level, archer, new ItemStack(Items.ARROW), null);
+            level.addFreshEntity(arrow);
+            helper.assertTrue(impact(arrow, wall, Direction.WEST) && arrow.isRemoved(), "flèche étrangère non arrêtée");
+        });
+    }
+
+    /** Boule de feu sans tireur, ajoutée au monde (sa nation d'origine est alors enregistrée). */
+    private static SmallFireball fireball(ServerLevel level, double x, double y, double z) {
+        SmallFireball fireball = new SmallFireball(level, x, y, z, new Vec3(1.0D, 0.0D, 0.0D));
+        level.addFreshEntity(fireball);
+        return fireball;
+    }
+
+    /** Impact du projectile sur la face {@code face} de {@code block} ; vrai s'il est annulé. */
+    private static boolean impact(Projectile projectile, BlockPos block, Direction face) {
+        return EventHooks.onProjectileImpact(projectile, new BlockHitResult(Vec3.atCenterOf(block), face, block, false));
+    }
+
+    /** La fusion d'un réacteur épargne les autres territoires, mais pas celui de sa propre nation. */
+    @GameTest(template = AREA, batch = "sf_protection_fusion")
+    public static void meltdownSparesOtherTerritories(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestFusion");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 6, border + 6, y - 1, z);
+        finish(helper, () -> {
+            // Réacteur hors territoire, à deux blocs de la frontière.
+            BlockPos wild = new BlockPos(border - 1, y, z);
+            BlockPos claimed = new BlockPos(border, y, z);
+            level.setBlock(wild, Blocks.DIRT.defaultBlockState(), 3);
+            level.setBlock(claimed, Blocks.DIRT.defaultBlockState(), 3);
+            Vec3 wildCore = new BlockPos(border - 2, y, z).getCenter();
+            explode(level, wildCore, wildCore);
+            helper.assertTrue(level.getBlockState(wild).isAir(), "témoin : l'explosion détruit hors territoire");
+            helper.assertTrue(level.getBlockState(claimed).is(Blocks.DIRT), "réacteur hors territoire : territoire voisin détruit");
+            // Autre explosion pendant la fusion (centre différent) : protection normale du territoire.
+            BlockPos own = new BlockPos(border + 4, y, z);
+            Vec3 ownCore = new BlockPos(border + 3, y, z).getCenter();
+            level.setBlock(own, Blocks.DIRT.defaultBlockState(), 3);
+            explode(level, ownCore, wildCore);
+            helper.assertTrue(level.getBlockState(own).is(Blocks.DIRT), "explosion ordinaire pendant une fusion : territoire détruit");
+            // Réacteur dans le territoire : sa propre nation n'est pas protégée.
+            explode(level, ownCore, ownCore);
+            helper.assertTrue(level.getBlockState(own).isAir(), "réacteur en territoire : sa nation reste protégée");
+        });
+    }
+
+    /** Explosion en {@code center} pendant la fusion du réacteur de centre {@code core} (cf. MachineBlockEntity#meltdown). */
+    private static void explode(ServerLevel level, Vec3 center, Vec3 core) {
+        MachineBlockEntity.meltdownInProgress = core;
+        try {
+            level.explode(null, center.x, center.y, center.z, 4.0F, Level.ExplosionInteraction.BLOCK);
+        } finally {
+            MachineBlockEntity.meltdownInProgress = null;
+        }
+    }
+
+    /** Zombies et endermen ne touchent à aucun bloc du territoire, même depuis l'extérieur. */
+    @GameTest(template = AREA, batch = "sf_protection_mobs")
+    public static void mobsCannotGriefTerritory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestMobs");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 8, border + 2, y - 1, z);
+        finish(helper, () -> {
+            BlockPos door = new BlockPos(border, y, z);
+            BlockPos wildDoor = new BlockPos(border - 3, y, z);
+            level.setBlock(door, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            level.setBlock(wildDoor, Blocks.OAK_PLANKS.defaultBlockState(), 3);
+            // Zombie qui défonce une porte (BreakDoorGoal), Wither : LivingDestroyBlockEvent.
+            Zombie zombie = EntityType.ZOMBIE.create(level);
+            helper.assertTrue(zombie != null, "zombie non créé");
+            zombie.moveTo(border - 0.5D, y, z + 0.5D);
+            helper.assertFalse(CommonHooks.canEntityDestroy(level, door, zombie), "zombie autorisé à détruire en territoire");
+            helper.assertTrue(CommonHooks.canEntityDestroy(level, wildDoor, zombie), "témoin : zombie autorisé hors territoire");
+            // Enderman hors territoire mais à portée de prise (2 blocs) de la frontière.
+            EnderMan enderman = EntityType.ENDERMAN.create(level);
+            helper.assertTrue(enderman != null, "enderman non créé");
+            enderman.moveTo(border - 1.5D, y, z + 0.5D);
+            helper.assertFalse(EventHooks.canEntityGrief(level, enderman), "enderman au bord du territoire autorisé à prendre des blocs");
+            enderman.moveTo(border - 5.5D, y, z + 0.5D);
+            helper.assertTrue(EventHooks.canEntityGrief(level, enderman), "témoin : enderman loin du territoire");
+        });
+    }
+
+    /** Un levier posé hors territoire, à deux blocs de la frontière, ne peut pas l'atteindre par la redstone. */
+    @GameTest(template = AREA, batch = "sf_protection_levier")
+    public static void redstoneCannotBePlacedAtBorder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestLevier");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 8, border + 2, y - 1, z);
+        finish(helper, () -> {
+            ServerPlayer intruder = outsider(helper, "sf_intrus_levier");
+            BlockPos near = new BlockPos(border - 2, y, z);
+            BlockPos far = new BlockPos(border - 6, y, z);
+            placeOn(intruder, near.below(), Items.LEVER);
+            placeOn(intruder, far.below(), Items.LEVER);
+            helper.assertTrue(level.getBlockState(far).is(Blocks.LEVER), "témoin : levier posé loin de la frontière");
+            helper.assertTrue(level.getBlockState(near).isAir(), "levier posé à deux blocs du territoire");
+        });
+    }
+
+    /** Une éponge posée hors territoire n'absorbe pas l'eau du territoire voisin. */
+    @GameTest(template = AREA, batch = "sf_protection_eponge")
+    public static void spongeDoesNotDrainTerritory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestEponge");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 4, border + 2, y - 1, z);
+        finish(helper, () -> {
+            BlockPos sponge = new BlockPos(border - 1, y, z);
+            BlockPos claimedWater = sponge.east();
+            BlockPos wildWater = sponge.west();
+            level.setBlock(claimedWater, Blocks.WATER.defaultBlockState(), 3);
+            level.setBlock(wildWater, Blocks.WATER.defaultBlockState(), 3);
+            // SpongeBlock#onPlace absorbe aussitôt (pose directe, sans capture de la pose).
+            level.setBlock(sponge, Blocks.SPONGE.defaultBlockState(), 3);
+            boolean wildDrained = level.getFluidState(wildWater).isEmpty();
+            boolean claimedKept = level.getFluidState(claimedWater).isSource();
+            level.setBlock(claimedWater, Blocks.AIR.defaultBlockState(), 3);
+            helper.assertTrue(wildDrained, "témoin : l'éponge absorbe l'eau hors territoire");
+            helper.assertTrue(claimedKept, "eau du territoire absorbée");
+        });
+    }
+
+    /** Un nénuphar (posé par Item#use, sans événement de pose) ne se pose pas sur l'eau d'un territoire. */
+    @GameTest(template = AREA, batch = "sf_protection_nenuphar")
+    public static void lilyPadCannotBePlacedInTerritory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestNenuphar");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 5, border + 3, y - 1, z);
+        finish(helper, () -> {
+            BlockPos claimedWater = new BlockPos(border + 1, y, z);
+            BlockPos wildWater = new BlockPos(border - 3, y, z);
+            level.setBlock(claimedWater, Blocks.WATER.defaultBlockState(), 3);
+            level.setBlock(wildWater, Blocks.WATER.defaultBlockState(), 3);
+            ServerPlayer intruder = outsider(helper, "sf_intrus_nenuphar");
+            useLilyPadAbove(intruder, level, wildWater);
+            useLilyPadAbove(intruder, level, claimedWater);
+            boolean wildPlaced = level.getBlockState(wildWater.above()).is(Blocks.LILY_PAD);
+            boolean claimedEmpty = level.getBlockState(claimedWater.above()).isAir();
+            level.setBlock(claimedWater, Blocks.AIR.defaultBlockState(), 3);
+            helper.assertTrue(wildPlaced, "témoin : nénuphar posé hors territoire");
+            helper.assertTrue(claimedEmpty, "nénuphar posé dans le territoire");
+        });
+    }
+
+    /** Clic droit avec un nénuphar, le joueur deux blocs au-dessus de la source {@code water} et regardant vers le bas. */
+    private static void useLilyPadAbove(ServerPlayer player, ServerLevel level, BlockPos water) {
+        player.moveTo(water.getX() + 0.5D, water.getY() + 2, water.getZ() + 0.5D, 0.0F, 90.0F);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.LILY_PAD));
+        player.gameMode.useItem(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND);
     }
 }

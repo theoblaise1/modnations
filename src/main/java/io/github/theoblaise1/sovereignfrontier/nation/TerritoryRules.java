@@ -25,4 +25,19 @@ public final class TerritoryRules {
         Nation target = data.ownerAt(serverLevel.dimension(), to);
         return target != null && target != data.ownerAt(serverLevel.dimension(), from);
     }
+
+    /**
+     * Frontière dans un sens ou dans l'autre : {@code a} et {@code b} n'ont pas le même propriétaire
+     * (deux nations, ou une nation et un chunk libre). Sert aux liens symétriques (double coffre).
+     */
+    public static boolean separatedByBorder(LevelAccessor level, BlockPos a, BlockPos b) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+        if ((a.getX() >> 4) == (b.getX() >> 4) && (a.getZ() >> 4) == (b.getZ() >> 4)) {
+            return false;
+        }
+        NationData data = NationData.get(serverLevel.getServer());
+        return data.ownerAt(serverLevel.dimension(), a) != data.ownerAt(serverLevel.dimension(), b);
+    }
 }
