@@ -16,6 +16,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.Nation;
 import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.TreasurySessions;
+import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.player.PlayerProfile;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.player.TerritoryTracker;
@@ -56,6 +57,8 @@ public final class ServerEvents {
         NationManager.tickIncome(event.getServer());
         CivilBuildings.tickRevalidation(event.getServer());
         ResearchManager.tick(event.getServer());
+        // En dernier : regroupe les rafraîchissements planifiés pendant ce tick.
+        NationSync.tick(event.getServer());
     }
 
     @SubscribeEvent
@@ -72,6 +75,8 @@ public final class ServerEvents {
         Nation nation = NationData.get(player.server).nationOf(player.getUUID());
         if (nation != null) {
             nation.updateMemberName(player.getUUID(), name);
+            // Statut « en ligne » (et nom éventuellement changé) vu par les membres dont l'écran est ouvert.
+            NationSync.scheduleRefresh(nation);
             player.sendSystemMessage(Msg.info("welcome.member", nation.name(), nation.roleOf(player.getUUID()).displayName()));
         } else {
             player.sendSystemMessage(Msg.info("welcome.no_nation"));
@@ -85,11 +90,20 @@ public final class ServerEvents {
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         TreasurySessions.close(event.getEntity().getUUID());
         EngineeringManager.close(event.getEntity().getUUID());
+        NationSync.forget(event.getEntity().getUUID());
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // Envoi groupé ultérieur : le joueur aura quitté la liste (et hasDisconnected() est déjà vrai).
+            Nation nation = NationData.get(player.server).nationOf(player.getUUID());
+            if (nation != null) {
+                NationSync.scheduleRefresh(nation);
+            }
+        }
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
         TreasurySessions.clear();
+        NationSync.clear();
         AdminBypass.clear();
         EngineeringManager.clear();
         EnergyNetworks.clear();

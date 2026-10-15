@@ -10,6 +10,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.AdminBypass;
 import io.github.theoblaise1.sovereignfrontier.nation.Nation;
 import io.github.theoblaise1.sovereignfrontier.nation.NationAdmin;
 import io.github.theoblaise1.sovereignfrontier.nation.NationData;
+import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchTier;
@@ -17,6 +18,7 @@ import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.UUID;
 
@@ -77,6 +79,10 @@ public final class AdminCommand {
             case 1 -> eco.add(id, amount);
             case -1 -> eco.add(id, -amount);
             default -> eco.set(id, amount);
+        }
+        ServerPlayer online = ctx.getSource().getServer().getPlayerList().getPlayer(id);
+        if (online != null) {
+            NationSync.scheduleRefresh(online);
         }
         long balance = eco.balance(id);
         ctx.getSource().sendSuccess(() -> Msg.ok("admin.money_set", eco.nameOf(id), Money.format(balance)), true);

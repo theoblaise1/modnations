@@ -1,5 +1,6 @@
 package io.github.theoblaise1.sovereignfrontier.nation;
 
+import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -68,7 +69,12 @@ public final class Nation {
         for (NationRole role : NationRole.values()) {
             permissions.put(role, NationPermission.defaults(role));
         }
-        chest.addListener(c -> markDirty());
+        // Le contenu du coffre alimente l'onglet Science des membres : rafraîchissement groupé
+        // (au plus une fois par seconde), jamais un envoi par objet déplacé.
+        chest.addListener(c -> {
+            markDirty();
+            NationSync.scheduleRefresh(this);
+        });
     }
 
     void setDirtyCallback(Runnable callback) {
@@ -146,11 +152,15 @@ public final class Nation {
         markDirty();
     }
 
-    void setRole(UUID player, NationRole role) {
-        if (members.containsKey(player)) {
-            members.put(player, role);
-            markDirty();
+    /** Vrai si le rang a réellement changé (membre connu, rang différent de l'actuel). */
+    boolean setRole(UUID player, NationRole role) {
+        NationRole old = members.get(player);
+        if (old == null || old == role) {
+            return false;
         }
+        members.put(player, role);
+        markDirty();
+        return true;
     }
 
     void setLeader(UUID newLeader) {
@@ -181,15 +191,17 @@ public final class Nation {
                 : NationPermission.toMask(permissions.get(role));
     }
 
-    void setPermission(NationRole role, NationPermission permission, boolean granted) {
+    /** Vrai si la matrice a réellement changé (jamais pour le chef, qui a toutes les permissions). */
+    boolean setPermission(NationRole role, NationPermission permission, boolean granted) {
         if (role == NationRole.CHEF) {
-            return;
+            return false;
         }
         EnumSet<NationPermission> set = permissions.get(role);
         boolean changed = granted ? set.add(permission) : set.remove(permission);
         if (changed) {
             markDirty();
         }
+        return changed;
     }
 
     // ------------------------------------------------------------------ invitations

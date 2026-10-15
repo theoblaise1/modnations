@@ -39,7 +39,9 @@ public final class NationCommand {
         dispatcher.register(Commands.literal("nation")
                 .executes(ctx -> help(ctx.getSource()))
                 .then(Commands.literal("create")
-                        .then(Commands.argument("nom", StringArgumentType.word())
+                        // Texte brut jusqu'à la fin : accents et espaces atteignent NAME_PATTERN, qui
+                        // explique les caractères permis, au lieu d'une erreur de syntaxe générique.
+                        .then(Commands.argument("nom", StringArgumentType.greedyString())
                                 .executes(ctx -> send(ctx.getSource(), NationManager.create(
                                         ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "nom"))))))
                 .then(Commands.literal("invite")

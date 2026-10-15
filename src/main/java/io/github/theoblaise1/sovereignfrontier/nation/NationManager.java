@@ -317,8 +317,11 @@ public final class NationManager {
         if (target.equals(actor.getUUID())) {
             return ActionResult.fail(Msg.err("nation.error.role_self"));
         }
-        nation.setRole(target, role);
         String name = nation.memberName(target);
+        if (!nation.setRole(target, role)) {
+            // Rien ne change : ni entrée de journal ni annonce ; l'échec resynchronise l'écran.
+            return ActionResult.fail(Msg.warn("nation.role_unchanged", name, role.displayName()));
+        }
         nation.log("role", actor.getGameProfile().getName(), name, "@role." + role.id());
         broadcast(server, nation, tag(nation).append(Msg.info("nation.role_changed", name, role.displayName())));
         changed(server, nation);
@@ -337,7 +340,11 @@ public final class NationManager {
         if (role == NationRole.CHEF) {
             return ActionResult.fail(Msg.err("nation.error.chef_locked"));
         }
-        nation.setPermission(role, permission, granted);
+        if (!nation.setPermission(role, permission, granted)) {
+            // Déjà dans cet état (double clic, commande répétée) : le journal ne garde que les vrais changements.
+            return ActionResult.fail(Msg.warn(granted ? "nation.perm_already_granted" : "nation.perm_already_revoked",
+                    permission.displayName(), role.displayName()));
+        }
         nation.log(granted ? "perm_grant" : "perm_revoke", actor.getGameProfile().getName(), "@perm." + permission.id(), "@role." + role.id());
         changed(server, nation);
         return ActionResult.ok(Msg.ok(granted ? "nation.perm_granted" : "nation.perm_revoked",
@@ -484,6 +491,8 @@ public final class NationManager {
             if (income > 0) {
                 nation.addTreasury(income);
                 broadcast(server, nation, tag(nation).append(Msg.info("treasury.income", Money.format(income), nation.effectivePopulation())));
+                // Trésorerie affichée (Aperçu, Trésor, bouton « Lancer » de la Science) : envoi groupé.
+                NationSync.scheduleRefresh(nation);
             }
         }
     }

@@ -9,6 +9,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationRole;
 import io.github.theoblaise1.sovereignfrontier.nation.TreasurySessions;
 import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
+import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,15 +24,47 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
-/** Construit et envoie les {@link NationSnapshot} personnalisés aux joueurs. */
+/**
+ * Construit et envoie les {@link NationSnapshot} personnalisés aux joueurs.
+ * <ul>
+ *   <li>Action explicite d'un joueur ({@link #refreshNation}) : envoi immédiat aux membres.</li>
+ *   <li>Changement de fond (coffre, revenu, connexions, porte-monnaie) : {@link #scheduleRefresh},
+ *       envoi groupé au plus une fois par {@link #FLUSH_INTERVAL_TICKS} ticks par {@link #tick}.</li>
+ *   <li>Demande d'un client ({@link #request}) : au plus une par {@link #REQUEST_COOLDOWN_TICKS} ticks
+ *       et par joueur ; une demande trop rapprochée est différée, jamais perdue.</li>
+ * </ul>
+ * Ces états sont transitoires (rien à envoyer après un redémarrage) : compteurs en mémoire,
+ * vidés à la déconnexion ({@link #forget}) et à l'arrêt du serveur ({@link #clear}).
+ */
 public final class NationSync {
     /** Rayon de la carte de l'onglet Territoire (en chunks) : grille de 15×15. */
     public static final int MAP_RADIUS = 7;
+    /** Intervalle minimal entre deux envois groupés des rafraîchissements planifiés (1 s). */
+    public static final int FLUSH_INTERVAL_TICKS = 20;
+    /** Intervalle minimal entre deux instantanés demandés par un même client (anti-abus). */
+    public static final int REQUEST_COOLDOWN_TICKS = 5;
+
+    /** Nations à rafraîchir au prochain envoi groupé. */
+    private static final Set<UUID> PENDING_NATIONS = new LinkedHashSet<>();
+    /** Joueurs (sans passer par leur nation) à rafraîchir au prochain envoi groupé. */
+    private static final Set<UUID> PENDING_PLAYERS = new LinkedHashSet<>();
+    /** Tick serveur du dernier instantané servi à la demande de chaque client. */
+    private static final Map<UUID, Integer> LAST_REQUEST_TICK = new HashMap<>();
+    /** Demande reçue pendant le délai, servie à son expiration (une seule par joueur). */
+    private static final Map<UUID, Request> DEFERRED = new HashMap<>();
+    /** Ticks écoulés depuis le dernier envoi groupé (plafonné à l'intervalle). */
+    private static int ticksSinceFlush = FLUSH_INTERVAL_TICKS;
+
+    private record Request(boolean open, NationTab tab) {
+    }
 
     private NationSync() {
     }
@@ -48,20 +81,145 @@ public final class NationSync {
         }
     }
 
-    /** Faux joueurs (GameTests, mods tiers) : pas de canal négocié, on n'envoie rien. */
+    /**
+     * Faux joueurs (GameTests, mods tiers) : pas de canal négocié, on n'envoie rien. Un joueur en
+     * cours de déconnexion (encore listé pendant {@code PlayerLoggedOutEvent}) est ignoré aussi.
+     */
     public static boolean canReceive(ServerPlayer player) {
-        return !(player instanceof FakePlayer) && player.connection != null
+        return !(player instanceof FakePlayer) && !player.hasDisconnected() && player.connection != null
                 && player.connection.hasChannel(NationSnapshotS2C.TYPE);
+    }
+
+    /**
+     * En ligne au sens de l'écran national. {@code ServerPlayer#disconnect} précède
+     * {@code PlayerLoggedOutEvent} : un joueur qui part n'est plus compté.
+     */
+    public static boolean isOnline(MinecraftServer server, UUID id) {
+        ServerPlayer p = server.getPlayerList().getPlayer(id);
+        return p != null && !p.hasDisconnected();
     }
 
     /** Pousse l'état à jour à tous les membres connectés (le client l'ignore si l'écran est fermé). */
     public static void refreshNation(MinecraftServer server, Nation nation) {
+        // L'envoi immédiat couvre un éventuel rafraîchissement planifié pour cette nation.
+        PENDING_NATIONS.remove(nation.id());
         for (UUID id : nation.members().keySet()) {
             ServerPlayer p = server.getPlayerList().getPlayer(id);
             if (p != null) {
                 refreshPlayer(p, false);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ envois groupés et limites
+
+    /** Planifie un rafraîchissement des membres de la nation (envoi groupé, au plus 1 par seconde). */
+    public static void scheduleRefresh(Nation nation) {
+        PENDING_NATIONS.add(nation.id());
+    }
+
+    /** Vrai si un rafraîchissement groupé attend pour cette nation (observé par les GameTests). */
+    public static boolean isRefreshScheduled(Nation nation) {
+        return PENDING_NATIONS.contains(nation.id());
+    }
+
+    /** Planifie un rafraîchissement d'un seul joueur, ex. son porte-monnaie (envoi groupé). */
+    public static void scheduleRefresh(ServerPlayer player) {
+        if (canReceive(player)) {
+            PENDING_PLAYERS.add(player.getUUID());
+        }
+    }
+
+    /**
+     * Instantané demandé par un client (paquet, resynchronisation après un échec) : servi tout de
+     * suite, ou différé si le précédent date de moins de {@link #REQUEST_COOLDOWN_TICKS} ticks.
+     * Une ouverture d'écran en attente n'est jamais remplacée par un simple rafraîchissement.
+     */
+    public static void request(ServerPlayer player, boolean open, NationTab tab) {
+        if (!canReceive(player)) {
+            return;
+        }
+        int now = player.server.getTickCount();
+        Integer last = LAST_REQUEST_TICK.get(player.getUUID());
+        if (last != null && now - last < REQUEST_COOLDOWN_TICKS) {
+            Request pending = DEFERRED.get(player.getUUID());
+            if (pending == null || open || !pending.open()) {
+                DEFERRED.put(player.getUUID(), new Request(open, tab));
+            }
+            return;
+        }
+        DEFERRED.remove(player.getUUID());
+        serve(player, new Request(open, tab), now);
+    }
+
+    private static void serve(ServerPlayer player, Request request, int now) {
+        LAST_REQUEST_TICK.put(player.getUUID(), now);
+        PacketDistributor.sendToPlayer(player, new NationSnapshotS2C(build(player), request.open(), request.tab().ordinal()));
+    }
+
+    /**
+     * Appelé à chaque tick serveur, après les boucles de jeu : sert les demandes différées échues,
+     * puis, au plus une fois par seconde, les rafraîchissements planifiés. O(1) quand rien n'attend.
+     */
+    public static void tick(MinecraftServer server) {
+        if (!DEFERRED.isEmpty()) {
+            int now = server.getTickCount();
+            Iterator<Map.Entry<UUID, Request>> it = DEFERRED.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<UUID, Request> e = it.next();
+                Integer last = LAST_REQUEST_TICK.get(e.getKey());
+                if (last != null && now - last < REQUEST_COOLDOWN_TICKS) {
+                    continue;
+                }
+                it.remove();
+                ServerPlayer p = server.getPlayerList().getPlayer(e.getKey());
+                if (p != null && canReceive(p)) {
+                    serve(p, e.getValue(), now);
+                }
+            }
+        }
+        if (ticksSinceFlush < FLUSH_INTERVAL_TICKS) {
+            ticksSinceFlush++;
+        }
+        if (ticksSinceFlush < FLUSH_INTERVAL_TICKS || (PENDING_NATIONS.isEmpty() && PENDING_PLAYERS.isEmpty())) {
+            return;
+        }
+        ticksSinceFlush = 0;
+        List<UUID> nations = List.copyOf(PENDING_NATIONS);
+        List<UUID> players = List.copyOf(PENDING_PLAYERS);
+        PENDING_NATIONS.clear();
+        PENDING_PLAYERS.clear();
+        NationData data = NationData.get(server);
+        for (UUID id : nations) {
+            Nation nation = data.byId(id);
+            if (nation != null) {
+                refreshNation(server, nation);
+            }
+        }
+        for (UUID id : players) {
+            ServerPlayer p = server.getPlayerList().getPlayer(id);
+            Nation nation = p == null ? null : data.nationOf(id);
+            // Déjà servi si sa nation vient d'être rafraîchie.
+            if (p != null && (nation == null || !nations.contains(nation.id()))) {
+                refreshPlayer(p, false);
+            }
+        }
+    }
+
+    /** Oublie les limites et demandes en attente d'un joueur qui se déconnecte. */
+    public static void forget(UUID player) {
+        LAST_REQUEST_TICK.remove(player);
+        DEFERRED.remove(player);
+        PENDING_PLAYERS.remove(player);
+    }
+
+    /** Arrêt du serveur : rien ne doit survivre d'une partie à l'autre (solo). */
+    public static void clear() {
+        PENDING_NATIONS.clear();
+        PENDING_PLAYERS.clear();
+        LAST_REQUEST_TICK.clear();
+        DEFERRED.clear();
+        ticksSinceFlush = FLUSH_INTERVAL_TICKS;
     }
 
     public static NationSnapshot build(ServerPlayer player) {
@@ -88,7 +246,7 @@ public final class NationSync {
         List<NationSnapshot.MemberInfo> members = new ArrayList<>();
         for (Map.Entry<UUID, NationRole> e : nation.members().entrySet()) {
             members.add(new NationSnapshot.MemberInfo(nation.memberName(e.getKey()), e.getValue().ordinal(),
-                    server.getPlayerList().getPlayer(e.getKey()) != null));
+                    isOnline(server, e.getKey())));
         }
         members.sort((a, b) -> a.role() != b.role() ? Integer.compare(a.role(), b.role()) : a.name().compareToIgnoreCase(b.name()));
         int[] rolePerms = new int[NationRole.values().length];
@@ -112,7 +270,7 @@ public final class NationSync {
         SimpleContainer chest = nation.chest();
         for (int i = 0; i < chest.getContainerSize(); i++) {
             ItemStack stack = chest.getItem(i);
-            if (!stack.isEmpty() && stack.getComponentsPatch().isEmpty()) {
+            if (ResearchManager.isPlain(stack)) {
                 counts.merge(BuiltInRegistries.ITEM.getKey(stack.getItem()), stack.getCount(), Integer::sum);
             }
         }

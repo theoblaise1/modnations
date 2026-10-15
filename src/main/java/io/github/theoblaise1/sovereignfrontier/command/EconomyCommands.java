@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
+import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.ChatFormatting;
@@ -79,6 +80,7 @@ public final class EconomyCommands {
         ServerPlayer receiver = payer.server.getPlayerList().getPlayer(target);
         if (receiver != null) {
             receiver.sendSystemMessage(Msg.ok("money.received", Money.format(amount), payer.getDisplayName()));
+            NationSync.scheduleRefresh(receiver);
         }
         return 1;
     }
