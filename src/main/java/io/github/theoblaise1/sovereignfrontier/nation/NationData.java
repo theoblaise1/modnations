@@ -1,6 +1,7 @@
 package io.github.theoblaise1.sovereignfrontier.nation;
 
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
+import io.github.theoblaise1.sovereignfrontier.energy.EnergyNetworks;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -39,6 +40,9 @@ public final class NationData extends SavedData {
 
     /** Compteur de ticks persistant pour le revenu de population (pas de scan de chunks). */
     private long incomeTickCounter;
+    /** Compteur de ticks persistant de la revalidation tournante des bâtiments civils. */
+    private int buildingTickCounter;
+    /** Position du tour de revalidation, persistée pour reprendre le tour après un redémarrage. */
     private int buildingCursor;
 
     public static NationData get(MinecraftServer server) {
@@ -101,6 +105,8 @@ public final class NationData extends SavedData {
             for (long chunk : e.getValue()) {
                 territory.invalidate(e.getKey(), chunk);
             }
+            // Les frontières changent : le réseau d'énergie doit être recalculé (câbles entre nations).
+            EnergyNetworks.invalidateDimension(e.getKey());
         }
         for (UUID member : nation.memberIds()) {
             memberIndex.remove(member);
@@ -123,24 +129,27 @@ public final class NationData extends SavedData {
     void claim(Nation nation, ResourceKey<Level> dimension, long chunk) {
         nation.addClaim(dimension, chunk);
         territory.put(dimension, chunk, nation);
+        EnergyNetworks.invalidateDimension(dimension);
     }
 
     void unclaim(Nation nation, ResourceKey<Level> dimension, long chunk) {
         nation.removeClaim(dimension, chunk);
         territory.invalidate(dimension, chunk);
         nation.removeBuildingsInChunk(dimension, chunk);
+        EnergyNetworks.invalidateDimension(dimension);
     }
 
-    /** Avance le compteur persistant ; vrai quand un cycle de revenu est atteint. */
+    /**
+     * Avance le compteur persistant ; vrai quand un cycle de revenu est atteint. Marqué comme modifié
+     * à chaque tick (simple drapeau, l'écriture n'a lieu qu'à la sauvegarde) : sinon la progression
+     * depuis la dernière sauvegarde serait perdue à l'arrêt si rien d'autre n'a changé.
+     */
     boolean advanceIncomeCounter(int interval) {
         incomeTickCounter++;
+        setDirty();
         if (incomeTickCounter >= interval) {
             incomeTickCounter = 0;
-            setDirty();
             return true;
-        }
-        if ((incomeTickCounter & 1023) == 0) {
-            setDirty();
         }
         return false;
     }
@@ -149,7 +158,19 @@ public final class NationData extends SavedData {
         return incomeTickCounter;
     }
 
+    /** Avance le compteur persistant de revalidation ; vrai quand un bâtiment doit être revérifié. */
+    boolean advanceBuildingCounter(int interval) {
+        buildingTickCounter++;
+        setDirty();
+        if (buildingTickCounter >= interval) {
+            buildingTickCounter = 0;
+            return true;
+        }
+        return false;
+    }
+
     int nextBuildingCursor() {
+        setDirty();
         return buildingCursor++;
     }
 
@@ -168,6 +189,8 @@ public final class NationData extends SavedData {
         }
         tag.put("nations", list);
         tag.putLong("incomeTicks", incomeTickCounter);
+        tag.putInt("buildingTicks", buildingTickCounter);
+        tag.putInt("buildingCursor", buildingCursor);
         return tag;
     }
 
@@ -185,6 +208,8 @@ public final class NationData extends SavedData {
         }
         data.territory.rebuild(data.nations.values());
         data.incomeTickCounter = tag.getLong("incomeTicks");
+        data.buildingTickCounter = tag.getInt("buildingTicks");
+        data.buildingCursor = tag.getInt("buildingCursor");
         return data;
     }
 }

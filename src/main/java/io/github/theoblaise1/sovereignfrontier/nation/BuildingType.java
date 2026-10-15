@@ -19,6 +19,11 @@ public enum BuildingType {
         return Msg.tr("building." + id());
     }
 
+    /** Maison ou atelier : fondé sur une pièce close, qui ne compte qu'une fois. La ferme compte ses terres labourées. */
+    public boolean isRoom() {
+        return this != FARM;
+    }
+
     public static BuildingType byId(String id) {
         for (BuildingType t : values()) {
             if (t.id().equals(id)) {
