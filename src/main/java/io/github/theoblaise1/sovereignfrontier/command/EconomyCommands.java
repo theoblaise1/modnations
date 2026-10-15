@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,12 +45,26 @@ public final class EconomyCommands {
         dispatcher.register(Commands.literal("baltop").executes(EconomyCommands::baltop));
     }
 
+    /** Compte unique portant ce nom ; sinon envoie l'erreur (inconnu ou ambigu) et renvoie null. */
+    @Nullable
+    static UUID resolveAccount(CommandSourceStack source, EconomyData eco, String name) {
+        List<UUID> matches = eco.findByName(name);
+        if (matches.isEmpty()) {
+            source.sendFailure(Msg.err("money.error.unknown_account", name));
+            return null;
+        }
+        if (matches.size() > 1) {
+            source.sendFailure(Msg.err("money.error.ambiguous", name));
+            return null;
+        }
+        return matches.get(0);
+    }
+
     private static int balanceOther(CommandContext<CommandSourceStack> ctx) {
         EconomyData eco = EconomyData.get(ctx.getSource().getServer());
         String name = StringArgumentType.getString(ctx, "joueur");
-        UUID id = eco.findByName(name);
+        UUID id = resolveAccount(ctx.getSource(), eco, name);
         if (id == null) {
-            ctx.getSource().sendFailure(Msg.err("money.error.unknown_account", name));
             return 0;
         }
         long balance = eco.balance(id);
@@ -62,9 +77,8 @@ public final class EconomyCommands {
         EconomyData eco = EconomyData.get(payer.server);
         String name = StringArgumentType.getString(ctx, "joueur");
         long amount = LongArgumentType.getLong(ctx, "montant");
-        UUID target = eco.findByName(name);
+        UUID target = resolveAccount(ctx.getSource(), eco, name);
         if (target == null) {
-            ctx.getSource().sendFailure(Msg.err("money.error.unknown_account", name));
             return 0;
         }
         if (target.equals(payer.getUUID())) {
@@ -76,6 +90,7 @@ public final class EconomyCommands {
             return 0;
         }
         eco.add(target, amount);
+        NationSync.scheduleRefresh(payer);
         ctx.getSource().sendSuccess(() -> Msg.ok("money.paid", Money.format(amount), eco.nameOf(target)), false);
         ServerPlayer receiver = payer.server.getPlayerList().getPlayer(target);
         if (receiver != null) {

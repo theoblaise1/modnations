@@ -70,9 +70,8 @@ public final class AdminCommand {
         EconomyData eco = EconomyData.get(ctx.getSource().getServer());
         String name = StringArgumentType.getString(ctx, "joueur");
         long amount = LongArgumentType.getLong(ctx, "montant");
-        UUID id = eco.findByName(name);
+        UUID id = EconomyCommands.resolveAccount(ctx.getSource(), eco, name);
         if (id == null) {
-            ctx.getSource().sendFailure(Msg.err("money.error.unknown_account", name));
             return 0;
         }
         switch (sign) {

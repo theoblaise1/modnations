@@ -8,7 +8,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -78,15 +77,22 @@ public final class EconomyData extends SavedData {
         return true;
     }
 
-    @Nullable
-    public UUID findByName(String name) {
+    /**
+     * Comptes portant ce nom : la correspondance exacte prime, sinon la casse est ignorée. Plusieurs
+     * résultats = nom ambigu (hors ligne, « Alice » et « alice » sont deux joueurs distincts).
+     */
+    public List<UUID> findByName(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
+        List<UUID> exact = new ArrayList<>();
+        List<UUID> loose = new ArrayList<>();
         for (Map.Entry<UUID, String> e : names.entrySet()) {
-            if (e.getValue().toLowerCase(Locale.ROOT).equals(lower)) {
-                return e.getKey();
+            if (e.getValue().equals(name)) {
+                exact.add(e.getKey());
+            } else if (e.getValue().toLowerCase(Locale.ROOT).equals(lower)) {
+                loose.add(e.getKey());
             }
         }
-        return null;
+        return exact.isEmpty() ? loose : exact;
     }
 
     public String nameOf(UUID player) {
@@ -94,7 +100,7 @@ public final class EconomyData extends SavedData {
     }
 
     public List<String> knownNames() {
-        return new ArrayList<>(names.values());
+        return names.values().stream().distinct().toList();
     }
 
     public List<Map.Entry<UUID, Long>> top(int limit) {
