@@ -44,7 +44,7 @@ import java.util.Locale;
  * {@link NationSnapshot} reçu. Toutes les actions passent par des paquets revalidés côté serveur.
  */
 @OnlyIn(Dist.CLIENT)
-public class NationScreen extends Screen {
+public class NationScreen extends Screen implements FeedbackScreen {
     // Géométrie du panneau (tient dans une hauteur GUI de 240)
     private static final int PANEL_W = 320;
     private static final int PANEL_H = 220;
@@ -67,11 +67,11 @@ public class NationScreen extends Screen {
     private static final int BUTTON_DY = 68;
     private static final int HINT_DY = 96;
 
-    // Rôles
+    // Rôles (12 permissions + l'aide tiennent dans les 160 px du contenu)
     private static final int ROLE_COL_W = 40;
-    private static final int ROLE_ROW_H = 12;
+    private static final int ROLE_ROW_H = 11;
     private static final int ROLE_HEADER_H = 12;
-    private static final int BOX = 10;
+    private static final int BOX = 9;
 
     // Couleurs (ARGB)
     private static final int COL_PANEL = 0xF0181A20;
@@ -97,6 +97,8 @@ public class NationScreen extends Screen {
     private NationTab tab;
     /** État de l'onglet Recherche (domaine et palier sélectionnés), conservé entre deux rafraîchissements. */
     private final ResearchTab researchTab = new ResearchTab();
+    /** Onglet Économie (contrats, entreprises) : section affichée conservée entre deux rafraîchissements. */
+    private final EconomyTab economyTab = new EconomyTab();
     private int left;
     private int top;
     /** Défilement (en lignes) de la liste des membres ou du journal. */
@@ -136,6 +138,9 @@ public class NationScreen extends Screen {
         if (s != null && s.hasNation() && tab == NationTab.RESEARCH) {
             researchTab.init(w -> addRenderableWidget(w), contentLeft(), contentTop(), CONTENT_W, CONTENT_H, s);
         }
+        if (s != null && s.hasNation() && tab == NationTab.CONTRACTS) {
+            economyTab.init(w -> addRenderableWidget(w), contentLeft(), contentTop(), CONTENT_W, CONTENT_H, s);
+        }
     }
 
     /** Reconstruit les widgets depuis {@link ClientNationState} en gardant l'onglet et la saisie. */
@@ -152,12 +157,28 @@ public class NationScreen extends Screen {
 
     /** Bascule sur un onglet imposé (par exemple par le serveur). */
     public void showTab(NationTab newTab) {
+        leaving(newTab);
         tab = newTab;
         scroll = 0;
         refresh();
     }
 
+    /** Nouvelle vue Économie reçue : seul l'onglet Économie l'affiche. */
+    public void onEconomyUpdated() {
+        if (tab == NationTab.CONTRACTS) {
+            refresh();
+        }
+    }
+
+    /** Quitter l'onglet Économie : sa vue sera redemandée à la prochaine ouverture. */
+    private void leaving(NationTab next) {
+        if (tab == NationTab.CONTRACTS && next != NationTab.CONTRACTS) {
+            economyTab.leave();
+        }
+    }
+
     /** Affiche le résultat d'une action dans la barre d'état pendant quelques secondes. */
+    @Override
     public void showFeedback(Component message, boolean success) {
         feedback = message;
         feedbackSuccess = success;
@@ -173,6 +194,7 @@ public class NationScreen extends Screen {
         if (newTab == tab) {
             return;
         }
+        leaving(newTab);
         tab = newTab;
         scroll = 0;
         rebuildWidgets();
@@ -281,7 +303,13 @@ public class NationScreen extends Screen {
                 case TERRITORY -> renderTerritory(g, s, mouseX, mouseY);
                 case ROLES -> renderRoles(g, s, mouseX, mouseY);
                 case JOURNAL -> renderJournal(g, s, mouseX, mouseY);
-                case CONTRACTS -> renderPlaceholder(g, "contracts");
+                case CONTRACTS -> {
+                    if (s.hasNation()) {
+                        economyTab.render(g, s, mouseX, mouseY, this::setTooltipForNextRenderPass);
+                    } else {
+                        renderNeedNation(g);
+                    }
+                }
             }
         }
         renderFeedback(g);
@@ -412,15 +440,6 @@ public class NationScreen extends Screen {
     private void commandLine(GuiGraphics g, Component command, Component description, int x, int y) {
         int end = g.drawString(font, command, x, y, COL_TITLE);
         g.drawString(font, description, end + 4, y, COL_LABEL);
-    }
-
-    // --- Onglets à venir
-
-    private void renderPlaceholder(GuiGraphics g, String id) {
-        int cx = left + PANEL_W / 2;
-        int cy = contentTop() + CONTENT_H / 2;
-        g.drawCenteredString(font, tr("tab." + id), cx, cy - 12, COL_TITLE);
-        g.drawCenteredString(font, tr(id + ".placeholder"), cx, cy + 2, COL_LABEL);
     }
 
     private void renderNeedNation(GuiGraphics g) {
@@ -695,12 +714,18 @@ public class NationScreen extends Screen {
         if (tab == NationTab.RESEARCH && s.hasNation()) {
             return researchTab.mouseClicked(mouseX, mouseY, button);
         }
+        if (tab == NationTab.CONTRACTS && s.hasNation()) {
+            return economyTab.mouseClicked(mouseX, mouseY, button);
+        }
         return false;
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (tab == NationTab.RESEARCH && researchTab.mouseScrolled(mouseX, mouseY, scrollY)) {
+            return true;
+        }
+        if (tab == NationTab.CONTRACTS && economyTab.mouseScrolled(mouseX, mouseY, scrollY)) {
             return true;
         }
         int max = maxScroll(ClientNationState.get());

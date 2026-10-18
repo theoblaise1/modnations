@@ -3,10 +3,11 @@ package io.github.theoblaise1.sovereignfrontier.registry;
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Registre centralisé des objets (pour l'instant : les objets-blocs du jalon J1). */
+/** Registre centralisé des objets : objets-blocs et objets simples. */
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(SovereignFrontier.MODID);
 
@@ -31,6 +32,24 @@ public final class ModItems {
     public static final DeferredItem<Item> GAS_BOTTLE = ITEMS.registerSimpleItem("bouteille_gaz");
     public static final DeferredItem<Item> FULL_GAS_BOTTLE = ITEMS.registerSimpleItem("bouteille_gaz_pleine");
     public static final DeferredItem<Item> CIRCUIT = ITEMS.registerSimpleItem("circuit");
+
+    // J4 : économie
+    public static final DeferredItem<BlockItem> TERMINAL = ITEMS.registerSimpleBlockItem(ModBlocks.TERMINAL);
+    public static final DeferredItem<BlockItem> OUTPOST_COUNTER = ITEMS.registerSimpleBlockItem(ModBlocks.OUTPOST_COUNTER);
+    public static final DeferredItem<BlockItem> CRATE_COMMUNE = ITEMS.registerSimpleBlockItem(ModBlocks.CRATE_COMMUNE);
+    public static final DeferredItem<BlockItem> CRATE_MILITAIRE = ITEMS.registerSimpleBlockItem(ModBlocks.CRATE_MILITAIRE);
+    public static final DeferredItem<BlockItem> CRATE_INDUSTRIELLE = ITEMS.registerSimpleBlockItem(ModBlocks.CRATE_INDUSTRIELLE);
+    public static final DeferredItem<BlockItem> CRATE_SPATIALE = ITEMS.registerSimpleBlockItem(ModBlocks.CRATE_SPATIALE);
+
+    /** Clés de caisse : piles de 64, aucune recette (vérifié par tools/check_economy.py). */
+    public static final DeferredItem<Item> KEY_COMMUNE = ITEMS.registerSimpleItem("cle_commune",
+            new Item.Properties().rarity(Rarity.COMMON));
+    public static final DeferredItem<Item> KEY_MILITAIRE = ITEMS.registerSimpleItem("cle_militaire",
+            new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> KEY_INDUSTRIELLE = ITEMS.registerSimpleItem("cle_industrielle",
+            new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<Item> KEY_SPATIALE = ITEMS.registerSimpleItem("cle_spatiale",
+            new Item.Properties().rarity(Rarity.RARE));
 
     private ModItems() {
     }

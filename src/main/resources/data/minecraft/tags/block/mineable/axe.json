@@ -1,6 +1,10 @@
 {
   "replace": false,
   "values": [
-    "sovereignfrontier:registre_civil"
+    "sovereignfrontier:registre_civil",
+    "sovereignfrontier:caisse_commune",
+    "sovereignfrontier:caisse_militaire",
+    "sovereignfrontier:caisse_industrielle",
+    "sovereignfrontier:caisse_spatiale"
   ]
 }

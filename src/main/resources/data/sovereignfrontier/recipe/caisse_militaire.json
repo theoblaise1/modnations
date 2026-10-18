@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:chest"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "X": {
+      "item": "minecraft:gunpowder"
+    }
+  },
+  "pattern": [
+    "XIX",
+    "ICI",
+    "XIX"
+  ],
+  "result": {
+    "count": 1,
+    "id": "sovereignfrontier:caisse_militaire"
+  }
+}

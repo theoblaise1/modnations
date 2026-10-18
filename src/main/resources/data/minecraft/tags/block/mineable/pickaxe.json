@@ -13,6 +13,7 @@
     "sovereignfrontier:cellule_combustible",
     "sovereignfrontier:dissipateur_thermique",
     "sovereignfrontier:station_ingenierie",
-    "sovereignfrontier:cable_energie"
+    "sovereignfrontier:cable_energie",
+    "sovereignfrontier:terminal_bancaire"
   ]
 }

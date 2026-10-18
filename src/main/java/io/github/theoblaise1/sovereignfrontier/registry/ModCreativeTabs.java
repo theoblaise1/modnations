@@ -35,6 +35,16 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.GAS_BOTTLE.get());
                         output.accept(ModItems.FULL_GAS_BOTTLE.get());
                         output.accept(ModItems.CIRCUIT.get());
+                        output.accept(ModItems.TERMINAL.get());
+                        output.accept(ModItems.OUTPOST_COUNTER.get());
+                        output.accept(ModItems.CRATE_COMMUNE.get());
+                        output.accept(ModItems.CRATE_MILITAIRE.get());
+                        output.accept(ModItems.CRATE_INDUSTRIELLE.get());
+                        output.accept(ModItems.CRATE_SPATIALE.get());
+                        output.accept(ModItems.KEY_COMMUNE.get());
+                        output.accept(ModItems.KEY_MILITAIRE.get());
+                        output.accept(ModItems.KEY_INDUSTRIELLE.get());
+                        output.accept(ModItems.KEY_SPATIALE.get());
                     })
                     .build());
 
