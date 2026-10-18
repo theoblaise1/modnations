@@ -1,0 +1,7 @@
+{
+  "kind": "kill",
+  "weight": 8,
+  "duration_hours": 24,
+  "objective": {"entity": "#sovereignfrontier:contrat/araignees", "amount": {"min": 12, "max": 24, "step": 4}},
+  "reward": {"money": 70, "money_per_unit": 7, "points": 3, "points_per_unit": 0.15}
+}

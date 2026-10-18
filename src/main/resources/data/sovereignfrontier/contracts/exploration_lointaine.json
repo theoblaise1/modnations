@@ -1,0 +1,7 @@
+{
+  "kind": "explore",
+  "weight": 6,
+  "duration_hours": 48,
+  "objective": {"waypoint": {"min": 1000, "max": 2000, "radius": 32}},
+  "reward": {"money": 350, "points": 8, "keys": [{"crate": "commune", "count": 1, "chance": 0.5}]}
+}

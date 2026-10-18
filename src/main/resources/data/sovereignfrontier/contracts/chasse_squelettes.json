@@ -1,0 +1,7 @@
+{
+  "kind": "kill",
+  "weight": 10,
+  "duration_hours": 24,
+  "objective": {"entity": "#sovereignfrontier:contrat/squelettes", "amount": {"min": 12, "max": 24, "step": 4}},
+  "reward": {"money": 80, "money_per_unit": 8, "points": 3, "points_per_unit": 0.2, "keys": [{"crate": "militaire", "count": 1, "chance": 0.3}]}
+}

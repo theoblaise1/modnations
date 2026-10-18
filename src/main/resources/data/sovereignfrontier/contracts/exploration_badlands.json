@@ -1,0 +1,8 @@
+{
+  "kind": "explore",
+  "weight": 5,
+  "min_population": 2,
+  "duration_hours": 48,
+  "objective": {"biome": "#minecraft:is_badlands", "min_distance": 1200},
+  "reward": {"money": 400, "points": 10}
+}

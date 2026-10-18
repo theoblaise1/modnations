@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 8,
+  "requires": ["sovereignfrontier:ressources_3"],
+  "duration_hours": 48,
+  "objective": {"item": "minecraft:iron_ingot", "amount": {"min": 16, "max": 48, "step": 8}},
+  "reward": {"money": 150, "money_per_unit": 5, "points": 4, "points_per_unit": 0.15, "keys": [{"crate": "industrielle", "count": 1, "chance": 0.5}]}
+}
