@@ -1,0 +1,9 @@
+{
+  "requires": [
+    "sovereignfrontier:civil_3"
+  ],
+  "domain": "civil",
+  "bonus_per_tier": 0.03,
+  "money_per_worker": 8,
+  "products": []
+}
