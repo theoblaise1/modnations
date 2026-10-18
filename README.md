@@ -6,8 +6,10 @@ Nom de travail, sans lien avec une marque existante. Aucune ressource n'est copi
 structures sont générées par script, tous les noms sont originaux.
 
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
-> recherche de 65 paliers, onglet Recherche) ; **J3 livré** (énergie, machines, réacteur, Station
-> d'ingénierie). Les jalons suivants attendent la validation en jeu du précédent.
+> recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
+> réacteur, Station d'ingénierie) ; **J4 livré, à valider en jeu** (terminal bancaire, `/daily` et
+> caisses, avant-postes marchands, contrats, entreprises). Les jalons suivants attendent la
+> validation en jeu du précédent.
 
 ---
 
@@ -38,8 +40,8 @@ structures sont générées par script, tous les noms sont originaux.
 |---|---|---|
 | J1 | Nation multi-membres (syst. 1 + 7 hors guerre), trésorerie, territoire, population, écran national | ✅ livré |
 | J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré |
-| J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, à valider en jeu |
-| J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | — |
+| J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, validé en jeu |
+| J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré, à valider en jeu |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée (syst. 4) | — |
 | J6 | Donjons, boss, armement (syst. 6) | — |
 | J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
@@ -83,7 +85,7 @@ Mémoire : `-Xmx4G` dans `user_jvm_args.txt` suffit pour 2 à 10 joueurs. Config
   `/nation create Aurore` → touche **N** ; `/sfadmin money give <joueur> 100000` ;
   `/sfadmin treasury Aurore 100000` (ajoute au trésor) ; `/sfadmin research Aurore complete industrie_1` (Tab
   complète les paliers). Le Créatif contient tous les blocs dans l'onglet « Sovereign Frontier ».
-- Suivre ensuite les recettes en jeu `docs/recette/J1.md` à `J3.md`.
+- Suivre ensuite les recettes en jeu `docs/recette/J1.md` à `J4.md`.
 
 ## Contenu du jalon J1
 
@@ -109,7 +111,7 @@ Mémoire : `-Xmx4G` dans `user_jvm_args.txt` suffit pour 2 à 10 joueurs. Config
 | `/balance [joueur]` · `/pay <joueur> <montant>` · `/baltop` | Économie personnelle. |
 | `/sfadmin money\|treasury\|bypass …` | Outils opérateur (niveau 2) pour tester et modérer. |
 
-Touche **N** : écran national (Aperçu, Science, Trésor, Carte, Rôles, Journal, Contrats).
+Touche **N** : écran national (Aperçu, Science, Trésor, Carte, Rôles, Journal, Économie).
 
 ### Recherche (J2)
 | Commande | Effet |
@@ -143,7 +145,8 @@ bouteilles, `industrie_7` réacteur, `industrie_10` combustible efficace, `techn
 
 ### Permissions (identifiants de commande)
 `revendiquer`, `abandonner`, `retirer`, `coffre`, `construire`, `inviter`, `exclure`,
-`rechercher`, `declarer_guerre`, `signer_traite`, `tirer_missile`. Le Chef les a toutes.
+`rechercher`, `declarer_guerre`, `signer_traite`, `tirer_missile`, `economie` (J4). Le Chef les a
+toutes ; Ministre et Officier ont `economie` par défaut (les nations existantes l'obtiennent par migration).
 
 ### Configuration serveur
 `<monde>/serverconfig/sovereignfrontier-server.toml`, rechargée à chaud :
@@ -154,6 +157,82 @@ bouteilles, `industrie_7` réacteur, `industrie_10` combustible efficace, `techn
 `researchCancelRefund` ; section `[energy]` : `thermalOutput`, `solarOutput`, `drillEnergyPerTick`,
 `drillLitersPerCycle`, `gasPerDimension`, `reactorOutputPerCell`, `reactorHeatPerCell`,
 `reactorDissipationPerSink`, `reactorMaxHeat`, `reactorFuelTicks`, `reactorExplosionPower`.
+Sections J4 : `[terminal]` : `terminalHourlyRates`, `terminalAfkSeconds`, `terminalLookDegrees`,
+`terminalWalkBlocks`, `terminalWindowHours`, `terminalMaxPending`, `terminalSouverainMultiplier` (lue à
+partir du J8) ; `[rewards]` : `dailyCooldownHours`, `dailyStreakResetHours`, `cratePityThreshold`,
+`crateOpenTicks`, `crateAnnounceRare` ; `[market]` : `merchantRotationTicks`, `merchantPressureStep`,
+`merchantSupplyDrop`, `merchantDemandRise`, `merchantPayoutFloor`, `merchantPriceCeiling`,
+`merchantPressureDecay`, `merchantTradeReach`, `protectOutposts` ; `[contracts]` : `contractRefreshHours`,
+`contractBaseOffers`, `contractMaxOffers`, `contractBaseActive`, `contractMaxActive`,
+`contractSizePerExtraMember`, `contractSizeCap`, `contractMoneyPerTier`, `contractContributorShare`,
+`contractMinNationAgeHours`, `contractMaintenanceTicks`, `contractExploreCheckTicks`,
+`contractHistorySize`.
+
+## Contenu du jalon J4
+
+Économie PNJ, récompenses, contrats et entreprises. Tout le contenu (caisses, `/daily`, marchands,
+contrats, entreprises) est en JSON de datapack, rechargé par `/reload` ; formats, bornes de validation et
+interdictions dans [`docs/economie.md`](docs/economie.md). Aucun objet de palier 3 ou 4, composant final
+de fusée ou arme militaire maximale n'y figure (tags `#sovereignfrontier:restreint`, contrôlés par
+`python3 tools/check_economy.py`, au chargement et à l'exécution).
+
+### Blocs et objets
+| Bloc / objet | Rôle |
+|---|---|
+| **Terminal bancaire** | Clic droit : encaisse l'épargne du temps de jeu **actif** (aucune nation requise) ; accroupi, main vide : état. Recette `IPI / GRG / III` (fer, vitre, or, bloc de redstone). |
+| **Caisses** commune, militaire, industrielle, spatiale | Clic droit avec la clé du même type : ouverture ; sans clé : aperçu du contenu et des chances. Recette `XIX / ICI / XIX` (coffre au centre ; X : planches, poudre à canon, lingot de cuivre ou verre). |
+| **Clés** (×4) | Piles de 64, **aucune recette** : `/daily`, contrats et caisses. |
+| **Comptoir d'avant-poste** | Ancre incassable d'un avant-poste marchand (Créatif seulement) ; le marchand PNJ se tient derrière. |
+
+### Récompenses personnelles
+- **Terminal bancaire.** Regard, marche au sol, casse ou pose, chat, commandes, conteneurs et artisanat
+  comptent comme activité ; un clic automatique ou un déplacement passif, jamais. Le temps actif remplit
+  une épargne au barème dégressif de 240, 180, 135… cr par heure active sur 24 h (855 cr en 8 h),
+  plafonnée à 3 000 cr ; 180 s sans activité mettent les gains en pause.
+- **`/daily` et série.** Une récompense toutes les 24 h : 100 cr au jour 1 jusqu'à 500 cr au jour 7
+  (plateau ensuite) et 1 à 2 clés ; la série repart au jour 1 après 48 h sans réclamer.
+- **Caisses et pitié.** Quatre tables de 1 à 3 récompenses rares ; une rare manquée 20 fois d'affilée
+  est garantie à la 21ᵉ ouverture (`/crate pity`) ; les gains rares sont annoncés à tout le serveur.
+
+### Avant-postes et marchands
+Des avant-postes (plaines, désert, taïga) sont générés avec un comptoir, une caisse commune et un
+marchand PNJ invulnérable (pools « général », « prospecteur », « trappeur »). L'étal est renouvelé toutes
+les 24 000 ticks ; le prix monte de 30 % tous les 20 lots achetés (plafond ×2), le rachat baisse de 30 %
+tous les 20 lots vendus (plancher ×0,25) et ne dépasse jamais 80 % du prix de vente : aucun arbitrage.
+`/trade` ou un clic droit, à 8 blocs du comptoir au plus. Les 3 × 3 chunks autour du comptoir ne sont pas
+revendicables et la zone (7 blocs autour) est protégée en survie.
+
+### Contrats nationaux
+Chaque nation a un tableau rafraîchi toutes les 24 h (1 membre : 4 offres et 2 contrats en cours ;
+jusqu'à 8 et 4), ouvert 12 h après sa fondation. Trois types (livraison, chasse, exploration), 20 modèles.
+La permission `economie` accepte et abandonne ; tout membre livre. À la réussite, la moitié de l'argent
+va aux contributeurs au prorata, le reste à la trésorerie ; les **points de recherche** et les clés
+s'y ajoutent. Les paliers de recherche à partir du 6ᵉ de chaque domaine coûtent `5 × (palier − 5)`
+points (1 035 pour tout l'arbre), gagnés uniquement par les contrats.
+
+### Entreprises
+Quatre secteurs (agricole, minier, logistique, industriel). Les habitants affectés (permission `economie`)
+quittent le revenu passif et produisent, à chaque cycle de revenu, de l'argent pour la trésorerie et des
+objets pour le coffre national, au multiplicateur de leur domaine de recherche.
+
+### Commandes
+| Commande | Effet |
+|---|---|
+| `/terminal` | État du terminal : temps actif, taux, épargne, fin de la fenêtre. |
+| `/daily` · `/daily info` | Réclamer la récompense · série et prochaine récompense. |
+| `/crate pity` · `/crate preview <type>` | Compteurs de pitié · aperçu d'une caisse. |
+| `/trade` · `/trade list` | Écran du marchand à portée · étal dans le chat. |
+| `/trade buy <objet> [lots]` · `/trade sell <objet> [lots\|tout]` | Acheter · vendre (objets intacts seulement). |
+| `/contract` · `/contract info <n>` | Tableau de la nation · fiche d'un contrat. |
+| `/contract accept <n>` · `/contract abandon <n>` | Accepter · abandonner (permission `economie`). |
+| `/contract deliver <n> [quantité]` | Livrer des objets intacts (tout membre). |
+| `/enterprise` · `/enterprise info <secteur>` | Résumé des 4 secteurs · fiche d'un secteur. |
+| `/enterprise assign <secteur> <nombre>` | Affecter des habitants (permission `economie`). |
+| `/sfadmin terminal reset\|give` · `daily reset\|streak` · `crate givekey\|pity` | Outils opérateur : terminal, `/daily`, clés et pitié. |
+| `/sfadmin outpost create\|info\|remove\|rotate\|respawn` | Avant-poste le plus proche (32 blocs au plus). |
+| `/sfadmin contract <nation> refresh\|complete\|expire` · `/sfadmin enterprise <nation> cycle` | Contrats et production forcés. |
+
+Onglet **Économie** de l'écran national (touche N) : contrats (offres, en cours, historique) et entreprises.
 
 ---
 
@@ -192,7 +271,8 @@ des 65 paliers et le catalogue des déblocages sont dans [`docs/recherche.md`](d
      `technologie` (7). Le palier `n` exige implicitement le palier `n-1` du même domaine :
      `requires` ne liste que les prérequis **croisés**.
    - `cost.items` : objets prélevés dans le **coffre national** au lancement ; `treasury` est
-     débité de la trésorerie ; `points` (points de recherche, J4) est facultatif.
+     débité de la trésorerie ; `points` (points de recherche gagnés par les contrats) vaut
+     `5 × (palier − 5)` à partir du palier 6 et est absent avant (imposé par `check_research.py`).
    - Durée : `120 s × palier^1,35` (champ facultatif `duration_seconds` pour la forcer), divisée
      par le bonus `research_speed`.
    - `rewards` : `unlock` (clé du catalogue de `docs/recherche.md`) ou `bonus` (`stat` parmi
@@ -220,6 +300,7 @@ python3 tools/gen_structures.py    # régénère les gabarits NBT ; --check en C
 python3 tools/check_sides.py       # aucune classe cliente hors du paquet client ; --self-test
 python3 tools/check_lang.py        # toute clé de traduction utilisée existe
 python3 tools/check_research.py    # arbre de recherche conforme à docs/recherche.md ; --self-test
+python3 tools/check_economy.py     # contenu de l'économie (docs/economie.md) et objets interdits ; --self-test
 
 # Captures automatiques de l'écran national (client sur écran virtuel, runs/client/screenshots/)
 SF_SCREENSHOTS=1 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient
@@ -238,7 +319,11 @@ sur serveur headless, et publie le `.jar` à chaque push.
 | `energy/` | Tampons d'énergie, câbles, réseau (`EnergyNetworks`, cache par dimension). |
 | `machine/` | Bloc et entité de machine (`MachineKind`), menu, réacteur multibloc, réserve de gaz (`GasData`). |
 | `engineering/` | Station d'ingénierie, recettes JSON rechargées par datapack, fabrication côté serveur. |
-| `economy/` | `EconomyData` : portefeuilles personnels. |
+| `economy/` | `EconomyData` (portefeuilles), Terminal bancaire (`TerminalManager`, `ActivityTracker`), interdictions (`RestrictedItems`). |
+| `reward/` | `/daily` et série, caisses et clés, pitié, `RewardData` (SavedData des récompenses). |
+| `outpost/` | Avant-postes : comptoir, marchand, étal tournant, tarification (`PriceMath`), `OutpostData`. |
+| `contract/` | Contrats nationaux : modèles JSON, tableau, progression, réussite. |
+| `enterprise/` | Entreprises : secteurs JSON, affectation des habitants, production par cycle. |
 | `player/` | DataAttachments joueur. |
 | `block/` | Blocs nationaux et menu du coffre. |
 | `command/` | Commandes Brigadier et autocomplétion. |
@@ -258,3 +343,6 @@ sur serveur headless, et publie le `.jar` à chaque push.
 - **Données de contenu** en JSON de datapack ; textures et structures produites par `tools/`.
 - **Messages** : clés `sovereignfrontier.*` ; `en_us.json` est rédigé en français (langue de repli
   de toutes les locales).
+- **Objets interdits** : tout objet de palier 3/4, composant final de fusée ou arme militaire maximale
+  est ajouté à `#sovereignfrontier:restreint/<…>` et n'entre jamais dans un craft, une caisse, un
+  marchand, une entreprise ni `/daily` (voir `docs/economie.md`).
