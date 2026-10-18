@@ -55,6 +55,7 @@ public final class AdminCommand {
                     ctx.getSource().sendSuccess(() -> Msg.warn(on ? "admin.bypass_on" : "admin.bypass_off"), true);
                     return 1;
                 }));
+        TradeCommand.registerAdmin(root);
         RewardCommands.registerAdmin(root);
         EnterpriseCommand.registerAdmin(root);
         dispatcher.register(root);

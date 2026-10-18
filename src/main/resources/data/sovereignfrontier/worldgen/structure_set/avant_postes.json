@@ -1,0 +1,26 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "exclusion_zone": {
+      "chunk_count": 4,
+      "other_set": "minecraft:villages"
+    },
+    "salt": 1740263719,
+    "separation": 10,
+    "spacing": 28
+  },
+  "structures": [
+    {
+      "structure": "sovereignfrontier:avant_poste_plaines",
+      "weight": 1
+    },
+    {
+      "structure": "sovereignfrontier:avant_poste_desert",
+      "weight": 1
+    },
+    {
+      "structure": "sovereignfrontier:avant_poste_taiga",
+      "weight": 1
+    }
+  ]
+}

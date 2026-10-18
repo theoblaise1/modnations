@@ -9,7 +9,9 @@ Les fichiers sont écrits dans src/main/resources/data/sovereignfrontier/structu
 Format : NBT compressé gzip d'un StructureTemplate Minecraft 1.21.1 (DataVersion 3955).
 Le contenu est comparé après décompression (l'en-tête gzip dépend de l'outil).
 Pour ajouter une structure : écrire une fonction qui renvoie (size, palette, blocks) et
-l'enregistrer dans STRUCTURES.
+l'enregistrer dans STRUCTURES. Une entrée de palette est un nom de bloc, ou (nom, {propriété: valeur}) ; une
+entrée de bloc est (x, y, z, index_palette) avec un 5e élément facultatif : le NBT du bloc-entité (dictionnaire).
+Aucune entité dans les gabarits (leur position exige des TAG_Double, non gérés par cet encodeur).
 """
 import argparse
 import gzip
@@ -74,16 +76,56 @@ def encode_root(root: dict) -> bytes:
     return buf.getvalue()
 
 
+def _palette_entry(entry) -> dict:
+    """« nom » ou (nom, {propriété: valeur}) → {"Name", "Properties"} (propriétés triées, chaînes)."""
+    if isinstance(entry, str):
+        return {"Name": entry}
+    name, props = entry
+    if not props:
+        return {"Name": name}
+    return {"Name": name, "Properties": {k: str(props[k]) for k in sorted(props)}}
+
+
+def _block_entry(block) -> dict:
+    x, y, z, index = block[:4]
+    out = {"pos": [Int(x), Int(y), Int(z)], "state": Int(index)}
+    if len(block) > 4 and block[4] is not None:
+        out["nbt"] = block[4]
+    return out
+
+
 def template(size, palette, blocks) -> bytes:
-    """palette : liste de noms de blocs ; blocks : liste de (x, y, z, index_palette)."""
+    """palette : noms de blocs ou (nom, propriétés) ; blocks : (x, y, z, index_palette[, nbt])."""
     root = {
         "DataVersion": Int(DATA_VERSION),
         "size": [Int(s) for s in size],
-        "palette": [{"Name": name} for name in palette],
-        "blocks": [{"pos": [Int(x), Int(y), Int(z)], "state": Int(i)} for x, y, z, i in blocks],
+        "palette": [_palette_entry(p) for p in palette],
+        "blocks": [_block_entry(b) for b in blocks],
         "entities": [],
     }
     return encode_root(root)
+
+
+class Builder:
+    """Gabarit construit case par case : palette dédoublonnée, blocs triés (y, z, x) pour une sortie stable."""
+
+    def __init__(self, size):
+        self.size = size
+        self.palette: list = []
+        self._index: dict = {}
+        self._cells: dict = {}
+
+    def set(self, x, y, z, name, props=None, nbt=None):
+        key = (name, tuple(sorted((props or {}).items())))
+        if key not in self._index:
+            self._index[key] = len(self.palette)
+            self.palette.append((name, dict(props)) if props else name)
+        self._cells[(x, y, z)] = (self._index[key], nbt)
+
+    def build(self):
+        cells = sorted(self._cells.items(), key=lambda kv: (kv[0][1], kv[0][2], kv[0][0]))
+        blocks = [(x, y, z, i, nbt) for (x, y, z), (i, nbt) in cells]
+        return tuple(self.size), self.palette, blocks
 
 
 # --------------------------------------------------------------------------- structures
@@ -93,8 +135,50 @@ def empty_area(n: int):
     return (n, n, n), ["minecraft:stone"], blocks
 
 
+# Variantes d'avant-poste (docs/conception/J4.md §3) : sol (bordure, intérieur), poteaux, toit, pool du comptoir.
+OUTPOST_VARIANTS = {
+    "plaines": ("minecraft:cobblestone", "minecraft:stone_bricks", "minecraft:oak_log", "minecraft:oak_slab", "general"),
+    "desert": ("minecraft:cut_sandstone", "minecraft:smooth_sandstone", "minecraft:acacia_log", "minecraft:acacia_slab",
+               "prospecteur"),
+    "taiga": ("minecraft:cobblestone", "minecraft:spruce_planks", "minecraft:spruce_log", "minecraft:spruce_slab",
+              "trappeur"),
+}
+
+
+def outpost(variant: str):
+    """
+    Avant-poste marchand 11 × 7 × 11 : sol, volume dégagé (air explicite), 4 poteaux, toit de dalles, 4 lanternes
+    suspendues, comptoir (5,1,4) tourné au nord (le marchand apparaît au premier tick à son poste, (5,1,5)), caisse
+    commune publique et tonneau à butin.
+    """
+    border, inner, log, slab, pool = OUTPOST_VARIANTS[variant]
+    b = Builder((11, 7, 11))
+    for x in range(11):
+        for z in range(11):
+            b.set(x, 0, z, border if x in (0, 10) or z in (0, 10) else inner)
+            for y in range(1, 7):
+                b.set(x, y, z, "minecraft:air")
+    for x, z in ((1, 1), (9, 1), (1, 9), (9, 9)):
+        for y in range(1, 5):
+            b.set(x, y, z, log, {"axis": "y"})
+    for x in range(1, 10):
+        for z in range(1, 10):
+            b.set(x, 5, z, slab, {"type": "bottom", "waterlogged": "false"})
+    for x, z in ((2, 2), (8, 2), (2, 8), (8, 8)):
+        b.set(x, 4, z, "minecraft:lantern", {"hanging": "true", "waterlogged": "false"})
+    b.set(5, 1, 4, "sovereignfrontier:comptoir_avant_poste", {"bound": "false", "facing": "north"},
+          {"id": "sovereignfrontier:comptoir", "pool": f"sovereignfrontier:{pool}"})
+    b.set(8, 1, 8, "sovereignfrontier:caisse_commune", {"facing": "west", "open": "false"})
+    b.set(2, 1, 8, "minecraft:barrel", {"facing": "up", "open": "false"},
+          {"id": "minecraft:barrel", "LootTable": f"sovereignfrontier:chests/avant_poste_{variant}"})
+    return b.build()
+
+
 STRUCTURES = {
     "gametest/empty9": lambda: empty_area(9),
+    "avant_poste/plaines": lambda: outpost("plaines"),
+    "avant_poste/desert": lambda: outpost("desert"),
+    "avant_poste/taiga": lambda: outpost("taiga"),
 }
 
 
