@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 5,
+  "requires": ["sovereignfrontier:ressources_8"],
+  "duration_hours": 72,
+  "objective": {"item": "sovereignfrontier:bouteille_gaz_pleine", "amount": {"min": 4, "max": 8, "step": 2}},
+  "reward": {"money": 300, "money_per_unit": 30, "points": 8, "points_per_unit": 0.6, "keys": [{"crate": "spatiale", "count": 1, "chance": 0.5}]}
+}

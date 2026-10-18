@@ -1,0 +1,7 @@
+{
+  "kind": "kill",
+  "weight": 10,
+  "duration_hours": 24,
+  "objective": {"entity": "minecraft:zombie", "amount": {"min": 15, "max": 30, "step": 5}},
+  "reward": {"money": 60, "money_per_unit": 6, "points": 3, "points_per_unit": 0.15, "keys": [{"crate": "militaire", "count": 1, "chance": 0.3}]}
+}

@@ -3,6 +3,7 @@
   "tier": 10,
   "cost": {
     "treasury": 7600,
+    "points": 25,
     "items": [
       {
         "item": "minecraft:spyglass",

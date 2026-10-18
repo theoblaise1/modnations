@@ -3,6 +3,7 @@
   "tier": 15,
   "cost": {
     "treasury": 13950,
+    "points": 50,
     "items": [
       {
         "item": "minecraft:obsidian",

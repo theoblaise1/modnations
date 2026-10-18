@@ -3,6 +3,7 @@
   "tier": 14,
   "cost": {
     "treasury": 10500,
+    "points": 45,
     "items": [
       {
         "item": "minecraft:diamond",

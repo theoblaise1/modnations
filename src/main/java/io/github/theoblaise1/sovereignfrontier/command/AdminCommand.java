@@ -58,6 +58,7 @@ public final class AdminCommand {
         TradeCommand.registerAdmin(root);
         RewardCommands.registerAdmin(root);
         EnterpriseCommand.registerAdmin(root);
+        ContractCommand.registerAdmin(root);
         dispatcher.register(root);
     }
 

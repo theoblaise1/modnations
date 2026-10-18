@@ -1,0 +1,8 @@
+{
+  "kind": "kill",
+  "weight": 4,
+  "requires": ["sovereignfrontier:militaire_3"],
+  "duration_hours": 48,
+  "objective": {"entity": "minecraft:enderman", "amount": {"min": 6, "max": 12, "step": 2}},
+  "reward": {"money": 200, "money_per_unit": 20, "points": 6, "points_per_unit": 0.5, "keys": [{"crate": "militaire", "count": 1, "chance": 1.0}]}
+}

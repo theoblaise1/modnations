@@ -2,16 +2,27 @@
 
 Ce document est le **contrat** entre le contenu (`data/sovereignfrontier/research/*.json`) et le
 code : noms, récompenses, prérequis croisés et population minimale de chacun des 65 paliers.
-Les coûts (objets, trésorerie) sont fixés dans les JSON et vérifiés par `tools/check_research.py`.
+Les coûts (objets, trésorerie, points de recherche) sont fixés dans les JSON et vérifiés par
+`tools/check_research.py`.
 
 ## Règles du moteur
 - 5 domaines ; dans chaque domaine le palier `n` exige implicitement le palier `n-1`.
 - Une seule recherche active par nation, tous domaines confondus (permission `rechercher`).
 - Lancement : objets **consommés dans le coffre national**, coût débité de la trésorerie
-  (et des points de recherche, gagnés par contrats au J4 ; `0` partout au J2).
+  et des points de recherche (gagnés par les contrats nationaux, voir « Points de recherche »).
 - Durée : `120 s × palier^1,35`, divisée par `1 + bonus research_speed`. Fin = horodatage epoch :
   la recherche avance serveur éteint et se termine au premier contrôle (toutes les 20 ticks).
-- Annulation : objets perdus, `researchCancelRefund` (50 % par défaut) du coût en trésorerie rendu.
+- Annulation : objets perdus, `researchCancelRefund` (50 % par défaut) du coût en trésorerie rendu ;
+  les points de recherche ne sont **jamais** rendus.
+
+## Points de recherche (J4)
+- Règle imposée par `tools/check_research.py` : `cost.points = 5 × (palier − 5)` à partir du
+  palier 6, `0` (champ absent) pour les paliers 1 à 5. Soit 5, 10, 15… points : 40 paliers payants,
+  **1 035 points** pour l'arbre complet (civil 275, militaire 330, ressources 275, industrie 140,
+  technologie 15).
+- Seule source : les contrats nationaux (`data/sovereignfrontier/contracts/`, environ 3 à 20 points
+  par contrat réussi), versés à la nation. L'arbre complet demande 3 à 5 semaines à une nation active.
+- Les paliers déjà terminés avant le J4 ne sont pas facturés rétroactivement.
 
 ## Bonus passifs (`"type": "bonus"`) — effet immédiat
 | stat | effet |
@@ -33,7 +44,7 @@ La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unl
 
 | clé | effet | jalon |
 |---|---|---|
-| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national | J4 |
+| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national (reporté : le déblocage reste sans effet) | après J4 |
 | `diplomacy.embassy` | ambassades et traités | J7 |
 | `tools.reinforced`, `tools.precision` | outils de minage avancés (Station d'ingénierie) | J3 |
 | `drill.survey`, `drill.mechanical`, `drill.gas`, `drill.deep` | prospection et foreuses | J3 |

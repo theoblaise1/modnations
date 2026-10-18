@@ -3,6 +3,7 @@
   "tier": 10,
   "cost": {
     "treasury": 6300,
+    "points": 25,
     "items": [
       {
         "item": "sovereignfrontier:coffre_national",

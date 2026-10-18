@@ -3,6 +3,7 @@
   "tier": 15,
   "cost": {
     "treasury": 12000,
+    "points": 50,
     "items": [
       {
         "item": "minecraft:gold_block",

@@ -1,0 +1,7 @@
+{
+  "kind": "explore",
+  "weight": 5,
+  "duration_hours": 72,
+  "objective": {"outposts": {"min": 2, "max": 3}},
+  "reward": {"money": 100, "money_per_unit": 120, "points": 0, "points_per_unit": 4, "keys": [{"crate": "commune", "count": 1, "chance": 1.0}]}
+}

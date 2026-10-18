@@ -1,0 +1,8 @@
+{
+  "kind": "kill",
+  "weight": 3,
+  "requires": ["sovereignfrontier:militaire_5"],
+  "duration_hours": 72,
+  "objective": {"entity": "minecraft:blaze", "amount": {"min": 6, "max": 12, "step": 2}},
+  "reward": {"money": 250, "money_per_unit": 25, "points": 8, "points_per_unit": 0.5, "keys": [{"crate": "militaire", "count": 1, "chance": 1.0}], "items": [{"item": "minecraft:experience_bottle", "count": 8}]}
+}

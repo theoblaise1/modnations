@@ -3,6 +3,7 @@
   "tier": 9,
   "cost": {
     "treasury": 8100,
+    "points": 20,
     "items": [
       {
         "item": "minecraft:gunpowder",

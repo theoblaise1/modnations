@@ -3,6 +3,7 @@
   "tier": 7,
   "cost": {
     "treasury": 3700,
+    "points": 10,
     "items": [
       {
         "item": "minecraft:glass",

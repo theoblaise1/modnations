@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 6,
+  "requires": ["sovereignfrontier:industrie_2"],
+  "duration_hours": 48,
+  "objective": {"item": "minecraft:redstone", "amount": {"min": 64, "max": 128, "step": 16}},
+  "reward": {"money": 120, "money_per_unit": 0.8, "points": 5, "points_per_unit": 0.06}
+}

@@ -1,0 +1,7 @@
+{
+  "kind": "deliver",
+  "weight": 8,
+  "duration_hours": 24,
+  "objective": {"item": "minecraft:bread", "amount": {"min": 32, "max": 64, "step": 8}},
+  "reward": {"money": 60, "money_per_unit": 1.2, "points": 2, "points_per_unit": 0.05, "keys": [{"crate": "commune", "count": 1, "chance": 0.3}]}
+}

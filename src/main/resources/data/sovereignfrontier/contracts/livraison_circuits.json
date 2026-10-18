@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 5,
+  "requires": ["sovereignfrontier:technologie_1"],
+  "duration_hours": 72,
+  "objective": {"item": "sovereignfrontier:circuit", "amount": {"min": 4, "max": 12, "step": 2}},
+  "reward": {"money": 300, "money_per_unit": 40, "points": 10, "points_per_unit": 0.8, "keys": [{"crate": "industrielle", "count": 1, "chance": 1.0}]}
+}

@@ -3,6 +3,7 @@
   "tier": 7,
   "cost": {
     "treasury": 14800,
+    "points": 10,
     "items": [
       {
         "item": "minecraft:netherite_ingot",
