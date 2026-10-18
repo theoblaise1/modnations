@@ -34,6 +34,9 @@ Coche chaque ligne ; note le message exact si un résultat diffère.
 - [ ] D3. Bateau ou œuf d'apparition posé sur l'eau visée depuis la rive du voisin : refus.
 - [ ] D4. Plaque de pression en territoire voisin : un joueur sans droit ne l'active pas (la porte ou le piston commandé
   ne bouge pas) ; un membre de la nation, si. Œuf de tortue : un non-membre ne le piétine pas.
+- [ ] D6. Double coffre déjà à cheval sur la frontière (moitié hors territoire) : un entonnoir posé sous cette moitié
+  ne récupère que les objets de sa moitié ; la moitié du territoire reste accessible à la nation.
+- [ ] D7. Poisson d'argent à 4 blocs d'un territoire voisin, frappé : aucun bloc infesté du territoire n'est cassé ni converti.
 - [ ] D5. Épée à pleine charge sur un zombie posé à côté d'une vache ou d'un villageois en territoire voisin :
   la vache et le villageois ne sont pas touchés ; le zombie, lui, peut l'être.
 

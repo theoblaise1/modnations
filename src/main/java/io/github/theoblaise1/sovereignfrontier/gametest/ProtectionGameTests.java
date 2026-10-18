@@ -11,8 +11,14 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.GoalSelector;
+import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -28,6 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.piston.PistonBaseBlock;
 import net.minecraft.world.level.block.piston.PistonHeadBlock;
@@ -44,6 +51,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 /**
@@ -289,6 +297,90 @@ public final class ProtectionGameTests {
             helper.assertTrue(rightClick(intruder, left).isCanceled(), "moitié hors territoire d'un double coffre ouverte");
             helper.assertFalse(rightClick(intruder, wild).isCanceled(), "témoin : double coffre hors territoire ouvert");
         });
+    }
+
+    /** Un entonnoir sous la moitié hors territoire d'un double coffre ne voit que cette moitié. */
+    @GameTest(template = AREA, batch = "sf_protection_entonnoir")
+    public static void hopperSeesOnlyItsOwnChestHalf(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestEntonnoir");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 6, border + 2, y - 1, z);
+        finish(helper, () -> {
+            BlockState single = Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH);
+            // Double coffre déjà à cheval : moitié gauche hors territoire, droite dans le territoire.
+            BlockPos wildLeft = new BlockPos(border - 1, y, z + 3);
+            level.setBlock(wildLeft, single.setValue(ChestBlock.TYPE, ChestType.LEFT), 3);
+            level.setBlock(wildLeft.east(), single.setValue(ChestBlock.TYPE, ChestType.RIGHT), 3);
+            helper.assertTrue(level.getBlockEntity(wildLeft) instanceof ChestBlockEntity, "témoin : coffre sans entité");
+            BlockState wildState = level.getBlockState(wildLeft);
+            Container seenFromWild = ChestBlock.getContainer((ChestBlock) wildState.getBlock(), wildState, level, wildLeft, false);
+            helper.assertTrue(seenFromWild == level.getBlockEntity(wildLeft),
+                    "entonnoir hors territoire : voit l'autre moitié du coffre");
+
+            // Témoin : double coffre entièrement dans le territoire, il garde son double inventaire.
+            BlockPos inLeft = new BlockPos(border + 2, y, z + 3);
+            level.setBlock(inLeft, single.setValue(ChestBlock.TYPE, ChestType.LEFT), 3);
+            level.setBlock(inLeft.east(), single.setValue(ChestBlock.TYPE, ChestType.RIGHT), 3);
+            BlockState inState = level.getBlockState(inLeft);
+            Container seenInside = ChestBlock.getContainer((ChestBlock) inState.getBlock(), inState, level, inLeft, false);
+            helper.assertTrue(seenInside != null && seenInside != level.getBlockEntity(inLeft),
+                    "témoin : double coffre du territoire non réduit à une moitié");
+        });
+    }
+
+    /** Un poisson d'argent à 4 blocs du territoire ne réveille pas ses congénères (zone de 10 blocs). */
+    @GameTest(template = AREA, batch = "sf_protection_poisson")
+    public static void silverfishDoesNotWakeNearTerritory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        int border = claimArea(helper, "TestPoisson");
+        int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
+        int z = lastZ;
+        floor(level, border - 8, border + 2, y - 1, z);
+        finish(helper, () -> {
+            Silverfish near = EntityType.SILVERFISH.create(level);
+            helper.assertTrue(near != null, "poisson d'argent non créé");
+            near.moveTo(border - 4.5D, y, z + 0.5D);
+            Goal nearWake = wakeUpFriendsGoal(near);
+            notifyHurt(nearWake);
+            helper.assertFalse(nearWake.canUse(), "poisson d'argent à 4 blocs du territoire : congénères réveillés");
+
+            // Témoin : le même réveil loin de tout territoire fonctionne.
+            Silverfish far = EntityType.SILVERFISH.create(level);
+            far.moveTo(border - 40.5D, y, z + 0.5D);
+            Goal farWake = wakeUpFriendsGoal(far);
+            notifyHurt(farWake);
+            helper.assertTrue(farWake.canUse(), "témoin : poisson d'argent loin du territoire");
+        });
+    }
+
+    /** Déclenche le réveil du goal comme le ferait un coup reçu (méthode {@code notifyHurt}, classe package-private). */
+    private static void notifyHurt(Goal goal) {
+        try {
+            java.lang.reflect.Method method = goal.getClass().getDeclaredMethod("notifyHurt");
+            method.setAccessible(true);
+            method.invoke(goal);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("réveil du goal impossible", e);
+        }
+    }
+
+    /** Le goal {@code SilverfishWakeUpFriendsGoal} est package-private et son sélecteur protégé : accès par réflexion. */
+    private static Goal wakeUpFriendsGoal(Mob mob) {
+        try {
+            Field field = Mob.class.getDeclaredField("goalSelector");
+            field.setAccessible(true);
+            GoalSelector selector = (GoalSelector) field.get(mob);
+            for (WrappedGoal wrapped : selector.getAvailableGoals()) {
+                if (wrapped.getGoal().getClass().getSimpleName().equals("SilverfishWakeUpFriendsGoal")) {
+                    return wrapped.getGoal();
+                }
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("accès au sélecteur de buts impossible", e);
+        }
+        throw new IllegalStateException("goal SilverfishWakeUpFriendsGoal absent");
     }
 
     /** Clic droit du joueur sur la face supérieure de {@code below}, objet {@code item} en main (pose d'un bloc). */
