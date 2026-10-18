@@ -1,0 +1,18 @@
+{
+  "rolls": 3,
+  "entries": [
+    {"item": "minecraft:bread", "count": [6, 12], "weight": 20},
+    {"item": "minecraft:cooked_beef", "count": [4, 8], "weight": 15},
+    {"item": "minecraft:oak_log", "count": [16, 32], "weight": 15},
+    {"item": "minecraft:cobblestone", "count": [32, 64], "weight": 10},
+    {"item": "minecraft:coal", "count": [8, 16], "weight": 15},
+    {"item": "minecraft:torch", "count": [16, 32], "weight": 10},
+    {"money": [50, 150], "weight": 15},
+    {"item": "minecraft:iron_ingot", "count": [3, 8], "weight": 10, "rarity": "peu_commun"},
+    {"item": "minecraft:copper_ingot", "count": [8, 16], "weight": 8, "rarity": "peu_commun"},
+    {"money": [200, 400], "weight": 6, "rarity": "peu_commun"},
+    {"id": "diamants", "item": "minecraft:diamond", "count": [1, 2], "weight": 2, "rarity": "rare"},
+    {"id": "cle_industrielle", "item": "sovereignfrontier:cle_industrielle", "count": 1, "weight": 1, "rarity": "rare"},
+    {"id": "pactole", "money": [500, 900], "weight": 2, "rarity": "rare"}
+  ]
+}

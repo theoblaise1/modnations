@@ -1,0 +1,9 @@
+{"days": [
+  {"money": 100, "keys": [{"one_of": ["commune"]}]},
+  {"money": 150, "keys": [{"one_of": ["commune"]}]},
+  {"money": 200, "keys": [{"one_of": ["commune"]}, {"one_of": ["commune"]}]},
+  {"money": 250, "keys": [{"one_of": ["commune"]}, {"one_of": ["industrielle", "militaire"]}]},
+  {"money": 300, "keys": [{"one_of": ["commune"]}, {"one_of": ["industrielle", "militaire"]}]},
+  {"money": 400, "keys": [{"one_of": ["commune"]}, {"one_of": ["industrielle", "militaire", "spatiale"]}]},
+  {"money": 500, "keys": [{"one_of": ["commune"]}, {"one_of": ["spatiale"]}]}
+]}

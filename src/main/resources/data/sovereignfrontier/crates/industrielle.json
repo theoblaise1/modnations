@@ -1,0 +1,19 @@
+{
+  "rolls": 3,
+  "entries": [
+    {"item": "sovereignfrontier:cable_energie", "count": [8, 16], "weight": 14},
+    {"item": "sovereignfrontier:circuit", "count": [1, 3], "weight": 6, "rarity": "peu_commun"},
+    {"item": "sovereignfrontier:bouteille_gaz", "count": [2, 4], "weight": 12},
+    {"item": "sovereignfrontier:bouteille_gaz_pleine", "count": [1, 2], "weight": 8},
+    {"item": "minecraft:coal_block", "count": [2, 6], "weight": 12},
+    {"item": "minecraft:redstone", "count": [16, 32], "weight": 12},
+    {"item": "minecraft:copper_ingot", "count": [8, 16], "weight": 12},
+    {"item": "minecraft:iron_ingot", "count": [4, 8], "weight": 10},
+    {"item": "minecraft:piston", "count": [1, 2], "weight": 8},
+    {"item": "minecraft:hopper", "count": 1, "weight": 5, "rarity": "peu_commun"},
+    {"money": [150, 300], "weight": 12},
+    {"id": "combustible", "item": "sovereignfrontier:combustible_enrichi", "count": [1, 2], "weight": 2, "rarity": "rare"},
+    {"id": "circuits", "item": "sovereignfrontier:circuit", "count": [6, 10], "weight": 1, "rarity": "rare"},
+    {"id": "pactole", "money": [800, 1200], "weight": 2, "rarity": "rare"}
+  ]
+}
