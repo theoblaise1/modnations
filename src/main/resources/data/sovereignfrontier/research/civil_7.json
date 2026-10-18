@@ -3,6 +3,7 @@
   "tier": 7,
   "cost": {
     "treasury": 4000,
+    "points": 10,
     "items": [
       {
         "item": "minecraft:gold_ingot",

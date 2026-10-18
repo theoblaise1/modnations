@@ -3,6 +3,7 @@
   "tier": 11,
   "cost": {
     "treasury": 8750,
+    "points": 30,
     "items": [
       {
         "item": "minecraft:tnt",

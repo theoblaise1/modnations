@@ -3,6 +3,7 @@
   "tier": 8,
   "cost": {
     "treasury": 5450,
+    "points": 15,
     "items": [
       {
         "item": "minecraft:dispenser",

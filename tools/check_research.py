@@ -21,7 +21,8 @@ Contrôles (code de sortie 1 en cas d'erreur ; les avertissements ne font pas é
   6. objets : « minecraft:… » ou « sovereignfrontier:… » (enregistré dans registry/),
      quantité entière > 0, au plus 30 piles de 64 au total ;
   7. trésorerie : AVERTISSEMENT si l'écart au barème 200 × palier^1,5 (×1,2 militaire,
-     ×1,5 industrie, ×4 technologie) dépasse 25 % ;
+     ×1,5 industrie, ×4 technologie) dépasse 25 % ; points de recherche (J4) : exactement
+     « cost.points = 5 × (palier − 5) » à partir du palier 6, 0 (ou absent) en dessous ;
   8. traductions (en_us.json) : nom de chaque palier (identique au plan), description
      « .desc », nom « sovereignfrontier.unlock.<clé> » de chaque déblocage utilisé.
 
@@ -68,6 +69,11 @@ TREASURY_EXPONENT = 1.5
 TREASURY_FACTOR = {"militaire": 1.2, "industrie": 1.5, "technologie": 4.0}
 TREASURY_TOLERANCE = 0.25
 TREASURY_ROUNDING = 50
+
+# Points de recherche (J4, gagnés par les contrats) : 5 × (palier − 5) à partir du palier 6, 0 en dessous.
+POINTS_PER_TIER = 5
+POINTS_FREE_TIERS = 5
+POINTS_RULE = "5 × (palier − 5) à partir du palier 6, 0 en dessous"
 
 MAX_STACKS = 30          # somme des piles (ceil(count / 64)) d'un palier
 STACK_SIZE = 64
@@ -126,6 +132,11 @@ def round_to(x: float, step: int) -> int:
 
 def treasury_target(domain: str, tier: int) -> float:
     return TREASURY_BASE * tier ** TREASURY_EXPONENT * TREASURY_FACTOR.get(domain, 1.0)
+
+
+def expected_points(tier: int) -> int:
+    """Points de recherche exigés (J4) : 5 × (palier − 5) à partir du palier 6, 0 en dessous."""
+    return POINTS_PER_TIER * (tier - POINTS_FREE_TIERS) if tier > POINTS_FREE_TIERS else 0
 
 
 def plan_duration(tier: int) -> int:
@@ -634,9 +645,10 @@ def validate_file(path: Path, rel: str, ctx: Context, rep: Report
         v = cost["points"]
         if not is_int(v) or not 0 <= v <= LONG_MAX:
             err(f"cost.points doit être un entier ≥ 0 (lu : {show(v)})")
-        elif v > 0:
-            err(f"cost.points = {v} : les points de recherche ne s'obtiennent qu'avec les "
-                f"contrats (J4) ; le plan impose 0 au J2")
+        elif tier and v != expected_points(tier):
+            err(f"cost.points = {v} : {expected_points(tier)} attendu ({POINTS_RULE})")
+    elif tier and expected_points(tier):
+        err(f"cost.points absent : {expected_points(tier)} attendu ({POINTS_RULE})")
     if "items" in cost:
         items = _check_items(cost["items"], ctx, err)
     if not ITEM_TYPES[0] <= len(items) <= ITEM_TYPES[1]:
@@ -967,9 +979,11 @@ def _build_fixture(root: Path) -> None:
                  {"item": "minecraft:iron_ingot", "count": row.tier}]
         if tid == "civil_1":
             items.append({"item": f"{NAMESPACE}:registre_civil", "count": 1})
-        data: dict = {"domain": row.domain, "tier": row.tier,
-                      "cost": {"treasury": round_to(treasury_target(row.domain, row.tier), TREASURY_ROUNDING),
-                               "items": items}}
+        cost: dict = {"treasury": round_to(treasury_target(row.domain, row.tier), TREASURY_ROUNDING)}
+        if expected_points(row.tier):
+            cost["points"] = expected_points(row.tier)
+        cost["items"] = items
+        data: dict = {"domain": row.domain, "tier": row.tier, "cost": cost}
         if row.requires:
             data["requires"] = [f"{NAMESPACE}:{r}" for r in sorted(row.requires, key=natural_key)]
         if row.pop:
@@ -1095,8 +1109,14 @@ def _self_test() -> int:
          ["introuvable en survie"], [], True),
         ("trop de piles", _edit("civil_2", lambda d: d["cost"]["items"][0].update(count=64 * 30 + 1)),
          ["piles de 64 au total"], [], True),
-        ("points de recherche au J2", _edit("civil_2", lambda d: d["cost"].update(points=5)),
-         ["cost.points = 5"], [], True),
+        ("points de recherche sous le palier 6", _edit("civil_2", lambda d: d["cost"].update(points=5)),
+         ["cost.points = 5 : 0 attendu"], [], True),
+        ("points de recherche hors règle", _edit("civil_6", lambda d: d["cost"].update(points=4)),
+         ["cost.points = 4 : 5 attendu"], [], True),
+        ("points de recherche absents (palier ≥ 6)", _edit("militaire_16", lambda d: d["cost"].pop("points")),
+         ["cost.points absent : 55 attendu"], [], True),
+        ("points de recherche négatifs", _edit("industrie_12", lambda d: d["cost"].update(points=-35)),
+         ["cost.points doit être un entier ≥ 0"], [], True),
         ("JSON invalide", _raw("civil_2.json", '{ "domain": "civil", '), ["JSON invalide"], [], True),
         ("clé JSON en double", _raw("civil_2.json", '{"domain": "civil", "tier": 2, "tier": 2}'),
          ["« tier » en double"], [], True),

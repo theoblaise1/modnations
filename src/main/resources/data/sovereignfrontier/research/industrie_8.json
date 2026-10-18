@@ -3,6 +3,7 @@
   "tier": 8,
   "cost": {
     "treasury": 6800,
+    "points": 15,
     "items": [
       {
         "item": "minecraft:firework_rocket",

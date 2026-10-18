@@ -3,6 +3,7 @@
   "tier": 14,
   "cost": {
     "treasury": 12550,
+    "points": 45,
     "items": [
       {
         "item": "minecraft:ender_eye",
