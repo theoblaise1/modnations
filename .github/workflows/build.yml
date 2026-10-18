@@ -59,7 +59,14 @@ jobs:
           python tools/check_research.py --self-test
           python tools/check_research.py
 
-      # Toute clé de traduction utilisée dans le code doit exister dans le fichier de langue.
+      # Économie (J4) : tags d'interdiction (paliers 3/4, fusée finale, arme max), recettes sans objet
+      # restreint ni clé de caisse, contenu des marchands, caisses, /daily, contrats et entreprises.
+      - name: Vérification de l'économie
+        run: |
+          python tools/check_economy.py --self-test
+          python tools/check_economy.py
+
+      # Toute clé de traduction utilisée dans le code doit exister, et le fichier de langue reste trié.
       - name: Vérification des traductions
         run: python tools/check_lang.py
 
