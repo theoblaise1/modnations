@@ -228,6 +228,11 @@ public final class ResearchGameTests {
             nation.chest().addItem(new ItemStack(Items.IRON_INGOT, 32));
             helper.assertTrue(ResearchManager.blockers(nation, registry, tier).isEmpty(), "64 lingots suffisent");
         } finally {
+            // Coffre non vide = dissolution refusée : la nation resterait et bloquerait les fondations voisines.
+            Nation leftover = NationData.get(helper.getLevel().getServer()).nationOf(chef.getUUID());
+            if (leftover != null) {
+                leftover.chest().clearContent();
+            }
             NationManager.disband(chef);
         }
         helper.succeed();
