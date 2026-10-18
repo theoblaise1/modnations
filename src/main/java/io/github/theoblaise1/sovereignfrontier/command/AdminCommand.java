@@ -28,7 +28,7 @@ public final class AdminCommand {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("sfadmin")
+        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("sfadmin")
                 .requires(s -> s.hasPermission(2))
                 .then(Commands.literal("money")
                         .then(moneyOp("give", 1))
@@ -54,7 +54,10 @@ public final class AdminCommand {
                     boolean on = AdminBypass.toggle(ctx.getSource().getPlayerOrException());
                     ctx.getSource().sendSuccess(() -> Msg.warn(on ? "admin.bypass_on" : "admin.bypass_off"), true);
                     return 1;
-                })));
+                }));
+        RewardCommands.registerAdmin(root);
+        EnterpriseCommand.registerAdmin(root);
+        dispatcher.register(root);
     }
 
     /** {@code sign} : 1 = ajouter, -1 = retirer, 0 = fixer. */
