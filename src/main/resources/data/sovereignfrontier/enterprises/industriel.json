@@ -1,0 +1,40 @@
+{
+  "requires": [
+    "sovereignfrontier:industrie_1"
+  ],
+  "domain": "industrie",
+  "bonus_per_tier": 0.05,
+  "money_per_worker": 2,
+  "products": [
+    {
+      "item": "minecraft:glass",
+      "per_worker": 0.5
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "per_worker": 0.25
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "per_worker": 0.2
+    },
+    {
+      "item": "minecraft:redstone",
+      "per_worker": 0.1
+    },
+    {
+      "item": "minecraft:gold_ingot",
+      "per_worker": 0.03,
+      "requires": [
+        "sovereignfrontier:industrie_3"
+      ]
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "per_worker": 0.04,
+      "requires": [
+        "sovereignfrontier:technologie_1"
+      ]
+    }
+  ]
+}

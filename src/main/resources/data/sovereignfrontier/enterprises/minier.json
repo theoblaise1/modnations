@@ -1,0 +1,52 @@
+{
+  "requires": [],
+  "domain": "ressources",
+  "bonus_per_tier": 0.04,
+  "money_per_worker": 1,
+  "products": [
+    {
+      "item": "minecraft:cobblestone",
+      "per_worker": 2.0
+    },
+    {
+      "item": "minecraft:coal",
+      "per_worker": 0.4
+    },
+    {
+      "item": "minecraft:raw_copper",
+      "per_worker": 0.3
+    },
+    {
+      "item": "minecraft:raw_iron",
+      "per_worker": 0.2
+    },
+    {
+      "item": "minecraft:raw_gold",
+      "per_worker": 0.05,
+      "requires": [
+        "sovereignfrontier:ressources_3"
+      ]
+    },
+    {
+      "item": "minecraft:redstone",
+      "per_worker": 0.15,
+      "requires": [
+        "sovereignfrontier:ressources_5"
+      ]
+    },
+    {
+      "item": "minecraft:lapis_lazuli",
+      "per_worker": 0.1,
+      "requires": [
+        "sovereignfrontier:ressources_5"
+      ]
+    },
+    {
+      "item": "minecraft:diamond",
+      "per_worker": 0.005,
+      "requires": [
+        "sovereignfrontier:ressources_11"
+      ]
+    }
+  ]
+}

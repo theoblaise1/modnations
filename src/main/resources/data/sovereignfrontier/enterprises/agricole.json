@@ -1,0 +1,35 @@
+{
+  "requires": [],
+  "domain": "ressources",
+  "bonus_per_tier": 0.04,
+  "money_per_worker": 1,
+  "products": [
+    {
+      "item": "minecraft:wheat",
+      "per_worker": 1.0
+    },
+    {
+      "item": "minecraft:carrot",
+      "per_worker": 0.4
+    },
+    {
+      "item": "minecraft:potato",
+      "per_worker": 0.4
+    },
+    {
+      "item": "minecraft:beetroot",
+      "per_worker": 0.2
+    },
+    {
+      "item": "minecraft:bone_meal",
+      "per_worker": 0.3
+    },
+    {
+      "item": "minecraft:leather",
+      "per_worker": 0.1,
+      "requires": [
+        "sovereignfrontier:ressources_2"
+      ]
+    }
+  ]
+}
