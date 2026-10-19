@@ -7,9 +7,9 @@ structures sont générées par script, tous les noms sont originaux.
 
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
 > recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
-> réacteur, Station d'ingénierie) ; **J4 livré, à valider en jeu** (terminal bancaire, `/daily` et
-> caisses, avant-postes marchands, contrats, entreprises). Les jalons suivants attendent la
-> validation en jeu du précédent.
+> réacteur, Station d'ingénierie) ; **J4 livré et validé en jeu** (terminal bancaire, `/daily` et
+> caisses, avant-postes marchands, contrats, entreprises). **J5 conçu** (`docs/conception/J5.md`),
+> développement en attente. Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
 
@@ -41,7 +41,7 @@ structures sont générées par script, tous les noms sont originaux.
 | J1 | Nation multi-membres (syst. 1 + 7 hors guerre), trésorerie, territoire, population, écran national | ✅ livré |
 | J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré |
 | J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, validé en jeu |
-| J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré, à valider en jeu |
+| J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré et validé en jeu |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée (syst. 4) | — |
 | J6 | Donjons, boss, armement (syst. 6) | — |
 | J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
