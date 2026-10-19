@@ -44,16 +44,18 @@ La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unl
 
 | clé | effet | jalon |
 |---|---|---|
-| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national (reporté : le déblocage reste sans effet) | après J4 |
+| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national (reporté : le déblocage reste sans effet) | reporté |
 | `diplomacy.embassy` | ambassades et traités | J7 |
-| `tools.reinforced`, `tools.precision` | outils de minage avancés (Station d'ingénierie) | J3 |
-| `drill.survey`, `drill.mechanical`, `drill.gas`, `drill.deep` | prospection et foreuses | J3 |
-| `refinery` | raffinerie de carburant | J3 |
+| `tools.reinforced`, `tools.precision` | outils de minage avancés (Station d'ingénierie) | reporté |
+| `drill.gas` | foreuse à gaz | J3 |
+| `drill.survey`, `drill.mechanical`, `drill.deep` | prospection, foreuses mécanique et profonde | reporté |
+| `refinery` | raffinerie de carburant | J5 |
 | `mining.lunar`, `mining.martian`, `mining.cryogenic` | extraction sur Lune / Mars / planète glacée | J5 |
 | `station.machines` | onglet Machines de la Station d'ingénierie | J3 |
 | `energy.cables` | câbles d'énergie | J3 |
 | `generator.thermal`, `generator.solar` | générateurs thermique et solaire | J3 |
-| `machines.automation`, `machines.alloy` | machines d'automatisation et d'alliage | J3 |
+| `machines.automation` | machines d'automatisation | J3 |
+| `machines.alloy` | machines d'alliage | reporté |
 | `reactor.nuclear`, `reactor.enriched_fuel` | réacteur nucléaire 5×5×5, combustible enrichi | J3 |
 | `station.aerospace`, `rocket` | onglet Aérospatial, fusée | J5 |
 | `rocket.fuel`, `rocket.upgrade_module` | carburant de fusée, module pour la 3e destination | J5 |
