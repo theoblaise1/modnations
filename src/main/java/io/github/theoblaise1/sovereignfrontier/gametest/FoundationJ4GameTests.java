@@ -119,10 +119,14 @@ public final class FoundationJ4GameTests {
         for (TagKey<Item> tag : List.of(RestrictedItems.OFF_ECONOMY, RestrictedItems.BANNED_FROM_LOOT)) {
             helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) > 0, "tag #" + tag.location() + " chargé");
         }
-        for (TagKey<Item> tag : List.of(RestrictedItems.RESTRICTED, RestrictedItems.TIER_3, RestrictedItems.TIER_4,
-                RestrictedItems.FINAL_ROCKET, RestrictedItems.MAX_WEAPON)) {
+        // J5 : le Module cryogénique remplit #restreint/fusee_finale (donc #restreint) ; les autres sous-tags restent vides.
+        for (TagKey<Item> tag : List.of(RestrictedItems.RESTRICTED, RestrictedItems.FINAL_ROCKET)) {
+            helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) > 0,
+                    "#" + tag.location() + " non vide depuis le J5");
+        }
+        for (TagKey<Item> tag : List.of(RestrictedItems.TIER_3, RestrictedItems.TIER_4, RestrictedItems.MAX_WEAPON)) {
             helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) == 0,
-                    "#" + tag.location() + " vide au J4");
+                    "#" + tag.location() + " vide au J5");
         }
         helper.assertTrue(RestrictedItems.auditRecipes(helper.getLevel().getServer()).isEmpty(),
                 "aucune recette chargée ne produit d'objet restreint");

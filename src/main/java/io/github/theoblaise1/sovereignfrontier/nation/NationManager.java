@@ -7,6 +7,7 @@ import io.github.theoblaise1.sovereignfrontier.network.EconomyNetwork;
 import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.outpost.OutpostRules;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
+import io.github.theoblaise1.sovereignfrontier.space.SpaceRules;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
@@ -164,6 +165,10 @@ public final class NationManager {
         Component outpost = OutpostRules.claimBlockReason(server, dimension, capital);
         if (outpost != null) {
             return ActionResult.fail(outpost);
+        }
+        Component space = SpaceRules.foundBlockReason(dimension);
+        if (space != null) {
+            return ActionResult.fail(space);
         }
         long cost = SFConfig.NATION_CREATION_COST.get();
         EconomyData eco = EconomyData.get(server);
@@ -445,6 +450,10 @@ public final class NationManager {
         Component outpost = OutpostRules.claimBlockReason(server, dimension, chunk);
         if (outpost != null) {
             return ActionResult.fail(outpost);
+        }
+        Component space = SpaceRules.claimBlockReason(nation, dimension);
+        if (space != null) {
+            return ActionResult.fail(space);
         }
         if (SFConfig.CLAIM_REQUIRE_CONTIGUOUS.get() && nation.hasClaimsIn(dimension) && !touchesOwn(data, nation, dimension, chunk)) {
             return ActionResult.fail(Msg.err("claim.error.not_contiguous"));

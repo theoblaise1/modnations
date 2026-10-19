@@ -23,6 +23,9 @@ public final class ResearchRegistry {
     private final Map<ResourceLocation, ResearchTier> byId = new LinkedHashMap<>();
     private final EnumMap<ResearchDomain, List<ResearchTier>> byDomain = new EnumMap<>(ResearchDomain.class);
     private final int generation;
+    /** Calculé à la première demande (registre immuable). */
+    @Nullable
+    private volatile Map<String, ResourceLocation> unlockSources;
 
     public ResearchRegistry(Collection<ResearchTier> tiers, int generation) {
         this.generation = generation;
@@ -75,6 +78,32 @@ public final class ResearchRegistry {
             }
         }
         return null;
+    }
+
+    /**
+     * Premier palier (dans l'ordre du registre) qui accorde chaque clé de déblocage. Sert à vérifier qu'une clé citée
+     * par le contenu (planètes du J5) existe.
+     */
+    public Map<String, ResourceLocation> unlockSources() {
+        Map<String, ResourceLocation> sources = unlockSources;
+        if (sources == null) {
+            sources = new LinkedHashMap<>();
+            for (ResearchTier t : byId.values()) {
+                for (ResearchReward reward : t.definition().rewards()) {
+                    if (reward.type() == ResearchReward.Type.UNLOCK) {
+                        sources.putIfAbsent(reward.key(), t.id());
+                    }
+                }
+            }
+            sources = Collections.unmodifiableMap(sources);
+            unlockSources = sources;
+        }
+        return sources;
+    }
+
+    /** Vrai si au moins un palier du registre accorde la clé {@code key}. */
+    public boolean knowsUnlock(String key) {
+        return unlockSources().containsKey(key);
     }
 
     /** Prérequis complets : palier précédent du domaine + {@code requires}. */

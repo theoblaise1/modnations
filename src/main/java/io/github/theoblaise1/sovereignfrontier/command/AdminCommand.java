@@ -59,6 +59,9 @@ public final class AdminCommand {
         RewardCommands.registerAdmin(root);
         EnterpriseCommand.registerAdmin(root);
         ContractCommand.registerAdmin(root);
+        SpaceCommand.registerAdmin(root);
+        RocketCommand.registerAdmin(root);
+        EnvironmentCommand.registerAdmin(root);
         dispatcher.register(root);
     }
 

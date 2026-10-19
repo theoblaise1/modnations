@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -40,6 +41,12 @@ public final class NationResearch {
     /** Cache des bonus, recalculé quand la génération du registre ou les paliers terminés changent. */
     private int bonusGeneration = -1;
     private double[] bonusCache = new double[ResearchStat.values().length];
+    /**
+     * Cache des déblocages (J5 : lus par les machines, objets et vols, parfois toutes les 20 ticks), invalidé comme
+     * celui des bonus.
+     */
+    private int unlockGeneration = -1;
+    private Set<String> unlockCache = Set.of();
 
     public Set<ResourceLocation> completed() {
         return Collections.unmodifiableSet(completed);
@@ -65,12 +72,14 @@ public final class NationResearch {
     public void complete(ResourceLocation id) {
         completed.add(id);
         bonusGeneration = -1;
+        unlockGeneration = -1;
     }
 
     public boolean revoke(ResourceLocation id) {
         boolean removed = completed.remove(id);
         if (removed) {
             bonusGeneration = -1;
+            unlockGeneration = -1;
         }
         return removed;
     }
@@ -101,19 +110,29 @@ public final class NationResearch {
 
     /** Vrai si un palier terminé accorde le déblocage {@code key}. */
     public boolean hasUnlock(String key) {
+        return unlocks().contains(key);
+    }
+
+    /** Clés de déblocage accordées par les paliers terminés connus du registre courant (lecture seule). */
+    public Set<String> unlocks() {
         ResearchRegistry registry = ResearchRegistry.server();
-        for (ResourceLocation id : completed) {
-            ResearchTier tier = registry.get(id);
-            if (tier == null) {
-                continue;
-            }
-            for (ResearchReward reward : tier.definition().rewards()) {
-                if (reward.type() == ResearchReward.Type.UNLOCK && reward.key().equals(key)) {
-                    return true;
+        if (unlockGeneration != registry.generation()) {
+            Set<String> keys = new HashSet<>();
+            for (ResourceLocation id : completed) {
+                ResearchTier tier = registry.get(id);
+                if (tier == null) {
+                    continue;
+                }
+                for (ResearchReward reward : tier.definition().rewards()) {
+                    if (reward.type() == ResearchReward.Type.UNLOCK) {
+                        keys.add(reward.key());
+                    }
                 }
             }
+            unlockCache = Collections.unmodifiableSet(keys);
+            unlockGeneration = registry.generation();
         }
-        return false;
+        return unlockCache;
     }
 
     public CompoundTag save() {

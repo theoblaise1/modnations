@@ -2,6 +2,7 @@ package io.github.theoblaise1.sovereignfrontier;
 
 import io.github.theoblaise1.sovereignfrontier.network.ModPayloads;
 import io.github.theoblaise1.sovereignfrontier.outpost.MerchantEntity;
+import io.github.theoblaise1.sovereignfrontier.registry.ModArmorMaterials;
 import io.github.theoblaise1.sovereignfrontier.registry.ModAttachments;
 import io.github.theoblaise1.sovereignfrontier.registry.ModBlockEntities;
 import io.github.theoblaise1.sovereignfrontier.registry.ModEntityTypes;
@@ -25,6 +26,7 @@ public final class SovereignFrontier {
     public static final String MODID = "sovereignfrontier";
 
     public SovereignFrontier(IEventBus modBus, ModContainer container) {
+        ModArmorMaterials.ARMOR_MATERIALS.register(modBus);
         ModBlocks.BLOCKS.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModCreativeTabs.TABS.register(modBus);

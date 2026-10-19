@@ -68,6 +68,7 @@ public final class Nation {
     private NationResearch research = new NationResearch();
     private NationContracts contracts = new NationContracts();
     private NationEnterprises enterprises = new NationEnterprises();
+    private NationSpace space = new NationSpace();
     private Runnable dirtyCallback = () -> {
     };
 
@@ -317,6 +318,11 @@ public final class Nation {
         return enterprises;
     }
 
+    /** Programme spatial : premiers atterrissages et vols (J5). Appeler {@link #markDirty()} après mutation. */
+    public NationSpace space() {
+        return space;
+    }
+
     public int buildingCount(BuildingType type) {
         int n = 0;
         for (BuildingType t : buildings.values()) {
@@ -334,6 +340,14 @@ public final class Nation {
     void addBuilding(GlobalPos pos, BuildingType type) {
         buildings.put(pos, type);
         markDirty();
+    }
+
+    /**
+     * Trésors et coffres nationaux enregistrés, dans l'ordre de pose (lecture seule). Une position peut être périmée
+     * (bloc détruit hors événement) : elle n'est retirée qu'à la vérification de son chunk.
+     */
+    public Set<GlobalPos> cores() {
+        return Collections.unmodifiableSet(cores);
     }
 
     /** Trésor ou coffre national posé sur le territoire de la nation. */
@@ -496,6 +510,7 @@ public final class Nation {
         tag.put("research", research.save());
         tag.put("contracts", contracts.save());
         tag.put("enterprises", enterprises.save());
+        tag.put("space", space.save());
         return tag;
     }
 
@@ -580,6 +595,7 @@ public final class Nation {
         n.research = NationResearch.load(tag.getCompound("research"));
         n.contracts = NationContracts.load(tag.getCompound("contracts"));
         n.enterprises = NationEnterprises.load(tag.getCompound("enterprises"));
+        n.space = NationSpace.load(tag.getCompound("space"));
         return n;
     }
 

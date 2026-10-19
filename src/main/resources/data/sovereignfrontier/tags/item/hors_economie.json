@@ -39,6 +39,13 @@
     "sovereignfrontier:controleur_reacteur",
     "sovereignfrontier:caisson_reacteur",
     "sovereignfrontier:cellule_combustible",
-    "sovereignfrontier:dissipateur_thermique"
+    "sovereignfrontier:dissipateur_thermique",
+    "sovereignfrontier:fusee",
+    "sovereignfrontier:raffinerie",
+    "sovereignfrontier:diffuseur_oxygene",
+    "sovereignfrontier:chaudiere_gaz",
+    "sovereignfrontier:rechauffeur_nucleaire",
+    "sovereignfrontier:propulseur_avance",
+    "sovereignfrontier:plastron_chauffant"
   ]
 }

@@ -98,6 +98,36 @@ public final class SFConfig {
     public static final ModConfigSpec.IntValue CONTRACT_EXPLORE_CHECK_TICKS;
     public static final ModConfigSpec.IntValue CONTRACT_HISTORY_SIZE;
 
+    // Espace (J5) : fusée, raffinerie, oxygène, froid. Les valeurs propres à chaque planète (coûts de vol, rayon,
+    // gaz, solaire, environnement) sont du contenu : data/<ns>/planets/*.json.
+    public static final ModConfigSpec.IntValue ROCKET_COUNTDOWN_TICKS;
+    public static final ModConfigSpec.IntValue ROCKET_CREW_MAX;
+    public static final ModConfigSpec.IntValue ROCKET_BOARD_RADIUS;
+    public static final ModConfigSpec.IntValue ROCKET_PILOT_LEASH;
+    public static final ModConfigSpec.IntValue ROCKET_COOLDOWN_SECONDS;
+    public static final ModConfigSpec.IntValue ROCKET_LANDING_SEARCH_CHUNKS;
+    public static final ModConfigSpec.DoubleValue ROCKET_PROPULSOR_FACTOR;
+    public static final ModConfigSpec.IntValue REFINERY_ENERGY_PER_TICK;
+    public static final ModConfigSpec.IntValue REFINERY_CYCLE_TICKS;
+    public static final ModConfigSpec.IntValue OXYGEN_BOTTLE_SECONDS;
+    public static final ModConfigSpec.DoubleValue OXYGEN_DAMAGE;
+    public static final ModConfigSpec.IntValue OXYGEN_WARN_SECONDS;
+    public static final ModConfigSpec.IntValue SPACE_GRACE_SECONDS;
+    public static final ModConfigSpec.IntValue SPACE_LOGIN_GRACE_COOLDOWN_MINUTES;
+    public static final ModConfigSpec.IntValue DIFFUSER_ENERGY_PER_TICK;
+    public static final ModConfigSpec.IntValue DIFFUSER_RADIUS_CHUNKS;
+    public static final ModConfigSpec.IntValue DIFFUSER_HALF_HEIGHT;
+    public static final ModConfigSpec.IntValue COLD_THRESHOLD_SECONDS;
+    public static final ModConfigSpec.DoubleValue COLD_DAMAGE;
+    public static final ModConfigSpec.IntValue COLD_DAMAGE_INTERVAL_SECONDS;
+    public static final ModConfigSpec.IntValue BOILER_RADIUS;
+    public static final ModConfigSpec.IntValue BOILER_BOTTLE_TICKS;
+    public static final ModConfigSpec.IntValue BOILER_HALF_HEIGHT;
+    public static final ModConfigSpec.IntValue NUCLEAR_HEATER_RADIUS;
+    public static final ModConfigSpec.IntValue NUCLEAR_HEATER_FUEL_TICKS;
+    public static final ModConfigSpec.IntValue NUCLEAR_HEATER_HALF_HEIGHT;
+    public static final ModConfigSpec.IntValue HEATED_CHESTPLATE_BOTTLE_SECONDS;
+
     /** Barème par défaut du terminal (cr par heure active ; la dernière valeur se répète). */
     private static final List<Double> DEFAULT_TERMINAL_RATES = List.of(240.0D, 180.0D, 135.0D, 100.0D, 75.0D, 55.0D, 40.0D,
             30.0D, 20.0D);
@@ -263,6 +293,63 @@ public final class SFConfig {
                 .defineInRange("contractExploreCheckTicks", 40, 10, 1200);
         CONTRACT_HISTORY_SIZE = b.comment("Nombre de contrats terminés conservés dans l'historique de chaque nation.")
                 .defineInRange("contractHistorySize", 10, 0, 50);
+        b.pop();
+
+        b.push("space");
+        ROCKET_COUNTDOWN_TICKS = b.comment("Durée du compte à rebours avant le décollage d'une fusée (ticks).")
+                .defineInRange("rocketCountdownTicks", 200, 60, 1200);
+        ROCKET_CREW_MAX = b.comment("Nombre maximal de personnes à bord d'une fusée, pilote compris.")
+                .defineInRange("rocketCrewMax", 4, 1, 10);
+        ROCKET_BOARD_RADIUS = b.comment("Distance maximale (blocs) à la fusée pour embarquer pendant le compte à rebours.")
+                .defineInRange("rocketBoardRadius", 4, 2, 16);
+        ROCKET_PILOT_LEASH = b.comment("Distance (blocs) au-delà de laquelle un membre d'équipage est débarqué ; le vol est annulé si c'est le pilote.")
+                .defineInRange("rocketPilotLeash", 6, 3, 32);
+        ROCKET_COOLDOWN_SECONDS = b.comment("Délai entre deux vols d'un même joueur (secondes réelles, horodatage persistant).")
+                .defineInRange("rocketCooldownSeconds", 60, 0, 86400);
+        ROCKET_LANDING_SEARCH_CHUNKS = b.comment("Rayon (chunks) de la recherche d'un site d'atterrissage hors du territoire des autres nations.")
+                .defineInRange("rocketLandingSearchChunks", 4, 0, 8);
+        ROCKET_PROPULSOR_FACTOR = b.comment("Facteur appliqué au carburant d'un vol avec un Propulseur avancé (arrondi à l'inférieur, au moins 1).")
+                .defineInRange("rocketPropulsorFactor", 0.75D, 0.1D, 1.0D);
+        REFINERY_ENERGY_PER_TICK = b.comment("Consommation de la Raffinerie pendant un cycle (En/tick).")
+                .defineInRange("refineryEnergyPerTick", 200, 1, 100000);
+        REFINERY_CYCLE_TICKS = b.comment("Durée d'un cycle de la Raffinerie : 1 carburant de fusée (ticks).")
+                .defineInRange("refineryCycleTicks", 200, 20, 72000);
+        OXYGEN_BOTTLE_SECONDS = b.comment("Autonomie d'une bouteille d'oxygène hors d'une zone oxygénée (secondes).")
+                .defineInRange("oxygenBottleSeconds", 120, 10, 3600);
+        OXYGEN_DAMAGE = b.comment("Dégâts d'asphyxie par seconde sans oxygène (ignorent l'armure).")
+                .defineInRange("oxygenDamage", 2.0D, 0.0D, 40.0D);
+        OXYGEN_WARN_SECONDS = b.comment("Avertissement quand la réserve d'oxygène descend à ce nombre de secondes.")
+                .defineInRange("oxygenWarnSeconds", 20, 0, 600);
+        SPACE_GRACE_SECONDS = b.comment("Acclimatation (secondes sans consommer d'oxygène ni prendre froid) après une arrivée en fusée ou une connexion.")
+                .defineInRange("spaceGraceSeconds", 10, 0, 120);
+        SPACE_LOGIN_GRACE_COOLDOWN_MINUTES = b.comment("Délai minimal (minutes réelles) entre deux acclimatations accordées à la connexion.")
+                .defineInRange("spaceLoginGraceCooldownMinutes", 5, 0, 1440);
+        DIFFUSER_ENERGY_PER_TICK = b.comment("Consommation du Diffuseur d'oxygène (En/tick).")
+                .defineInRange("diffuserEnergyPerTick", 20, 0, 100000);
+        DIFFUSER_RADIUS_CHUNKS = b.comment("Rayon (chunks) de la zone oxygénée autour du diffuseur, limitée aux chunks de sa nation (1 = 3×3).")
+                .defineInRange("diffuserRadiusChunks", 1, 0, 2);
+        DIFFUSER_HALF_HEIGHT = b.comment("Demi-hauteur (blocs) de la zone oxygénée au-dessus et au-dessous du diffuseur.")
+                .defineInRange("diffuserHalfHeight", 32, 4, 128);
+        COLD_THRESHOLD_SECONDS = b.comment("Secondes d'exposition au froid avant les premiers dégâts de gel.")
+                .defineInRange("coldThresholdSeconds", 30, 1, 600);
+        COLD_DAMAGE = b.comment("Dégâts de gel (ignorent l'armure) au-delà du seuil.")
+                .defineInRange("coldDamage", 1.0D, 0.0D, 40.0D);
+        COLD_DAMAGE_INTERVAL_SECONDS = b.comment("Intervalle (secondes) entre deux dégâts de gel.")
+                .defineInRange("coldDamageIntervalSeconds", 2, 1, 60);
+        BOILER_RADIUS = b.comment("Rayon horizontal (blocs) de la zone de chaleur d'une Chaudière à gaz.")
+                .defineInRange("boilerRadius", 50, 8, 128);
+        BOILER_BOTTLE_TICKS = b.comment("Durée de combustion d'une bouteille de gaz pleine dans la Chaudière (ticks).")
+                .defineInRange("boilerBottleTicks", 2400, 200, 72000);
+        BOILER_HALF_HEIGHT = b.comment("Demi-hauteur (blocs) de la zone de chaleur d'une Chaudière à gaz.")
+                .defineInRange("boilerHalfHeight", 32, 4, 128);
+        NUCLEAR_HEATER_RADIUS = b.comment("Rayon horizontal (blocs) de la zone de chaleur d'un Réchauffeur nucléaire.")
+                .defineInRange("nuclearHeaterRadius", 200, 16, 256);
+        NUCLEAR_HEATER_FUEL_TICKS = b.comment("Durée d'un combustible enrichi dans le Réchauffeur nucléaire (ticks).")
+                .defineInRange("nuclearHeaterFuelTicks", 12000, 200, 720000);
+        NUCLEAR_HEATER_HALF_HEIGHT = b.comment("Demi-hauteur (blocs) de la zone de chaleur d'un Réchauffeur nucléaire.")
+                .defineInRange("nuclearHeaterHalfHeight", 96, 4, 128);
+        HEATED_CHESTPLATE_BOTTLE_SECONDS = b.comment("Secondes d'exposition au froid couvertes par une bouteille de gaz pleine dans le Plastron chauffant.")
+                .defineInRange("heatedChestplateBottleSeconds", 300, 10, 3600);
         b.pop();
 
         SPEC = b.build();

@@ -25,7 +25,8 @@ import java.util.List;
  *   <li>{@link #RESTRICTED} ({@code #sovereignfrontier:restreint}) : objets de palier 3/4, composants finaux de
  *       fusée, armes militaires maximales. Jamais dans un craft (vanilla ou ingénierie), une caisse, une vente de
  *       marchand, un produit d'entreprise ni {@code /daily} ; seules les récompenses de contrat (et, au J6, le
- *       butin de donjon) peuvent en contenir ;</li>
+ *       butin de donjon) peuvent en contenir. Au J5, seul {@link #FINAL_ROCKET} est permis dans un contrat
+ *       ({@link #isBannedFromContracts}) ;</li>
  *   <li>{@link #BANNED_FROM_LOOT} ({@code #sovereignfrontier:interdit_caisses} = restreint + hors_economie) :
  *       interdit dans les caisses, les ventes des marchands, les produits d'entreprise et {@code /daily}.</li>
  * </ul>
@@ -79,6 +80,35 @@ public final class RestrictedItems {
         }
         LOGGER.error("[Économie] Objet interdit {} non remis ({}) : il appartient à #{}",
                 BuiltInRegistries.ITEM.getKey(stack.getItem()), source, BANNED_FROM_LOOT.location());
+        return false;
+    }
+
+    /**
+     * Objet interdit dans une récompense de contrat : {@code #interdit_caisses} <b>sauf</b>
+     * {@code #restreint/fusee_finale} (J5, décision validée : le Module cryogénique ne s'obtient que par le contrat de
+     * mission). C'est la seule exemption : {@code palier_3}, {@code palier_4} et {@code arme_max} restent interdits.
+     */
+    public static boolean isBannedFromContracts(ItemLike item) {
+        var holder = BuiltInRegistries.ITEM.wrapAsHolder(item.asItem());
+        return holder.is(BANNED_FROM_LOOT) && !holder.is(FINAL_ROCKET);
+    }
+
+    public static boolean isBannedFromContracts(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(BANNED_FROM_LOOT) && !stack.is(FINAL_ROCKET);
+    }
+
+    /**
+     * Garde d'exécution avant de remettre la récompense d'un contrat : faux (et une ERREUR au journal) si l'objet est
+     * interdit dans les contrats ({@link #isBannedFromContracts}) ; l'appelant ne le remet pas.
+     *
+     * @param source description du contrat pour le journal (« contrat sovereignfrontier:mission_module_cryogenique »)
+     */
+    public static boolean allowInContractReward(ItemStack stack, String source) {
+        if (!isBannedFromContracts(stack)) {
+            return true;
+        }
+        LOGGER.error("[Économie] Objet interdit {} non remis ({}) : il appartient à #{} (seul #{} est permis dans un contrat)",
+                BuiltInRegistries.ITEM.getKey(stack.getItem()), source, BANNED_FROM_LOOT.location(), FINAL_ROCKET.location());
         return false;
     }
 

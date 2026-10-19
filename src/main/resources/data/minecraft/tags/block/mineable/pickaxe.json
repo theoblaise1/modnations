@@ -14,6 +14,14 @@
     "sovereignfrontier:dissipateur_thermique",
     "sovereignfrontier:station_ingenierie",
     "sovereignfrontier:cable_energie",
-    "sovereignfrontier:terminal_bancaire"
+    "sovereignfrontier:terminal_bancaire",
+    "sovereignfrontier:fusee",
+    "sovereignfrontier:raffinerie",
+    "sovereignfrontier:diffuseur_oxygene",
+    "sovereignfrontier:chaudiere_gaz",
+    "sovereignfrontier:rechauffeur_nucleaire",
+    "sovereignfrontier:minerai_titane",
+    "sovereignfrontier:minerai_soufre",
+    "sovereignfrontier:minerai_cryogenique"
   ]
 }

@@ -11,6 +11,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
@@ -23,6 +24,7 @@ public final class SovereignFrontierClient {
         modBus.addListener(RegisterKeyMappingsEvent.class, ModKeyMappings::register);
         modBus.addListener(RegisterMenuScreensEvent.class, e -> e.register(ModMenus.MACHINE.get(), MachineScreen::new));
         modBus.addListener(EntityRenderersEvent.RegisterRenderers.class, SovereignFrontierClient::registerRenderers);
+        modBus.addListener(RegisterDimensionSpecialEffectsEvent.class, SpaceDimensionEffects::register);
     }
 
     /**

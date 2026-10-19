@@ -45,6 +45,25 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.KEY_MILITAIRE.get());
                         output.accept(ModItems.KEY_INDUSTRIELLE.get());
                         output.accept(ModItems.KEY_SPATIALE.get());
+                        output.accept(ModItems.ROCKET.get());
+                        output.accept(ModItems.ROCKET_HULL.get());
+                        output.accept(ModItems.ROCKET_ENGINE.get());
+                        output.accept(ModItems.ADVANCED_PROPULSOR.get());
+                        output.accept(ModItems.CRYOGENIC_MODULE.get());
+                        output.accept(ModItems.ROCKET_FUEL.get());
+                        output.accept(ModItems.OXYGEN_BOTTLE.get());
+                        output.accept(ModItems.REFINERY.get());
+                        output.accept(ModItems.OXYGEN_DIFFUSER.get());
+                        output.accept(ModItems.GAS_BOILER.get());
+                        output.accept(ModItems.NUCLEAR_HEATER.get());
+                        output.accept(ModItems.HEATED_CHESTPLATE.get());
+                        output.accept(ModItems.TITANIUM_ORE.get());
+                        output.accept(ModItems.RAW_TITANIUM.get());
+                        output.accept(ModItems.TITANIUM_INGOT.get());
+                        output.accept(ModItems.SULFUR_ORE.get());
+                        output.accept(ModItems.SULFUR.get());
+                        output.accept(ModItems.CRYOGENIC_ORE.get());
+                        output.accept(ModItems.CRYOGENIC_CRYSTAL.get());
                     })
                     .build());
 
