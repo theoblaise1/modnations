@@ -9,7 +9,7 @@ recettes en jeu : `docs/recette/J<n>.md`.
   `test(Jn): …`, `assets: …`, `ci: …`, `docs: …`.
 - Avant tout commit : `python3 tools/check_sides.py && python3 tools/check_lang.py &&
   python3 tools/check_research.py && python3 tools/check_economy.py --self-test &&
-  python3 tools/check_economy.py && python3 tools/gen_textures.py --check &&
+  python3 tools/check_economy.py && python3 tools/check_space.py && python3 tools/gen_textures.py --check &&
   python3 tools/gen_structures.py --check && ./gradlew build runGameTestServer`.
 
 ## Règles non négociables

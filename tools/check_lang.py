@@ -12,7 +12,8 @@ Clés détectées :
     log.<clé de nation.log(...)>, help.nation.<sous-commande>, gui.tab.<id NationTab>,
     l'aide tr("x") de l'écran national (gui.x), les touches (KeyMapping), research.domain.<id>,
     research.stat.<id>, research.state.<statut>, reward.crate.<id CrateKind>,
-    enterprise.sector.<id Sector> et contract.kind.<id ContractKind> (si l'énumération existe).
+    enterprise.sector.<id Sector>, contract.kind.<id ContractKind> (si l'énumération existe), machine.<id> et
+    tooltip.<id> de chaque MachineKind (premier argument).
     Les noms de paliers et de déblocages (research.<palier>, unlock.<clé>) sont vérifiés par
     tools/check_research.py.
 """
@@ -115,6 +116,9 @@ def main() -> int:
         used.add(PREFIX + "enterprise.sector." + sid)
     for cid in enum_ids(read("ContractKind.java")):
         used.add(PREFIX + "contract.kind." + cid)
+    # J5 : nom et info-bulle de chaque machine (premier argument de MachineKind, « NOM("id", rôle, … ) »).
+    for mid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)",', read("MachineKind.java"), re.M):
+        used.update({PREFIX + "machine." + mid, PREFIX + "tooltip." + mid})
     help_list = re.search(r'for \(String sub : List\.of\((.*?)\)\)', read("NationCommand.java"), re.S)
     if help_list:
         for sub in re.findall(r'"([a-z]+)"', help_list.group(1)):
