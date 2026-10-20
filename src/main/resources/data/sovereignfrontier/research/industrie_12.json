@@ -6,8 +6,8 @@
     "points": 35,
     "items": [
       {
-        "item": "minecraft:magma_block",
-        "count": 48
+        "item": "sovereignfrontier:soufre",
+        "count": 64
       },
       {
         "item": "minecraft:blaze_rod",

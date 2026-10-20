@@ -12,8 +12,9 @@
     {"id": "combustible", "item": "sovereignfrontier:combustible_enrichi", "count": [2, 4], "weight": 2, "rarity": "rare"},
     {"id": "gaz_massif", "item": "sovereignfrontier:bouteille_gaz_pleine", "count": [12, 16], "weight": 1, "rarity": "rare"},
     {"id": "pactole", "money": [1000, 1500], "weight": 2, "rarity": "rare"},
-    {"placeholder": {"milestone": "J5", "label": "pieces_fusee"}, "weight": 6},
-    {"placeholder": {"milestone": "J5", "label": "oxygene"}, "weight": 8},
-    {"placeholder": {"milestone": "J5", "label": "carburant_fusee"}, "weight": 8}
+    {"item": "sovereignfrontier:coque_fusee", "count": 1, "weight": 4},
+    {"item": "sovereignfrontier:moteur_fusee", "count": 1, "weight": 2},
+    {"item": "sovereignfrontier:bouteille_oxygene", "count": [2, 6], "weight": 8},
+    {"item": "sovereignfrontier:carburant_fusee", "count": [1, 2], "weight": 8}
   ]
 }

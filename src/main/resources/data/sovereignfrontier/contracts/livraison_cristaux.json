@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 4,
+  "requires": ["sovereignfrontier:ressources_15", "sovereignfrontier:technologie_7"],
+  "duration_hours": 96,
+  "objective": {"item": "sovereignfrontier:cristal_cryogenique", "amount": {"min": 8, "max": 24, "step": 4}},
+  "reward": {"money": 800, "money_per_unit": 40, "points": 25, "points_per_unit": 1.0}
+}

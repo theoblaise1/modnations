@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 6,
+  "requires": ["sovereignfrontier:ressources_14"],
+  "duration_hours": 72,
+  "objective": {"item": "sovereignfrontier:soufre", "amount": {"min": 32, "max": 96, "step": 16}},
+  "reward": {"money": 400, "money_per_unit": 6, "points": 12, "points_per_unit": 0.2}
+}
