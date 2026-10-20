@@ -1,0 +1,26 @@
+{
+  "tab": "aerospatial",
+  "unlock": "rocket",
+  "ingredients": [
+    {
+      "item": "sovereignfrontier:coque_fusee",
+      "count": 3
+    },
+    {
+      "item": "sovereignfrontier:moteur_fusee",
+      "count": 1
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "count": 4
+    },
+    {
+      "item": "minecraft:firework_rocket",
+      "count": 16
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:fusee",
+    "count": 1
+  }
+}

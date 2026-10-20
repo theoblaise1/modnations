@@ -1,0 +1,26 @@
+{
+  "tab": "aerospatial",
+  "unlock": "rocket",
+  "ingredients": [
+    {
+      "item": "minecraft:blast_furnace",
+      "count": 1
+    },
+    {
+      "item": "minecraft:iron_block",
+      "count": 2
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "count": 2
+    },
+    {
+      "item": "minecraft:blaze_rod",
+      "count": 4
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:moteur_fusee",
+    "count": 1
+  }
+}

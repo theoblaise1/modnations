@@ -1,0 +1,26 @@
+{
+  "tab": "aerospatial",
+  "unlock": "propulsion.advanced",
+  "ingredients": [
+    {
+      "item": "sovereignfrontier:lingot_titane",
+      "count": 12
+    },
+    {
+      "item": "minecraft:blaze_rod",
+      "count": 6
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "count": 4
+    },
+    {
+      "item": "minecraft:fire_charge",
+      "count": 8
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:propulseur_avance",
+    "count": 1
+  }
+}
