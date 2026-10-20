@@ -7,12 +7,14 @@ import com.mojang.logging.LogUtils;
 import com.mojang.serialization.DataResult;
 import io.github.theoblaise1.sovereignfrontier.economy.RestrictedItems;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchRegistry;
+import io.github.theoblaise1.sovereignfrontier.space.PlanetRegistry;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -143,9 +145,11 @@ public final class ContractRegistry {
             return objective;
         }
         for (ContractTemplate.ItemReward item : t.reward().items()) {
-            if (RestrictedItems.isBannedFromLoot(item.item())) {
+            // J5 : #interdit_caisses sauf #restreint/fusee_finale (module cryogénique du contrat de mission).
+            if (RestrictedItems.isBannedFromContracts(item.item())) {
                 return "récompense interdite « " + BuiltInRegistries.ITEM.getKey(item.item()) + " » (#"
-                        + RestrictedItems.BANNED_FROM_LOOT.location() + ")";
+                        + RestrictedItems.BANNED_FROM_LOOT.location() + ", seul #" + RestrictedItems.FINAL_ROCKET.location()
+                        + " est permis dans un contrat)";
             }
         }
         return null;
@@ -190,6 +194,10 @@ public final class ContractRegistry {
             return biomes.get().containsKey(b.biome().id()) ? null : "biome inconnu « " + b.biome().id() + " »";
         }
         if (target instanceof ContractObjective.DimensionTarget d) {
+            // J5 : une dimension déclarée par une planète est acceptée même si le serveur ne l'a pas (GameTests).
+            if (PlanetRegistry.get().byDimension(ResourceKey.create(Registries.DIMENSION, d.dimension())) != null) {
+                return null;
+            }
             return registries.registry(Registries.LEVEL_STEM).map(stems -> stems.containsKey(d.dimension()) ? null
                     : "dimension inconnue « " + d.dimension() + " »").orElse(null);
         }
