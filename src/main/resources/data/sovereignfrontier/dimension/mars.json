@@ -1,0 +1,11 @@
+{
+  "type": "sovereignfrontier:mars",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "sovereignfrontier:mars",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "sovereignfrontier:mars"
+    }
+  }
+}
