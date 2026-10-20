@@ -250,6 +250,32 @@ def _both(*mutations):
     return mutate
 
 
+def _register_item(name: str):
+    """Enregistre un objet de plus dans la ModItems du dépôt temporaire."""
+    def mutate(root: Path) -> None:
+        path = root / REGISTRY_FILES[1]
+        src = path.read_text(encoding="utf-8")
+        path.write_text(src.replace("class ModItems {", f'class ModItems {{ Object X_{name} = ITEMS.registerSimpleItem("{name}");\n', 1),
+                        encoding="utf-8")
+    return mutate
+
+
+def _contract(name: str, **parts):
+    """Modèle de contrat de livraison minimal (``parts`` remplace des champs : objective, reward, kind…)."""
+    data = {"kind": "deliver", "duration_hours": 24,
+            "objective": {"item": "minecraft:iron_ingot", "amount": {"min": 1, "max": 4}},
+            "reward": {"money": 10}}
+    data.update(parts)
+    return _edit_json(NS_DATA_REL / "contracts" / f"{name}.json", lambda d: d.update(data))
+
+
+def _module_reward(name: str):
+    """Contrat dont la récompense est le composant final de fusée (le module est enregistré et dans ``fusee_finale``)."""
+    return _both(_register_item("module_cryogenique"),
+                 _tag("restreint/fusee_finale", lambda d: d["values"].append(f"{NAMESPACE}:module_cryogenique")),
+                 _contract(name, reward={"money": 10, "items": [{"item": f"{NAMESPACE}:module_cryogenique", "count": 1}]}))
+
+
 def _self_test() -> int:
     failures: list[str] = []
     ns = NAMESPACE
@@ -300,6 +326,31 @@ def _self_test() -> int:
          _edit_json(NS_DATA_REL / "recipe" / "terminal_bancaire.json",
                     lambda d: d["key"].update(X={"tag": f"{ns}:inexistant"})),
          [f"tag inconnu « #{ns}:inexistant »"]),
+        # Exemption des contrats (J5) : seul #restreint/fusee_finale est permis en récompense de contrat.
+        ("contrat : le composant final de fusée est permis en récompense", _module_reward("mission"), None),
+        ("contrat : un objet de palier 3 reste interdit en récompense",
+         _both(_register_item("lingot_exotique"),
+               _tag("restreint/palier_3", lambda d: d["values"].append(f"{ns}:lingot_exotique")),
+               _contract("pillage", reward={"money": 10, "items": [{"item": f"{ns}:lingot_exotique", "count": 1}]})),
+         [f"objet interdit « {ns}:lingot_exotique »", "sauf"]),
+        ("contrat : les élytres restent interdites en récompense",
+         _contract("vol", reward={"money": 10, "items": [{"item": "minecraft:elytra", "count": 1}]}),
+         ["objet interdit « minecraft:elytra »"]),
+        ("caisse : le composant final de fusée reste interdit",
+         _both(_module_reward("mission"),
+               _edit_json(NS_DATA_REL / "crates" / "commune.json",
+                          lambda d: d.update(rolls=1, entries=[{"item": f"{ns}:module_cryogenique", "weight": 5},
+                                                               {"id": "r", "money": 10, "rarity": "rare"}]))),
+         [f"objet interdit « {ns}:module_cryogenique »", "jamais dans une caisse"]),
+        ("contrat : dimension du mod sans planète",
+         _contract("lune", kind="explore", objective={"dimension": f"{ns}:lune"}),
+         [f"dimension du mod inconnue « {ns}:lune »"]),
+        ("contrat : dimension déclarée par une planète",
+         _both(_contract("lune", kind="explore", objective={"dimension": f"{ns}:lune"}),
+               _edit_json(NS_DATA_REL / "planets" / "lune.json", lambda d: d.update(dimension=f"{ns}:lune"))),
+         None),
+        ("contrat : dimension vanilla", _contract("nether", kind="explore", objective={"dimension": "minecraft:the_nether"}),
+         None),
     ]
 
     with tempfile.TemporaryDirectory(prefix="check_economy_") as tmp:
@@ -316,7 +367,10 @@ def _self_test() -> int:
             ctx, stats = check(root)
             text = format_report(ctx, stats)
             errors = "\n".join(f"{s} : {m}" for s, m in ctx.errors)
-            expect(label, bool(ctx.errors) and all(f in errors for f in fragments), text)
+            if fragments is None:  # cas conforme : aucune erreur attendue
+                expect(label, not ctx.errors, text)
+            else:
+                expect(label, bool(ctx.errors) and all(f in errors for f in fragments), text)
 
     if failures:
         print(f"\nÉCHEC : {len(failures)} auto-test(s) en échec.")

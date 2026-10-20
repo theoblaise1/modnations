@@ -10,9 +10,11 @@
     (directement ou par un tag du mod) doit être un monstre (``MobCategory.MONSTER``, liste 1.21.1 ci-dessous) ;
     un tag vanilla n'est pas vérifiable ici (avertissement : ``#minecraft:skeletons`` contient le cheval squelette) ;
   * exploration : exactement une cible parmi ``biome`` (+ ``min_distance``), ``waypoint {min, max, radius}``,
-    ``outposts {min, max}`` (1..8) et ``dimension`` ; tag de biome du mod existant ;
+    ``outposts {min, max}`` (1..8) et ``dimension`` ; tag de biome du mod existant ; une dimension du mod doit être
+    déclarée par une planète (``planets/*.json``, miroir de ``ContractRegistry.exploreProblem``) ;
   * récompense : ``money`` 0..1 000 000, ``points`` 0..1000, au plus 4 clés (type de caisse connu, 1..64, chance
-    dans ]0 ; 1]), au plus 8 objets (connus, uniques, 1..64, ni clé de caisse, ni ``#interdit_caisses``) ;
+    dans ]0 ; 1]), au plus 8 objets (connus, uniques, 1..64, ni clé de caisse, ni ``#interdit_caisses`` **sauf**
+    ``#restreint/fusee_finale`` : seule exemption du J5, ``RestrictedItems.isBannedFromContracts``) ;
   * plafonds : ``money_per_unit × max × 2,5 ≤ 100 000`` et ``points + points_per_unit × max × 2,5 ≤ 1000``
     (exploration : ``max`` sans facteur de taille) ;
   * règle CI seulement : ``money_per_unit ≤ 0,5 ×`` le prix unitaire marchand minimal du même objet (livraison) ;
@@ -30,6 +32,10 @@ from .common import (
 )
 
 LANG_REL = Path("src/main/resources/assets") / NAMESPACE / "lang" / "en_us.json"
+
+# Seule exemption de la garde #interdit_caisses dans une récompense de contrat (J5, décision validée) : le composant
+# final de la fusée, dont la seule source est le contrat de mission (RestrictedItems.isBannedFromContracts).
+FINAL_ROCKET = f"{NAMESPACE}:restreint/fusee_finale"
 
 KINDS = ("deliver", "kill", "explore")
 FIELDS = {"kind", "weight", "requires", "min_population", "duration_hours", "objective", "reward"}
@@ -250,8 +256,24 @@ def _check_objective(ctx: Context, chk: _Checker, kind: str, objective: object,
             return None, False
         lo = chk.int_field(o, "min", 1, OUTPOSTS_MAX, "objective.outposts")
         return chk.int_field(o, "max", lo or 1, OUTPOSTS_MAX, "objective.outposts"), False
-    chk.ident(obj["dimension"], "objective.dimension")
+    ident = chk.ident(obj["dimension"], "objective.dimension")
+    if ident is not None and ident[0].startswith(NAMESPACE + ":") and ident[0] not in _planet_dimensions(ctx):
+        chk.error(f"objective.dimension : dimension du mod inconnue « {ident[0]} » (aucune planète ne la déclare dans "
+                  f"data/{NAMESPACE}/planets/)")
     return 1, False
+
+
+def _planet_dimensions(ctx: Context) -> set[str]:
+    """Dimensions déclarées par les planètes du mod (``planets/*.json``, champ ``dimension``)."""
+    out: set[str] = set()
+    for path in ctx.data_files("planets"):
+        try:
+            data = load_json(path)
+        except (ValueError, OSError):
+            continue  # signalé par check_space.py
+        if isinstance(data, dict) and isinstance(data.get("dimension"), str):
+            out.add(data["dimension"])
+    return out
 
 
 def _check_reward(ctx: Context, chk: _Checker, reward: object) -> dict:
@@ -303,8 +325,9 @@ def _check_reward(ctx: Context, chk: _Checker, reward: object) -> dict:
             seen.add(item)
             if item in ctx.key_items():
                 chk.error(f"{where}.item : clé de caisse « {item} » : utiliser « keys »")
-            if ctx.banned_from_loot(item):
-                chk.error(f"{where}.item : objet interdit « {item} » (#{BANNED_FROM_LOOT}) dans une récompense de contrat")
+            if ctx.banned_from_loot(item) and item not in ctx.tags.get(FINAL_ROCKET, frozenset()):
+                chk.error(f"{where}.item : objet interdit « {item} » (#{BANNED_FROM_LOOT}, sauf #{FINAL_ROCKET}) "
+                          f"dans une récompense de contrat")
         chk.int_field(it, "count", 1, ITEM_COUNT_MAX, where, default=1)
     empty = all(not r.get(k) for k in ("money", "money_per_unit", "points", "points_per_unit")) and not keys and not items
     if empty:
