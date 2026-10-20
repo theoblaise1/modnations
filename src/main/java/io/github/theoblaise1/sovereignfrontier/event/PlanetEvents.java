@@ -8,6 +8,7 @@ import io.github.theoblaise1.sovereignfrontier.space.TravelPermits;
 import io.github.theoblaise1.sovereignfrontier.space.ZoneIndex;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
@@ -38,10 +39,12 @@ public final class PlanetEvents {
 
     /**
      * Après tous les écouteurs de rechargement (premier chargement ou {@code /reload}) : tags liés et registre de
-     * recherche à jour ; le candidat est validé puis publié. Après un {@code /reload}, les niveaux sont contrôlés
-     * aussitôt (au premier chargement, le serveur n'existe pas encore : voir {@link #onServerStarted}).
+     * recherche à jour ; le candidat est validé puis publié. Priorité haute : les planètes sont publiées avant les
+     * registres qui s'en servent au même événement (cibles de dimension des contrats). Après un {@code /reload}, les
+     * niveaux sont contrôlés aussitôt (au premier chargement, le serveur n'existe pas encore : voir
+     * {@link #onServerStarted}).
      */
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onTagsUpdated(TagsUpdatedEvent event) {
         if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
             return;
