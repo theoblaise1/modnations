@@ -485,9 +485,13 @@ public final class ProtectionGameTests {
         });
     }
 
-    /** Clic droit avec un nénuphar, le joueur deux blocs au-dessus de la source {@code water} et regardant vers le bas. */
+    /**
+     * Clic droit avec un nénuphar, le joueur un bloc au-dessus de la source {@code water} et regardant vers le bas.
+     * L'œil (+ 1,62) doit rester sous la couche de barrières que le GameTest pose à {@code water.y + 3} : à une
+     * hauteur de 2 blocs, il y entrait selon la position (aléatoire) du test et le rayon touchait la barrière.
+     */
     private static void useLilyPadAbove(ServerPlayer player, ServerLevel level, BlockPos water) {
-        player.moveTo(water.getX() + 0.5D, water.getY() + 2, water.getZ() + 0.5D, 0.0F, 90.0F);
+        player.moveTo(water.getX() + 0.5D, water.getY() + 1, water.getZ() + 0.5D, 0.0F, 90.0F);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.LILY_PAD));
         player.gameMode.useItem(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND);
     }
