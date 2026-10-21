@@ -1,0 +1,11 @@
+{
+  "type": "sovereignfrontier:lune",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "sovereignfrontier:lune",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "sovereignfrontier:lune"
+    }
+  }
+}

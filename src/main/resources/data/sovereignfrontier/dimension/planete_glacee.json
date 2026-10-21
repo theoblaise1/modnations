@@ -1,0 +1,11 @@
+{
+  "type": "sovereignfrontier:planete_glacee",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "sovereignfrontier:planete_glacee",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "sovereignfrontier:planete_glacee"
+    }
+  }
+}
