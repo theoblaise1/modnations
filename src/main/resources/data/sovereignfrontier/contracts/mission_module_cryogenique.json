@@ -1,0 +1,9 @@
+{
+  "kind": "deliver",
+  "weight": 50,
+  "requires": ["sovereignfrontier:industrie_11", "sovereignfrontier:ressources_14"],
+  "min_population": 12,
+  "duration_hours": 168,
+  "objective": {"item": "sovereignfrontier:soufre", "amount": {"min": 64, "max": 128, "step": 16}},
+  "reward": {"money": 2000, "points": 30, "items": [{"item": "sovereignfrontier:module_cryogenique", "count": 1}]}
+}

@@ -619,7 +619,7 @@ public final class ContractManager {
         }
         for (ContractTemplate.ItemReward item : c.items()) {
             ItemStack stack = new ItemStack(item.item(), item.count());
-            if (!RestrictedItems.allowInLoot(stack, source)) {
+            if (!RestrictedItems.allowInContractReward(stack, source)) {
                 continue;
             }
             if (recipient != null) {

@@ -1,0 +1,8 @@
+{
+  "kind": "explore",
+  "weight": 4,
+  "requires": ["sovereignfrontier:technologie_7"],
+  "duration_hours": 120,
+  "objective": {"dimension": "sovereignfrontier:planete_glacee"},
+  "reward": {"money": 1500, "points": 40, "keys": [{"crate": "spatiale", "count": 1, "chance": 1.0}, {"crate": "industrielle", "count": 1, "chance": 0.5}]}
+}
