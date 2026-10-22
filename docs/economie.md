@@ -1,11 +1,13 @@
-# Économie, récompenses et contrats — contrat de données (J4)
+# Économie, récompenses et contrats — contrat de données (J4, complété au J5)
 
 Ce document est le **contrat** entre le contenu JSON (`src/main/resources/data/sovereignfrontier/`,
 modifiable par un datapack de monde) et le code : où vivent les données, format de chaque fichier,
 règles de validation et interdiction absolue de certains objets. Les valeurs d'équilibrage globales
 (barème du Terminal, délais, pas de prix…) sont dans la configuration serveur (`[terminal]`,
 `[rewards]`, `[market]`, `[contracts]`), pas dans les JSON. La conception complète est dans
-[`docs/conception/J4.md`](conception/J4.md) ; ce qui diffère du code livré est signalé ici.
+[`docs/conception/J4.md`](conception/J4.md) ; ce qui diffère du code livré est signalé ici. Le contenu du J5
+(Module cryogénique, caisse spatiale, contrats spatiaux) y est intégré ; les planètes, la fusée et l'environnement
+ont leur propre contrat : [`docs/espace.md`](espace.md).
 
 `python3 tools/check_economy.py` vérifie tout ce qui suit (voir « Validation »).
 
@@ -36,7 +38,8 @@ règles de validation et interdiction absolue de certains objets. Les valeurs d'
 | Marchands | `merchants/<pool>.json` | identifiant du pool (`sovereignfrontier:general`) | `MerchantRegistry` | « N pool(s) marchand(s) publié(s) […] » |
 | Contrats | `contracts/<chemin>.json` | identifiant du modèle | `ContractRegistry` | « N modèle(s) de contrat publié(s) {…} » |
 | Entreprises | `enterprises/<secteur>.json` | `agricole`, `minier`, `logistique`, `industriel` (= `enterprise/Sector`) | `SectorRegistry` | « N secteur(s) d'entreprise publié(s) sur 4 » |
-| Ingénierie (J3) | `engineering/<id>.json` | identifiant de la recette | `EngineeringRegistry` | « N recette(s) d'ingénierie chargée(s) » |
+| Ingénierie (J3, J5) | `engineering/<id>.json` | identifiant de la recette | `EngineeringRegistry` | « N recette(s) d'ingénierie chargée(s) » |
+| Planètes (J5) | `planets/<nom>.json` | nom du fichier (`lune`, `mars`, `planete_glacee`) | `PlanetRegistry` | « N planète(s) publiée(s) : … » (voir `docs/espace.md`) |
 | Objets interdits | `tags/item/restreint*.json`, `hors_economie.json`, `interdit_caisses.json` | tags `#sovereignfrontier:…` | `RestrictedItems` | « [Économie] Audit des recettes : … » |
 | Cibles de chasse | `tags/entity_type/contrat/<nom>.json` | `#sovereignfrontier:contrat/<nom>` | `ContractRegistry` | — |
 | Avant-postes | `worldgen/structure/`, `worldgen/structure_set/`, `worldgen/template_pool/avant_poste/`, `tags/worldgen/biome/has_structure/`, `tags/worldgen/structure/avant_postes.json` | `avant_poste_<variante>` (`plaines`, `desert`, `taiga`) | datapack vanilla | — |
@@ -52,8 +55,8 @@ vérifient leur présence.
 
 | Tag (`#sovereignfrontier:…`) | Contenu |
 |---|---|
-| `restreint` | regroupe `restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max` (vides au J4 ; J5 et J6 les remplissent) |
-| `hors_economie` | objets vanilla de fin de jeu (netherite complète, gabarit d'amélioration, élytres, étoile du Nether, balise, pomme dorée enchantée, œuf de dragon, masse, noyau lourd), objets de Créatif (blocs de commande, barrière, blocs de structure et puzzle, bâton de débogage, lumière, cage d'apparition, bedrock) et les machines J3 soumises à recherche (`generateur_thermique`, `panneau_solaire`, `cellule_energie`, `foreuse_gaz`, `controleur_reacteur`, `caisson_reacteur`, `cellule_combustible`, `dissipateur_thermique`) |
+| `restreint` | regroupe `restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max`. `restreint/fusee_finale` contient `module_cryogenique` depuis le J5 (seul composant final de fusée) ; les trois autres sont vides jusqu'au J6 |
+| `hors_economie` | objets vanilla de fin de jeu (netherite complète, gabarit d'amélioration, élytres, étoile du Nether, balise, pomme dorée enchantée, œuf de dragon, masse, noyau lourd), objets de Créatif (blocs de commande, barrière, blocs de structure et puzzle, bâton de débogage, lumière, cage d'apparition, bedrock), les machines J3 soumises à recherche (`generateur_thermique`, `panneau_solaire`, `cellule_energie`, `foreuse_gaz`, `controleur_reacteur`, `caisson_reacteur`, `cellule_combustible`, `dissipateur_thermique`) et les objets J5 soumis à recherche (`fusee`, `raffinerie`, `diffuseur_oxygene`, `chaudiere_gaz`, `rechauffeur_nucleaire`, `propulseur_avance`, `plastron_chauffant`) : aucune source automatique ne les donne |
 | `interdit_caisses` | `#restreint` + `#hors_economie` |
 
 **Règle absolue.** Un objet de palier 3 ou 4, un composant final de fusée ou une arme militaire
@@ -66,15 +69,20 @@ maximale ne se trouve **jamais** dans :
 | `/daily` (clés) | clés absentes de `#interdit_caisses` | erreur | table rejetée | clé non remise |
 | Marchand (vente **et** rachat) | `#interdit_caisses` | erreur | pool rejeté en entier | achat refusé |
 | Produit d'entreprise | `#interdit_caisses` + clés de caisse | erreur | secteur rejeté | objet non déposé |
-| Récompense de contrat (`reward.items`) | `#interdit_caisses` | erreur | modèle rejeté | objet non remis |
+| Récompense de contrat (`reward.items`) | `#interdit_caisses` **sauf `#restreint/fusee_finale`** | erreur | modèle rejeté | objet non remis, ERREUR au journal |
 | Butin des tonneaux d'avant-poste | `#interdit_caisses` | erreur | — (table de butin vanilla) | — |
 
 - Les références `#minecraft:…` sont **interdites** dans ces tags (y compris indirectement) : les
   objets vanilla y sont listés un par un, pour que le contenu ne change pas avec Minecraft.
-- **Écart avec la conception.** `docs/conception/J4.md` §1.4 et §9 prévoient que `reward.items` des
-  contrats puisse contenir des objets `#restreint` (source légitime des objets de palier 3 et 4). Le code
-  livré applique `#interdit_caisses` aussi aux contrats. Au J6, il faudra décider d'une exemption
-  explicite (retirer `#restreint` de la garde des contrats) avant d'y mettre un objet de palier 3 ou 4.
+- **Exemption des contrats (J5).** `docs/conception/J4.md` §1.4 et §9 prévoient que `reward.items` des
+  contrats puisse contenir des objets `#restreint` (source légitime des objets de palier 3 et 4). Le J4
+  appliquait `#interdit_caisses` aussi aux contrats ; le J5 y ajoute **une seule exemption explicite** :
+  `#sovereignfrontier:restreint/fusee_finale`. La garde des contrats est donc « `#interdit_caisses` sauf
+  `#restreint/fusee_finale` » (`RestrictedItems.isBannedFromContracts` au chargement, `allowInContractReward` à la
+  remise). `restreint/palier_3`, `restreint/palier_4` et `restreint/arme_max` restent **interdits dans les
+  contrats** jusqu'à ce que le J6 tranche ; il suffira alors d'étendre l'exemption. C'est ainsi que le Module
+  cryogénique (seul membre de `restreint/fusee_finale`) est obtenu : uniquement par le contrat de mission
+  `mission_module_cryogenique`, jamais par un craft, une caisse, un marchand, une entreprise ni `/daily`.
 - **Procédure.** Tout nouvel objet de palier 3 ou 4, composant final de fusée ou arme militaire
   maximale doit être ajouté **dans le même commit** au sous-tag correspondant
   (`restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max`).
@@ -110,9 +118,15 @@ maximale ne se trouve **jamais** dans :
   entrée rare, par joueur et par type : une rare manquée `cratePityThreshold` fois (20) est garantie à
   l'ouverture suivante (la 21ᵉ) ; si deux rares atteignent le seuil ensemble, la plus manquée tombe
   d'abord (égalité : ordre du JSON), l'autre à l'ouverture d'après.
-- Le contenu livré est dans `crates/*.json` ; la caisse militaire et la spatiale portent des entrées
-  provisoires J6 (munitions, trousse de soins, gilet balistique léger) et J5 (pièces de fusée non
-  finales, oxygène, carburant de fusée).
+- Le contenu livré est dans `crates/*.json` ; seule la caisse militaire porte encore des entrées
+  provisoires (J6 : munitions, trousse de soins, gilet balistique léger).
+- **Caisse spatiale (J5).** Ses trois entrées provisoires (pièces de fusée, oxygène, carburant de fusée) sont
+  remplacées par du contenu réel : `coque_fusee` × 1 (poids 4), `moteur_fusee` × 1 (poids 2), `bouteille_oxygene`
+  2 à 6 (poids 8) et `carburant_fusee` 1 à 2 (poids 8), en plus des bouteilles de gaz, du verre, des blocs de
+  fer, des circuits, des fusées d'artifice, des membranes de phantom et de l'argent. Entrées rares inchangées
+  (`combustible`, `gaz_massif`, `pactole`). Ces quatre objets ne figurent pas dans `#interdit_caisses` (pièces non
+  finales et consommables) ; le module cryogénique, lui, ne peut pas en sortir (`check_economy.py` en CI,
+  `CrateRegistry` au chargement : table rejetée en entier).
 
 ## `/daily` — `daily/streak.json`
 ```json
@@ -198,12 +212,14 @@ survie sans `/sfadmin bypass` ne cassent ni ne posent, et les explosions ne dét
 |---|---|
 | `deliver` | `item`, `amount {min, max, step}` (1 à 10 000, `step` défaut 1) |
 | `kill` | `entity` (type ou `#tag`), `amount {min, max, step}` ; chaque cible doit être de catégorie `MONSTER` (vérifié au chargement) |
-| `explore` | **exactement une** cible : `biome` (identifiant ou `#tag`, avec `min_distance` de 0 à 1 000 000), `waypoint {min, max, radius}` (point tiré à l'acceptation ; rayon 1 à 1 024), `outposts {min, max}` (1 à 8 avant-postes distincts à 16 blocs au plus d'une ancre) ou `dimension` |
+| `explore` | **exactement une** cible : `biome` (identifiant ou `#tag`, avec `min_distance` de 0 à 1 000 000), `waypoint {min, max, radius}` (point tiré à l'acceptation ; rayon 1 à 1 024), `outposts {min, max}` (1 à 8 avant-postes distincts à 16 blocs au plus d'une ancre) ou `dimension` (présente dans le registre `LEVEL_STEM` du serveur **ou** déclarée par une planète publiée : les modèles spatiaux restent chargés sur le serveur de GameTests, qui n'a pas les planètes) |
 
 - **Récompense** (au moins un élément non vide) : `money` (0 à 1 000 000), `money_per_unit`,
   `points` (0 à 1 000), `points_per_unit`, `keys` (au plus 4 : `crate`, `count` de 1 à 64, `chance` dans
   ]0 ; 1]), `items` (au plus 8 : `item`, `count` de 1 à 64 ; ni doublon, ni clé de caisse, ni objet de
-  `#interdit_caisses`).
+  `#interdit_caisses` **hors `#restreint/fusee_finale`** : un modèle qui en contient un autre est rejeté au
+  chargement avec « récompense interdite … seul #sovereignfrontier:restreint/fusee_finale est permis dans un
+  contrat »).
 - **Plafonds** : `money_per_unit × max × 2,5 ≤ 100 000` et `points + points_per_unit × max × 2,5 ≤ 1 000`
   (exploration : sans facteur de taille). **Règle CI seulement** : pour un contrat de livraison,
   `money_per_unit ≤ 0,5 ×` le prix unitaire marchand minimal du même objet (pas d'arbitrage
@@ -226,15 +242,29 @@ survie sans `/sfadmin bypass` ne cassent ni ne posent, et les explosions ne dét
   `CHUNK_GENERATION`, `STRUCTURE`, `PATROL`, `EVENT`, `JOCKEY`), tués directement par un vrai joueur
   membre d'une nation. Cages, œufs, commandes, reproduction et faux joueurs sont ignorés.
 
-Modèles livrés (20) :
+Modèles livrés (27) :
 
 | Type | Modèles |
 |---|---|
-| Livraison (9) | `livraison_ble`, `livraison_pain`, `livraison_bois`, `livraison_charbon`, `livraison_fer` (`ressources_3`), `livraison_cuivre` (pop. 2), `livraison_redstone` (`industrie_2`), `livraison_circuits` (`technologie_1`), `livraison_gaz` (`ressources_8`) |
+| Livraison (13) | `livraison_ble`, `livraison_pain`, `livraison_bois`, `livraison_charbon`, `livraison_fer` (`ressources_3`), `livraison_cuivre` (pop. 2), `livraison_redstone` (`industrie_2`), `livraison_circuits` (`technologie_1`), `livraison_gaz` (`ressources_8`) ; **J5** : `livraison_titane` (`ressources_13`), `livraison_soufre` (`ressources_14`), `livraison_cristaux` (`ressources_15` et `technologie_7`), `mission_module_cryogenique` |
 | Chasse (6) | `chasse_zombies`, `chasse_squelettes` (`#sovereignfrontier:contrat/squelettes`), `chasse_araignees` (`#sovereignfrontier:contrat/araignees`), `chasse_creepers` (pop. 2), `chasse_endermen` (`militaire_3`), `chasse_blazes` (`militaire_5`, 8 fioles d'expérience en plus) |
-| Exploration (5) | `exploration_jungle`, `exploration_badlands` (pop. 2), `exploration_lointaine` (point à 1 000–2 000 blocs), `exploration_avant_postes` (2 à 3 avant-postes), `exploration_nether` (pop. 3) |
+| Exploration (8) | `exploration_jungle`, `exploration_badlands` (pop. 2), `exploration_lointaine` (point à 1 000–2 000 blocs), `exploration_avant_postes` (2 à 3 avant-postes), `exploration_nether` (pop. 3) ; **J5** : `exploration_lune` (`technologie_2`), `exploration_mars` (`technologie_4`), `exploration_planete_glacee` (`technologie_7`) |
 
 Les points de recherche gagnés ici paient les paliers 6 et suivants (voir `docs/recherche.md`).
+
+### Contrats spatiaux (J5)
+- **Expéditions** (`exploration_lune`, `exploration_mars`, `exploration_planete_glacee`) : cible
+  `dimension` ; récompense 600, 900 et 1 500 cr, 15, 25 et 40 points, une clé spatiale à coup sûr (et une
+  clé industrielle à 50 % pour la planète glacée) ; prérequis `technologie_2`, `technologie_4`, `technologie_7`.
+  Elles se valident en arrivant dans la dimension, donc en fusée.
+- **Livraisons de matériaux** : lingot de titane (16 à 48, pas 8), soufre (32 à 96, pas 16), cristal cryogénique
+  (8 à 24, pas 4) ; argent et points au prorata de la quantité ; plafonds du J4 respectés.
+- **Mission du module** `mission_module_cryogenique` : livrer 64 à 128 soufres (pas de 16, mis à l'échelle par le nombre
+  de membres) ; récompense 2 000 cr, 30 points et **1 `module_cryogenique`** ; exige `industrie_11`, `ressources_14`
+  et 12 habitants effectifs ; durée 168 h, poids 50. Le module va au plus gros contributeur en ligne, sinon au
+  coffre national (chemin des objets de contrat du J4). C'est la seule source du composant final : il n'existe aucune
+  recette, entrée de caisse, offre de marchand, produit d'entreprise ni clé `/daily` qui le donne.
+- Aucun marchand n'achète ni ne vend titane, soufre ou cristal (pas de conversion illimitée en argent).
 
 ## Entreprises — `enterprises/<secteur>.json`
 ```json
@@ -271,11 +301,19 @@ Les points de recherche gagnés ici paient les paliers 6 et suivants (voir `docs
 | `logistique` | `civil_3` | civil (0,03) | 8 | — |
 | `industriel` | `industrie_1` | industrie (0,05) | 2 | verre 0,5 · lingot de cuivre 0,25 · lingot de fer 0,2 · redstone 0,1 · lingot d'or 0,03 (`industrie_3`) · circuit 0,04 (`technologie_1`) |
 
-## Recettes d'ingénierie — `engineering/<id>.json` (J3)
+## Recettes d'ingénierie — `engineering/<id>.json` (J3, J5)
 `{"tab": "machines", "unlock": "energy.cables", "ingredients": [{"item": …, "count": …}], "result": {"item": …, "count": …}}`.
 `tab` : `machines`, `armement` ou `aerospatial` ; `unlock` : clé de déblocage de recherche
 (facultative) ; ingrédients sans doublon ; résultat au plus une pile. Au J4, `check_economy.py` y
-refuse tout résultat de `#restreint` et toute clé de caisse.
+refuse tout résultat de `#restreint` et toute clé de caisse. Une recette n'est utilisable que si la nation a la clé de
+l'onglet (`station.machines`, `station.armament`, `station.aerospace`) **et** celle de la recette. Le J5 y ajoute les
+recettes de l'onglet Aérospatial et celle de la Raffinerie (liste dans `docs/espace.md` et `docs/recherche.md`) ;
+aucune ne produit `module_cryogenique` ni `carburant_fusee`.
+
+**Écart avec les autres dossiers** : contrairement aux caisses, contrats, marchands et entreprises, `engineering/`
+n'est pas publié au `TagsUpdatedEvent` : `EngineeringRegistry` remplace son registre dès que l'écouteur a lu les
+fichiers, et son codec **ignore les champs inconnus** (seul `check_economy.py` les refuse). La garde `#restreint`
+s'applique donc par l'audit des recettes au démarrage et après chaque `/reload`, pas par un rejet au chargement.
 
 ## Barèmes de référence (configuration par défaut)
 - **Terminal bancaire** : `terminalHourlyRates` = 240, 180, 135, 100, 75, 55, 40, 30, 20 cr par heure
@@ -307,7 +345,8 @@ python3 tools/check_economy.py --self-test  # tests intégrés sur un dépôt te
 3. **Recettes** (`recipe/` de tous les espaces de noms et `engineering/`) : objets connus, aucun résultat
    de `#restreint`, aucune recette de clé de caisse.
 4. **Modules de contenu** (`tools/economy_checks/`) : `merchants` (pools, écart global, artisanat, butin
-   des tonneaux), `crates`, `daily`, `contracts` (dont nom affiché et plafonds), `enterprises`.
+   des tonneaux), `crates`, `daily`, `contracts` (dont nom affiché, plafonds, récompense hors `#interdit_caisses`
+   sauf `#restreint/fusee_finale`), `enterprises`.
 
 Les avertissements (par exemple un tag de chasse vanille non vérifiable) ne font pas échouer. La CI
 (`.github/workflows/build.yml`) exécute l'auto-test puis la vérification. Ces contrôles sont **plus
@@ -325,9 +364,10 @@ caisse.
 4. **Nouvel objet restreint** : l'ajouter au sous-tag de `restreint/` (voir « Objets interdits »).
 5. `/reload` en jeu : les fichiers invalides sont ignorés avec un message explicite dans le journal.
 
-## Reporté (hors J4)
-- Objets de palier 3 et 4 en récompense de contrat (J6), clés lâchées par les boss et les victoires de
-  guerre (J6, J7) : les points d'entrée `CrateKeys.give` et `CrateKeys.giveToNation` existent.
+## Reporté
+- Objets de palier 3 et 4 et armes maximales en récompense de contrat (J6 : il suffira d'étendre l'exemption
+  de `RestrictedItems.isBannedFromContracts`), clés lâchées par les boss et les victoires de guerre (J6, J7) : les
+  points d'entrée `CrateKeys.give` et `CrateKeys.giveToNation` existent.
 - Grade Souverain : `RankHooks.terminalMultiplier` renvoie 1,0 jusqu'au J8 (`terminalSouverainMultiplier`
   n'est pas encore lue).
 - Griefs des avant-postes (pillage d'un conteneur à butin non encore ouvert dans la boîte) : enregistrés
