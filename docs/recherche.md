@@ -91,7 +91,7 @@ nation qui possède sa clé, un propulseur ou un plastron n'agit que pour une na
 | `ammo.basic`, `ammo.piercing`, `ammo.sulfur` | munitions | J6 |
 | `weapon.pistol`, `weapon.rifle`, `weapon.sniper`, `weapon.explosives` | armes | J6 |
 | `armor.ballistic_light`, `armor.ballistic_heavy` | armures balistiques | J6 |
-| `defense.walls`, `defense.turret`, `defense.shield` | défenses anti-PNJ | J6 |
+| `defense.walls`, `defense.turret`, `defense.shield` | défenses anti-PNJ (effet en J7 : cible = PNJ hostiles, absents au J6) | reporté |
 | `missile.silo`, `missile.guided`, `missile.heavy_warhead` | silo à missiles et ogives | J7 |
 
 ## Paliers
@@ -176,7 +176,7 @@ nation qui possède sa clé, un propulseur ou un plastron n'agit que pour une na
 | 9 | Armure balistique lourde | unlock armor.ballistic_heavy | — | 8 |
 | 10 | Tir de précision | unlock weapon.sniper | — | 9 |
 | 11 | Explosifs | unlock weapon.explosives | — | 10 |
-| 12 | Munitions au soufre | unlock ammo.sulfur | technologie_4 | 11 |
+| 12 | Munitions au soufre | unlock ammo.sulfur | technologie_4, ressources_14 | 11 |
 | 13 | Silo à missiles | unlock missile.silo | industrie_7 | 12 |
 | 14 | Guidage de missiles | unlock missile.guided | — | 13 |
 | 15 | Bouclier défensif | unlock defense.shield | — | 14 |

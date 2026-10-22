@@ -1,6 +1,7 @@
 package io.github.theoblaise1.sovereignfrontier.registry;
 
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
+import io.github.theoblaise1.sovereignfrontier.dungeon.DungeonBossEntity;
 import io.github.theoblaise1.sovereignfrontier.outpost.MerchantEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -19,6 +20,13 @@ public final class ModEntityTypes {
                     .sized(0.6F, 1.95F)
                     .clientTrackingRange(10)
                     .build(SovereignFrontier.MODID + ":marchand"));
+
+    /** Gardien du donjon (J6) : monstre de la taille du zombi, hors chasses de contrat (invoqué par l'autel, WP1). */
+    public static final DeferredHolder<EntityType<?>, EntityType<DungeonBossEntity>> DUNGEON_BOSS = ENTITY_TYPES.register("gardien_donjon",
+            () -> EntityType.Builder.<DungeonBossEntity>of(DungeonBossEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(8)
+                    .build(SovereignFrontier.MODID + ":gardien_donjon"));
 
     private ModEntityTypes() {
     }

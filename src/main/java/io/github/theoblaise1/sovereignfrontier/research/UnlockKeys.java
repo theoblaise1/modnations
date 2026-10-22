@@ -46,6 +46,28 @@ public final class UnlockKeys {
     /** {@code technologie_7} : destination planète glacée. */
     public static final String DIMENSION_PLANETE_GLACEE = "dimension.planete_glacee";
 
+    // Clés J6 (armement, munitions, armures balistiques) : consommées par les lots J6 (tir, recettes, équipement).
+    /** {@code militaire_1} : onglet Armement de la Station d'ingénierie. */
+    public static final String STATION_ARMAMENT = "station.armament";
+    /** {@code militaire_3} : pistolet. */
+    public static final String WEAPON_PISTOL = "weapon.pistol";
+    /** {@code militaire_5} : fusil. */
+    public static final String WEAPON_RIFLE = "weapon.rifle";
+    /** {@code militaire_10} : fusil de précision. */
+    public static final String WEAPON_SNIPER = "weapon.sniper";
+    /** {@code militaire_11} : explosif lancé. */
+    public static final String WEAPON_EXPLOSIVES = "weapon.explosives";
+    /** {@code militaire_2} : munitions basiques. */
+    public static final String AMMO_BASIC = "ammo.basic";
+    /** {@code militaire_7} : munitions perforantes. */
+    public static final String AMMO_PIERCING = "ammo.piercing";
+    /** {@code militaire_12} : munitions au soufre. */
+    public static final String AMMO_SULFUR = "ammo.sulfur";
+    /** {@code militaire_4} : gilet balistique léger. */
+    public static final String ARMOR_BALLISTIC_LIGHT = "armor.ballistic_light";
+    /** {@code militaire_9} : plastron balistique lourd. */
+    public static final String ARMOR_BALLISTIC_HEAVY = "armor.ballistic_heavy";
+
     /** Les 16 clés câblées par le J5 (15 du catalogue J5, plus {@code refinery}). */
     public static final List<String> J5 = List.of(STATION_AEROSPACE, ROCKET, REFINERY, ROCKET_FUEL, DIMENSION_LUNE,
             OXYGEN_SYSTEMS, MINING_LUNAR, DIMENSION_MARS, PROPULSION_ADVANCED, MINING_MARTIAN, ROCKET_UPGRADE_MODULE,

@@ -25,8 +25,8 @@ import java.util.List;
  *   <li>{@link #RESTRICTED} ({@code #sovereignfrontier:restreint}) : objets de palier 3/4, composants finaux de
  *       fusée, armes militaires maximales. Jamais dans un craft (vanilla ou ingénierie), une caisse, une vente de
  *       marchand, un produit d'entreprise ni {@code /daily} ; seules les récompenses de contrat (et, au J6, le
- *       butin de donjon) peuvent en contenir. Au J5, seul {@link #FINAL_ROCKET} est permis dans un contrat
- *       ({@link #isBannedFromContracts}) ;</li>
+ *       butin de donjon) peuvent en contenir. Dans un contrat, sont permis {@link #FINAL_ROCKET} (J5) et
+ *       {@link #TIER_3}, {@link #TIER_4} (J6) ({@link #isBannedFromContracts}) ;</li>
  *   <li>{@link #BANNED_FROM_LOOT} ({@code #sovereignfrontier:interdit_caisses} = restreint + hors_economie) :
  *       interdit dans les caisses, les ventes des marchands, les produits d'entreprise et {@code /daily}.</li>
  * </ul>
@@ -84,17 +84,20 @@ public final class RestrictedItems {
     }
 
     /**
-     * Objet interdit dans une récompense de contrat : {@code #interdit_caisses} <b>sauf</b>
-     * {@code #restreint/fusee_finale} (J5, décision validée : le Module cryogénique ne s'obtient que par le contrat de
-     * mission). C'est la seule exemption : {@code palier_3}, {@code palier_4} et {@code arme_max} restent interdits.
+     * Objet interdit dans une récompense de contrat : {@code #interdit_caisses} <b>sauf</b> {@code #restreint/fusee_finale}
+     * (J5, décision validée : le Module cryogénique ne s'obtient que par le contrat de mission) et
+     * {@code #restreint/palier_3}, {@code #restreint/palier_4} (J6 : contrats de mission). {@code arme_max} reste interdit
+     * partout hors butin de donjon. Les caisses, marchands, entreprises et {@code /daily} gardent l'interdiction
+     * ({@link #isBannedFromLoot}).
      */
     public static boolean isBannedFromContracts(ItemLike item) {
         var holder = BuiltInRegistries.ITEM.wrapAsHolder(item.asItem());
-        return holder.is(BANNED_FROM_LOOT) && !holder.is(FINAL_ROCKET);
+        return holder.is(BANNED_FROM_LOOT) && !holder.is(FINAL_ROCKET) && !holder.is(TIER_3) && !holder.is(TIER_4);
     }
 
     public static boolean isBannedFromContracts(ItemStack stack) {
-        return !stack.isEmpty() && stack.is(BANNED_FROM_LOOT) && !stack.is(FINAL_ROCKET);
+        return !stack.isEmpty() && stack.is(BANNED_FROM_LOOT) && !stack.is(FINAL_ROCKET) && !stack.is(TIER_3)
+                && !stack.is(TIER_4);
     }
 
     /**
@@ -107,8 +110,9 @@ public final class RestrictedItems {
         if (!isBannedFromContracts(stack)) {
             return true;
         }
-        LOGGER.error("[Économie] Objet interdit {} non remis ({}) : il appartient à #{} (seul #{} est permis dans un contrat)",
-                BuiltInRegistries.ITEM.getKey(stack.getItem()), source, BANNED_FROM_LOOT.location(), FINAL_ROCKET.location());
+        LOGGER.error("[Économie] Objet interdit {} non remis ({}) : il appartient à #{} (permis dans un contrat : #{}, #{}, #{})",
+                BuiltInRegistries.ITEM.getKey(stack.getItem()), source, BANNED_FROM_LOOT.location(), FINAL_ROCKET.location(),
+                TIER_3.location(), TIER_4.location());
         return false;
     }
 

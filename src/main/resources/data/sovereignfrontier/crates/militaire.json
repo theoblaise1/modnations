@@ -13,10 +13,9 @@
     {"item": "minecraft:iron_boots", "count": 1, "weight": 6},
     {"item": "minecraft:gunpowder", "count": [4, 10], "weight": 12},
     {"money": [100, 250], "weight": 12},
-    {"id": "plastron_diamant", "item": "minecraft:diamond_chestplate", "count": 1, "weight": 1, "rarity": "rare"},
-    {"id": "totem", "item": "minecraft:totem_of_undying", "count": 1, "weight": 1, "rarity": "rare"},
-    {"placeholder": {"milestone": "J6", "label": "munitions"}, "weight": 10},
-    {"placeholder": {"milestone": "J6", "label": "trousse_soins"}, "weight": 6},
-    {"placeholder": {"milestone": "J6", "label": "gilet_balistique_leger"}, "weight": 2}
+    {"item": "sovereignfrontier:munitions_basiques", "count": [8, 16], "weight": 10},
+    {"item": "sovereignfrontier:trousse_soins", "count": [1, 2], "weight": 6},
+    {"item": "sovereignfrontier:armure_balistique_legere", "count": 1, "weight": 2, "rarity": "peu_commun"},
+    {"id": "plastron_balistique", "item": "sovereignfrontier:armure_balistique_lourde", "count": 1, "weight": 1, "rarity": "rare"}
   ]
 }

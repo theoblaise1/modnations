@@ -411,8 +411,8 @@ public final class SpaceContentGameTests {
                 ModItems.ROCKET_FUEL.get())) {
             helper.assertTrue(seen.getOrDefault(expected, 0) > 0, expected + " tiré au moins une fois en 10 000 ouvertures");
         }
-        helper.assertTrue(CrateRegistry.get(CrateKind.MILITAIRE).entries().stream().filter(CrateEntry::isPlaceholder).count() == 3,
-                "la caisse militaire garde ses 3 entrées provisoires J6");
+        helper.assertTrue(CrateRegistry.get(CrateKind.MILITAIRE).entries().stream().filter(CrateEntry::isPlaceholder).count() == 0,
+                "la caisse militaire n'a plus d'entrée provisoire (J6)");
         helper.succeed();
     }
 

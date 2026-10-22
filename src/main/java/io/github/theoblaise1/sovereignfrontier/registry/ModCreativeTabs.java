@@ -64,6 +64,18 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.SULFUR.get());
                         output.accept(ModItems.CRYOGENIC_ORE.get());
                         output.accept(ModItems.CRYOGENIC_CRYSTAL.get());
+                        output.accept(ModItems.PISTOL.get());
+                        output.accept(ModItems.RIFLE.get());
+                        output.accept(ModItems.SNIPER_RIFLE.get());
+                        output.accept(ModItems.EXPLOSIVE.get());
+                        output.accept(ModItems.AMMO_BASIC.get());
+                        output.accept(ModItems.AMMO_PIERCING.get());
+                        output.accept(ModItems.AMMO_SULFUR.get());
+                        output.accept(ModItems.BALLISTIC_LIGHT_ARMOR.get());
+                        output.accept(ModItems.BALLISTIC_HEAVY_ARMOR.get());
+                        output.accept(ModItems.HEALING_KIT.get());
+                        output.accept(ModItems.DUNGEON_KEY.get());
+                        output.accept(ModItems.DUNGEON_ALTAR.get());
                     })
                     .build());
 

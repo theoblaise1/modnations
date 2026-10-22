@@ -540,9 +540,9 @@ public final class RewardGameTests {
                         kind.id() + " : ligne d'aperçu " + i);
             }
         }
-        helper.assertTrue(CrateRegistry.get(CrateKind.MILITAIRE).entries().stream().filter(CrateEntry::isPlaceholder).count() == 3
+        helper.assertTrue(CrateRegistry.get(CrateKind.MILITAIRE).entries().stream().filter(CrateEntry::isPlaceholder).count() == 0
                 && CrateRegistry.get(CrateKind.SPATIALE).entries().stream().filter(CrateEntry::isPlaceholder).count() == 0,
-                "entrées provisoires J6 (militaire) ; plus aucune pour la caisse spatiale (J5)");
+                "plus aucune entrée provisoire (militaire remplacée au J6, spatiale au J5)");
         helper.assertFalse(CrateManager.preview(CrateKind.COMMUNE, null, Map.of(), THRESHOLD).available(),
                 "sans table : aperçu « indisponible »");
         helper.succeed();

@@ -124,9 +124,10 @@ public final class FoundationJ4GameTests {
             helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) > 0,
                     "#" + tag.location() + " non vide depuis le J5");
         }
+        // J6 : les paliers 3 et 4 et l'arme maximale sont remplis (gardien du donjon, contrats).
         for (TagKey<Item> tag : List.of(RestrictedItems.TIER_3, RestrictedItems.TIER_4, RestrictedItems.MAX_WEAPON)) {
-            helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) == 0,
-                    "#" + tag.location() + " vide au J5");
+            helper.assertTrue(BuiltInRegistries.ITEM.getTag(tag).map(HolderSet::size).orElse(0) > 0,
+                    "#" + tag.location() + " rempli au J6");
         }
         helper.assertTrue(RestrictedItems.auditRecipes(helper.getLevel().getServer()).isEmpty(),
                 "aucune recette chargée ne produit d'objet restreint");

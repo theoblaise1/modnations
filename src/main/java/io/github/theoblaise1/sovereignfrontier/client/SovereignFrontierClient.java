@@ -5,6 +5,7 @@ import io.github.theoblaise1.sovereignfrontier.client.screen.MachineScreen;
 import io.github.theoblaise1.sovereignfrontier.registry.ModEntityTypes;
 import io.github.theoblaise1.sovereignfrontier.registry.ModMenus;
 import net.minecraft.client.renderer.entity.NoopRenderer;
+import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
@@ -33,5 +34,6 @@ public final class SovereignFrontierClient {
      */
     private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntityTypes.MERCHANT.get(), NoopRenderer::new);
+        event.registerEntityRenderer(ModEntityTypes.DUNGEON_BOSS.get(), ZombieRenderer::new);
     }
 }

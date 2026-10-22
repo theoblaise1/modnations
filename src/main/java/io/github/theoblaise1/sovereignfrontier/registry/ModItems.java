@@ -1,6 +1,10 @@
 package io.github.theoblaise1.sovereignfrontier.registry;
 
 import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
+import io.github.theoblaise1.sovereignfrontier.armement.AmmoItem;
+import io.github.theoblaise1.sovereignfrontier.armement.ExplosiveItem;
+import io.github.theoblaise1.sovereignfrontier.armement.FirearmItem;
+import io.github.theoblaise1.sovereignfrontier.armement.TrousseSoinsItem;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -85,6 +89,48 @@ public final class ModItems {
     public static final DeferredItem<ArmorItem> HEATED_CHESTPLATE = ITEMS.register("plastron_chauffant",
             () -> new ArmorItem(ModArmorMaterials.HEATED, ArmorItem.Type.CHESTPLATE,
                     new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(20))));
+
+    // J6 : armement, munitions, armures balistiques, donjon (sans modèle ni texture : lot graphique)
+
+    /** Armes à feu (piles de 1) : le tir et les munitions sont dans {@code armement/FirearmItem} (WP2). */
+    public static final DeferredItem<FirearmItem> PISTOL = ITEMS.register("pistolet",
+            () -> new FirearmItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<FirearmItem> RIFLE = ITEMS.register("fusil",
+            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+    public static final DeferredItem<FirearmItem> SNIPER_RIFLE = ITEMS.register("fusil_precision",
+            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+    public static final DeferredItem<ExplosiveItem> EXPLOSIVE = ITEMS.register("explosif",
+            () -> new ExplosiveItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
+
+    /** Munitions (piles de 64) : consommées à chaque tir (WP2). */
+    public static final DeferredItem<AmmoItem> AMMO_BASIC = ITEMS.register("munitions_basiques",
+            () -> new AmmoItem(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<AmmoItem> AMMO_PIERCING = ITEMS.register("munitions_perforantes",
+            () -> new AmmoItem(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<AmmoItem> AMMO_SULFUR = ITEMS.register("munitions_soufre",
+            () -> new AmmoItem(new Item.Properties().stacksTo(64)));
+
+    /** Pièces de torse (un emplacement par matériau) : gilet léger et plastron lourd de {@link ModArmorMaterials}. */
+    public static final DeferredItem<ArmorItem> BALLISTIC_LIGHT_ARMOR = ITEMS.register("armure_balistique_legere",
+            () -> new ArmorItem(ModArmorMaterials.BALLISTIC_LIGHT, ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(20))));
+    public static final DeferredItem<ArmorItem> BALLISTIC_HEAVY_ARMOR = ITEMS.register("armure_balistique_lourde",
+            () -> new ArmorItem(ModArmorMaterials.BALLISTIC_HEAVY, ArmorItem.Type.CHESTPLATE,
+                    new Item.Properties().rarity(Rarity.RARE).durability(ArmorItem.Type.CHESTPLATE.getDurability(20))));
+
+    /** Soins (pile de 8) : caisse militaire et butin du gardien seulement, aucune recette (WP2). */
+    public static final DeferredItem<TrousseSoinsItem> HEALING_KIT = ITEMS.register("trousse_soins",
+            () -> new TrousseSoinsItem(new Item.Properties().stacksTo(8)));
+
+    /**
+     * Clé d'entrée du donjon (craft Station d'ingénierie, onglet Armement). Ce n'est pas une clé de caisse : aucun
+     * {@code CrateKind}, aucun bloc ni table liés.
+     */
+    public static final DeferredItem<Item> DUNGEON_KEY = ITEMS.registerSimpleItem("cle_donjon",
+            new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+
+    /** Objet-bloc de l'autel de donjon ({@link ModBlocks#DUNGEON_ALTAR}). */
+    public static final DeferredItem<BlockItem> DUNGEON_ALTAR = ITEMS.registerSimpleBlockItem(ModBlocks.DUNGEON_ALTAR);
 
     private ModItems() {
     }

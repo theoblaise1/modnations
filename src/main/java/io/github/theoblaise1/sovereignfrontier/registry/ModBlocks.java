@@ -4,6 +4,7 @@ import io.github.theoblaise1.sovereignfrontier.SovereignFrontier;
 import io.github.theoblaise1.sovereignfrontier.block.CivilRegistryBlock;
 import io.github.theoblaise1.sovereignfrontier.block.NationalChestBlock;
 import io.github.theoblaise1.sovereignfrontier.block.TreasuryBlock;
+import io.github.theoblaise1.sovereignfrontier.dungeon.AltarBlock;
 import io.github.theoblaise1.sovereignfrontier.economy.TerminalBlock;
 import io.github.theoblaise1.sovereignfrontier.energy.CableBlock;
 import io.github.theoblaise1.sovereignfrontier.engineering.EngineeringStationBlock;
@@ -102,6 +103,12 @@ public final class ModBlocks {
             p -> new DropExperienceBlock(UniformInt.of(0, 2), p), ore(MapColor.TERRACOTTA_RED, SoundType.STONE));
     public static final DeferredBlock<DropExperienceBlock> CRYOGENIC_ORE = BLOCKS.registerBlock("minerai_cryogenique",
             p -> new DropExperienceBlock(UniformInt.of(3, 7), p), ore(MapColor.ICE, SoundType.GLASS));
+
+    // ------------------------------------------------------------------ J6 : donjons (sans modèle : lot graphique)
+
+    /** Autel du donjon à clé : dureté 3, résistance 1 200, bloc plein (logique dans {@code AltarBlock}, WP1). */
+    public static final DeferredBlock<AltarBlock> DUNGEON_ALTAR = BLOCKS.registerBlock("autel_donjon", AltarBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(3.0F, 1200.0F).sound(SoundType.STONE));
 
     private static BlockBehaviour.Properties ore(MapColor color, SoundType sound) {
         return BlockBehaviour.Properties.of().mapColor(color).instrument(NoteBlockInstrument.BASEDRUM).strength(3.0F, 3.0F)

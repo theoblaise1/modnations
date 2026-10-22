@@ -1,5 +1,6 @@
 package io.github.theoblaise1.sovereignfrontier;
 
+import io.github.theoblaise1.sovereignfrontier.dungeon.DungeonBossEntity;
 import io.github.theoblaise1.sovereignfrontier.network.ModPayloads;
 import io.github.theoblaise1.sovereignfrontier.outpost.MerchantEntity;
 import io.github.theoblaise1.sovereignfrontier.registry.ModArmorMaterials;
@@ -34,8 +35,10 @@ public final class SovereignFrontier {
         ModBlockEntities.BLOCK_ENTITIES.register(modBus);
         ModMenus.MENUS.register(modBus);
         ModEntityTypes.ENTITY_TYPES.register(modBus);
-        modBus.addListener(EntityAttributeCreationEvent.class,
-                event -> event.put(ModEntityTypes.MERCHANT.get(), MerchantEntity.createAttributes().build()));
+        modBus.addListener(EntityAttributeCreationEvent.class, event -> {
+            event.put(ModEntityTypes.MERCHANT.get(), MerchantEntity.createAttributes().build());
+            event.put(ModEntityTypes.DUNGEON_BOSS.get(), DungeonBossEntity.createAttributes().build());
+        });
         modBus.addListener(ModPayloads::register);
         container.registerConfig(ModConfig.Type.SERVER, SFConfig.SPEC);
     }

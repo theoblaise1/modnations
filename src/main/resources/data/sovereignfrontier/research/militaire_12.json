@@ -24,7 +24,8 @@
     ]
   },
   "requires": [
-    "sovereignfrontier:technologie_4"
+    "sovereignfrontier:technologie_4",
+    "sovereignfrontier:ressources_14"
   ],
   "min_population": 11,
   "rewards": [
