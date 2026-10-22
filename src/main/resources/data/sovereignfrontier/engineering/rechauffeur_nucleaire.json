@@ -1,0 +1,30 @@
+{
+  "tab": "aerospatial",
+  "unlock": "heater.nuclear",
+  "ingredients": [
+    {
+      "item": "sovereignfrontier:caisson_reacteur",
+      "count": 8
+    },
+    {
+      "item": "sovereignfrontier:cellule_combustible",
+      "count": 1
+    },
+    {
+      "item": "sovereignfrontier:lingot_titane",
+      "count": 16
+    },
+    {
+      "item": "sovereignfrontier:soufre",
+      "count": 16
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "count": 8
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:rechauffeur_nucleaire",
+    "count": 1
+  }
+}

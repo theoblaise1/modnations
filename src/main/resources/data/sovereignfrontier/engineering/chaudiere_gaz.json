@@ -1,0 +1,26 @@
+{
+  "tab": "aerospatial",
+  "unlock": "boiler.gas",
+  "ingredients": [
+    {
+      "item": "minecraft:blast_furnace",
+      "count": 1
+    },
+    {
+      "item": "minecraft:copper_block",
+      "count": 4
+    },
+    {
+      "item": "sovereignfrontier:lingot_titane",
+      "count": 6
+    },
+    {
+      "item": "sovereignfrontier:soufre",
+      "count": 8
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:chaudiere_gaz",
+    "count": 1
+  }
+}

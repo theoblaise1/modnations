@@ -1,0 +1,18 @@
+{
+  "tab": "aerospatial",
+  "unlock": "dimension.lune",
+  "ingredients": [
+    {
+      "item": "sovereignfrontier:bouteille_gaz",
+      "count": 4
+    },
+    {
+      "item": "minecraft:moss_block",
+      "count": 4
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:bouteille_oxygene",
+    "count": 4
+  }
+}
