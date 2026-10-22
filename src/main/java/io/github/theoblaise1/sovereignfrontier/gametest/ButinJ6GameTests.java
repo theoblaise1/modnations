@@ -127,6 +127,7 @@ public final class ButinJ6GameTests {
         LootParams params = new LootParams.Builder(level)
                 .withParameter(LootContextParams.THIS_ENTITY, zombie)
                 .withParameter(LootContextParams.ORIGIN, new Vec3(0.5D, 1.0D, 0.5D))
+                .withParameter(LootContextParams.DAMAGE_SOURCE, level.damageSources().generic())
                 .create(LootContextParamSets.ENTITY);
 
         ResourceLocation perforantes = J6TestUtil.id("munitions_perforantes");

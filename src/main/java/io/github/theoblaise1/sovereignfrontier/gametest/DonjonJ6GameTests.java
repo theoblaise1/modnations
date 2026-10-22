@@ -89,7 +89,7 @@ public final class DonjonJ6GameTests {
     }
 
     private static List<DungeonBossEntity> bosses(ServerLevel level, BlockPos altar) {
-        return level.getEntitiesOfClass(DungeonBossEntity.class, new AABB(altar).inflate(8.0D));
+        return level.getEntitiesOfClass(DungeonBossEntity.class, new AABB(altar).inflate(8.0D), boss -> boss.isAlive());
     }
 
     private static DungeonData.AltarState altarState(GameTestHelper helper, BlockPos altar) {
