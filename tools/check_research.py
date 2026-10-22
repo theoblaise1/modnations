@@ -72,7 +72,7 @@ UNLOCK_KEYS_REL = JAVA_REL / "research" / "UnlockKeys.java"
 GAMETEST_REL = JAVA_REL / "gametest"
 
 # Câblage des déblocages (contrôle 9) : jalons au plus WIRED_UP_TO vérifiés (WP5 du J5 : « J5 »).
-WIRED_UP_TO = "J5"
+WIRED_UP_TO = "J6"
 DEFERRED = "reporté"
 MILESTONE_RE = re.compile(r"^J([1-9][0-9]*)$")
 # Matériaux spatiaux (J5) : clé d'extraction exigée (transitivement) par tout palier qui les coûte.
