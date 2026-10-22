@@ -9,6 +9,7 @@
     "DispenserBlockMixin",
     "FireBlockMixin",
     "FlowingFluidMixin",
+    "SilverfishWakeUpFriendsGoalMixin",
     "SpongeBlockMixin",
     "TurtleEggBlockMixin"
   ],

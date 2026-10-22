@@ -58,3 +58,59 @@ Lire d'abord `README.md` (boucle de jeu, feuille de route, état des jalons, arc
   vérification finale.
 - Les dimensions des planètes n'existent pas en GameTest : leur génération se vérifie à la recette, sur un
   serveur dédié.
+- Tout bloc, tout joueur et tout témoin d'un test doit se trouver dans la zone dégagée par `floor()` : étendre ses
+  bornes plutôt que supposer l'espace voisin libre (le mur de barrières peut tomber sur une colonne utilisée).
+  L'œil d'un joueur de test (position + 1,62) ne doit jamais entrer dans un bloc.
+- Le serveur de GameTests tire une position de départ aléatoire à chaque exécution : une panne rare ne se voit qu'en
+  relançant `runGameTestServer` plusieurs fois (après avoir supprimé `runs/gameTestServer/world`). Un test qui échoue
+  sur son seul **témoin** (le contrôle, pas la protection testée) trahit d'abord une géométrie de test, pas le mod.
+
+## Reprise du travail (état au 2026-10-22)
+
+### Où on en est
+- **Branche de référence** : `claude/pensive-pasteur-nid4rh`, alignée sur `main`. Elle contient J1 à J5 et les
+  correctifs de `claude/sovereign-frontier-mod-w9ukee` (guide, entonnoir, poisson d'argent). Les branches
+  `claude/nifty-ptolemy-q1umi6` (jusqu'à `1f83239`) et `claude/sovereign-frontier-mod-w9ukee` (jusqu'à `00359dd`)
+  y sont entièrement fusionnées : ne plus y travailler, sinon les lignes divergent de nouveau. Ne pas ouvrir de PR
+  sans demande explicite.
+- **Jalons** : voir l'état dans `README.md`. J5 attend la validation en jeu (`docs/recette/J5.md`) ; J6 ne démarre
+  pas avant.
+- **Recettes à jouer** : `docs/recette/J5.md` ; `docs/recette/revue-multijoueur.md` (deux clients requis) dont le
+  statut n'est pas confirmé.
+- **Guide** : `docs/guide.md` (joueurs et opérateur) couvre J1 à J3 ; J4 et J5 restent à y ajouter.
+- **CI** : `.github/workflows/build.yml` relance les contrôles, le build, les GameTests et publie le `.jar` à chaque
+  push. Vérifier le résultat sur le commit poussé avant de considérer un travail fini.
+
+### Points ouverts
+1. **Interfaces (style NationsGlory)** : mises de côté à la demande de l'utilisateur ; aucune capture de référence
+   n'est disponible, l'utilisateur doit en fournir. Un premier jet partiel (widgets `client/ui/`) n'a **pas** été
+   commité.
+2. **`economie-5`** : les soldes personnels (`EconomyData`) et les trésors nationaux (`NationData`) sont dans deux
+   fichiers distincts ; un arrêt brutal entre deux écritures peut perdre un transfert. Le corriger (regrouper les
+   soldes dans `NationData`) change le format de sauvegarde : décision de l'utilisateur d'abord.
+3. **Trésors et coffres posés avant le commit `4a1554d`** ne sont pas référencés comme cœurs de nation : leur
+   parcelle peut encore être abandonnée. Une migration serait nécessaire.
+4. **Journal** : le limiteur d'actions (5/s) borne le flot, mais un membre peut toujours remplir le journal de
+   50 entrées (pas de regroupement des dépôts).
+5. **Hébergement Aternos** : NeoForge figure au catalogue, l'envoi d'un `.jar` de mod personnalisé n'est pas
+   confirmé. Pour jouer, préférer un serveur local (voir `docs/guide.md`).
+
+### Procédure de reprise
+1. `git status`, puis `git log --oneline -5` : vérifier la branche et qu'elle est à jour de `origin`.
+2. Lire `README.md` (état des jalons), `docs/guide.md`, puis la recette du jalon en cours.
+3. Ne pas démarrer un jalon avant la validation en jeu du précédent (voir Méthode) : la demander à l'utilisateur.
+4. Lancer la vérification « Avant tout commit » (voir Méthode), après `rm -rf runs/gameTestServer/world`.
+
+### Conventions de travail
+- **Un seul Gradle à la fois** : jamais deux commandes Gradle en parallèle dans le même dépôt (verrou et conflits
+  de build). Les sous-agents respectent la même règle.
+- **Sous-agents** : ne commitent pas et ne poussent pas. Ils ne modifient que les fichiers listés dans leur mission ;
+  le fichier de travail va dans le scratchpad, jamais dans le dépôt.
+- **Push** : sur la branche de travail. Vers `main` uniquement sur demande explicite, et seulement si les tests
+  passent (de préférence une fois la CI verte sur la branche de travail).
+- **Protocole réseau** : `ModPayloads.PROTOCOL_VERSION` doit être incrémenté à chaque changement de format d'un
+  paquet (valeur actuelle : `4`).
+- **Mixins** : les cibles package-private (ex. `Silverfish$SilverfishWakeUpFriendsGoal`) se déclarent par chaîne
+  (`targets = "…"`) dans `sovereignfrontier.mixins.json`.
+- **Vidéos et captures** : l'agent ne peut pas regarder une vidéo ; seules les captures fournies par l'utilisateur
+  servent de référence visuelle.

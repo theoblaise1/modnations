@@ -5,6 +5,8 @@ pensé pour **2 à 10 joueurs** sur un serveur dédié auto-hébergé (LAN ou Ta
 Nom de travail, sans lien avec une marque existante. Aucune ressource n'est copiée : textures et
 structures sont générées par script, tous les noms sont originaux.
 
+> Guide joueur et opérateur (J1–J3) : [`docs/guide.md`](docs/guide.md).
+
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
 > recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
 > réacteur, Station d'ingénierie) ; **J4 livré et validé en jeu** (terminal bancaire, `/daily` et

@@ -109,12 +109,17 @@ public final class TerritoryEvents {
      */
     @Nullable
     private static Nation ownerNear(Level level, BlockPos pos, Predicate<Nation> filter) {
+        return ownerNear(level, pos, NEAR_RADIUS, filter);
+    }
+
+    @Nullable
+    private static Nation ownerNear(Level level, BlockPos pos, int radius, Predicate<Nation> filter) {
         if (!(level instanceof ServerLevel serverLevel)) {
             return null;
         }
         NationData data = NationData.get(serverLevel.getServer());
-        for (int cx = (pos.getX() - NEAR_RADIUS) >> 4; cx <= (pos.getX() + NEAR_RADIUS) >> 4; cx++) {
-            for (int cz = (pos.getZ() - NEAR_RADIUS) >> 4; cz <= (pos.getZ() + NEAR_RADIUS) >> 4; cz++) {
+        for (int cx = (pos.getX() - radius) >> 4; cx <= (pos.getX() + radius) >> 4; cx++) {
+            for (int cz = (pos.getZ() - radius) >> 4; cz <= (pos.getZ() + radius) >> 4; cz++) {
                 Nation owner = data.ownerAt(level.dimension(), ChunkPos.asLong(cx, cz));
                 if (owner != null && filter.test(owner)) {
                     return owner;
@@ -503,9 +508,18 @@ public final class TerritoryEvents {
     }
 
     /**
+     * Vrai si un territoire tenu touche le carré de rayon {@code radius} autour de {@code pos}.
+     * Sert aux mobs qui agissent sur un rayon plus large que la règle des 2 blocs (poisson d'argent).
+     */
+    public static boolean territoryWithin(Level level, BlockPos pos, int radius) {
+        return ownerNear(level, pos, radius, owner -> true) != null;
+    }
+
+    /**
      * Mobs qui modifient des blocs autour d'eux (l'enderman prend un bloc jusqu'à 2 blocs de
-     * distance, le ravageur arrache les feuilles, le poisson d'argent s'infiltre, le lapin mange
-     * les carottes, le blaze met le feu) : rien à moins de 2 blocs d'un territoire.
+     * distance, le ravageur arrache les feuilles, le lapin mange les carottes, le blaze met le feu)
+     * : rien à moins de 2 blocs d'un territoire. Le poisson d'argent a sa propre règle, plus large,
+     * dans {@code SilverfishWakeUpFriendsGoalMixin}, car son réveil ne passe pas par cet événement.
      */
     @SubscribeEvent
     public static void onMobGriefing(EntityMobGriefingEvent event) {
