@@ -309,7 +309,9 @@ public final class ProtectionGameTests {
         int border = claimArea(helper, "TestEntonnoir");
         int y = helper.absolutePos(BlockPos.ZERO).getY() + 3;
         int z = lastZ;
-        floor(level, border - 6, border + 2, y - 1, z);
+        // Jusqu'à border + 3 : la moitié droite du double coffre « témoin » y est posée, et une barrière au-dessus
+        // d'un coffre le « bloque » (getContainer renvoie null) si le mur du serveur de GameTests tombe sur cette colonne.
+        floor(level, border - 6, border + 3, y - 1, z);
         finish(helper, () -> {
             BlockState single = Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH);
             // Double coffre déjà à cheval : moitié gauche hors territoire, droite dans le territoire.
@@ -582,8 +584,9 @@ public final class ProtectionGameTests {
 
     /**
      * Clic droit avec un nénuphar, le joueur un bloc au-dessus de la source {@code water} et regardant vers le bas.
-     * L'œil (+ 1,62) doit rester sous la couche de barrières que le GameTest pose à {@code water.y + 3} : à une
-     * hauteur de 2 blocs, il y entrait selon la position (aléatoire) du test et le rayon touchait la barrière.
+     * L'œil (+ 1,62) reste ainsi dans l'air dégagé par {@code floor()} : à 2 blocs de hauteur, il pouvait entrer dans
+     * le mur de barrières que le serveur de GameTests dresse autour de chaque zone (position aléatoire à chaque
+     * exécution), et le rayon touchait la barrière au lieu de l'eau.
      */
     private static void useLilyPadAbove(ServerPlayer player, ServerLevel level, BlockPos water) {
         player.moveTo(water.getX() + 0.5D, water.getY() + 1, water.getZ() + 0.5D, 0.0F, 90.0F);
