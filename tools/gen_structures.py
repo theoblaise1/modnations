@@ -174,11 +174,40 @@ def outpost(variant: str):
     return b.build()
 
 
+def donjon():
+    """
+    Arène du donjon 15 × 8 × 15 (docs/conception/J6.md §2.6) : sol et plafond en pierre taillée, murs de pierre, une
+    ouverture de 3 × 2 au milieu du mur nord (z = 0), 4 piliers, 4 lanternes suspendues et l'autel au centre du sol
+    (7, 1, 7). Pas d'entité ni de coffre : le butin passe par le gardien.
+    """
+    size_x, size_y, size_z = 15, 8, 15
+    b = Builder((size_x, size_y, size_z))
+    for x in range(size_x):
+        for z in range(size_z):
+            b.set(x, 0, z, "minecraft:stone_bricks")
+            b.set(x, size_y - 1, z, "minecraft:stone_bricks")
+            edge = x in (0, size_x - 1) or z in (0, size_z - 1)
+            for y in range(1, size_y - 1):
+                opening = z == 0 and 6 <= x <= 8 and y <= 2
+                if edge and not opening:
+                    b.set(x, y, z, "minecraft:stone_bricks")
+                else:
+                    b.set(x, y, z, "minecraft:air")
+    for x, z in ((3, 3), (11, 3), (3, 11), (11, 11)):
+        for y in range(1, size_y - 1):
+            b.set(x, y, z, "minecraft:chiseled_stone_bricks")
+    for x, z in ((5, 5), (9, 5), (5, 9), (9, 9)):
+        b.set(x, size_y - 2, z, "minecraft:lantern", {"hanging": "true", "waterlogged": "false"})
+    b.set(7, 1, 7, "sovereignfrontier:autel_donjon")
+    return b.build()
+
+
 STRUCTURES = {
     "gametest/empty9": lambda: empty_area(9),
     "avant_poste/plaines": lambda: outpost("plaines"),
     "avant_poste/desert": lambda: outpost("desert"),
     "avant_poste/taiga": lambda: outpost("taiga"),
+    "donjon": lambda: donjon(),
 }
 
 
