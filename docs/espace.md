@@ -327,7 +327,7 @@ compte des frontières. Sur une planète, la production solaire ignore la pluie 
 | Attachement joueur `sovereignfrontier:space` (persistant, copié à la mort) | `oxygen`, `cold`, `heat` (secondes), `grace_until`, `last_login_grace`, `next_flight` (epoch ms), `return_point`, `last_planet`. |
 | Données persistantes du joueur | repère `sovereignfrontier:planete` (secours à la connexion). |
 | NBT de la nation, clé `space` | `landed` (premier atterrissage par dimension, epoch ms), `flights` (nombre de vols). |
-| `MachineBlockEntity` | aucun champ nouveau : la Raffinerie utilise la progression, la Chaudière la combustion, le Réchauffeur le combustible. |
+| `MachineBlockEntity` | aucun champ nouveau (la progression est persistée dans le NBT, clé `progress`) : la Raffinerie utilise la progression, la Chaudière la combustion, le Réchauffeur le combustible. |
 | `GasData` (par dimension) | format inchangé (`extracted`) ; la réserve lue est celle de la planète, sinon `gasPerDimension`. |
 | En mémoire | zones (`ZoneIndex`), sessions de fusée (60 s), comptes à rebours, équipages, permis de voyage. Tout est vidé à l'arrêt. |
 

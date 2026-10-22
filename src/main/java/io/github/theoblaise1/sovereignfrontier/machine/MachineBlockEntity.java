@@ -436,6 +436,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         tag.putInt("heat", heat);
         tag.putInt("gasTank", gasTank);
         tag.putInt("fuelTicks", fuelTicks);
+        tag.putInt("progress", progress);
         tag.putBoolean("running", running);
     }
 
@@ -449,6 +450,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         heat = tag.getInt("heat");
         gasTank = tag.getInt("gasTank");
         fuelTicks = tag.getInt("fuelTicks");
+        progress = Math.max(0, tag.getInt("progress"));
         running = tag.getBoolean("running");
     }
 }

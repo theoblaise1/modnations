@@ -407,6 +407,10 @@ public final class FoundationJ5GameTests {
             be.setBurn(1200, 2400);
             be.setFuelTicks(6000);
             be.setProgress(50);
+            CompoundTag rawTag = be.saveWithoutMetadata(level.registryAccess());
+            MachineBlockEntity rawCopy = new MachineBlockEntity(pos, state);
+            rawCopy.loadWithComponents(rawTag, level.registryAccess());
+            helper.assertTrue(rawCopy.progress() == 50, kind.id() + " : progression relue du NBT");
             be.energyBuffer().setStored(1234);
             be.tick(level, pos, state);
             helper.assertFalse(be.active(), kind.id() + " : ébauche neutre (inactive)");
@@ -415,7 +419,7 @@ public final class FoundationJ5GameTests {
             copy.loadWithComponents(tag, level.registryAccess());
             helper.assertTrue(copy.kind() == kind && copy.burn() == 1200 && copy.burnTotal() == 2400 && copy.fuelTicks() == 6000
                     && copy.energyBuffer().stored() == Math.min(1234, exp[1]), kind.id() + " : NBT relu (combustion, combustible, énergie)");
-            helper.assertTrue(copy.progress() == 0, kind.id() + " : progression non persistée (aucun nouveau champ)");
+            helper.assertTrue(copy.progress() == be.progress(), kind.id() + " : progression relue (après un tick)");
             for (int i = 0; i < kind.slotCount(); i++) {
                 helper.assertTrue(ItemStack.matches(copy.items().getItem(i), contents.get(i)), kind.id() + " : case " + i + " relue");
             }
