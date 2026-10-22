@@ -3,6 +3,7 @@
   "tier": 14,
   "cost": {
     "treasury": 10500,
+    "points": 45,
     "items": [
       {
         "item": "minecraft:diamond",
@@ -13,7 +14,7 @@
         "count": 24
       },
       {
-        "item": "minecraft:quartz_block",
+        "item": "sovereignfrontier:lingot_titane",
         "count": 32
       },
       {

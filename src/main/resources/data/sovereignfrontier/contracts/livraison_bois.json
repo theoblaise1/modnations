@@ -1,0 +1,7 @@
+{
+  "kind": "deliver",
+  "weight": 10,
+  "duration_hours": 24,
+  "objective": {"item": "minecraft:oak_log", "amount": {"min": 64, "max": 128, "step": 16}},
+  "reward": {"money": 50, "money_per_unit": 0.6, "points": 2, "points_per_unit": 0.03}
+}

@@ -46,7 +46,7 @@ import java.util.Set;
  * l'inventaire) et ligne d'état expliquant pourquoi « Fabriquer » est désactivé. Le serveur revalide tout.
  */
 @OnlyIn(Dist.CLIENT)
-public class EngineeringScreen extends Screen {
+public class EngineeringScreen extends Screen implements FeedbackScreen {
     private static final int W = 320;
     private static final int H = 200;
     private static final int ROW = 20;
@@ -143,6 +143,7 @@ public class EngineeringScreen extends Screen {
         rebuildWidgets();
     }
 
+    @Override
     public void showFeedback(Component message, boolean success) {
         feedback = message;
         feedbackOk = success;

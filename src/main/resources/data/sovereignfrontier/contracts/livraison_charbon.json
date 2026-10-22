@@ -1,0 +1,7 @@
+{
+  "kind": "deliver",
+  "weight": 10,
+  "duration_hours": 24,
+  "objective": {"item": "minecraft:coal", "amount": {"min": 64, "max": 128, "step": 16}},
+  "reward": {"money": 60, "money_per_unit": 0.7, "points": 3, "points_per_unit": 0.04}
+}

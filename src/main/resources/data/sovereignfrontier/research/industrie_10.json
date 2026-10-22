@@ -3,6 +3,7 @@
   "tier": 10,
   "cost": {
     "treasury": 9500,
+    "points": 25,
     "items": [
       {
         "item": "minecraft:glowstone",

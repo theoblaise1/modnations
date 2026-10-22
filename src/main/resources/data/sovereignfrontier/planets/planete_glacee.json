@@ -1,0 +1,16 @@
+{
+  "dimension": "sovereignfrontier:planete_glacee",
+  "requires": ["rocket", "dimension.planete_glacee", "rocket.upgrade_module"],
+  "module": "sovereignfrontier:module_cryogenique",
+  "outbound": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 10}
+  ],
+  "return": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 6}
+  ],
+  "radius": 2000,
+  "environment": {"oxygen": true, "cold": true},
+  "gas_reserve": 1000000,
+  "solar_multiplier": 0.3,
+  "mining": {"unlock": "mining.cryogenic", "blocks": "#sovereignfrontier:minerais/planete_glacee"}
+}

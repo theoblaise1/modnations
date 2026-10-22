@@ -1,0 +1,30 @@
+{
+  "tab": "machines",
+  "unlock": "refinery",
+  "ingredients": [
+    {
+      "item": "minecraft:blast_furnace",
+      "count": 2
+    },
+    {
+      "item": "minecraft:copper_block",
+      "count": 4
+    },
+    {
+      "item": "minecraft:cauldron",
+      "count": 2
+    },
+    {
+      "item": "sovereignfrontier:circuit",
+      "count": 4
+    },
+    {
+      "item": "minecraft:iron_block",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:raffinerie",
+    "count": 1
+  }
+}

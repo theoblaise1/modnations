@@ -1,0 +1,20 @@
+{
+  "variant": "general",
+  "rolls": 6,
+  "offers": [
+    {"item": "minecraft:bread", "count": 6, "price": 18, "stock": 16, "weight": 10, "guaranteed": true},
+    {"item": "minecraft:wheat", "count": 16, "payout": 12, "demand": 32, "weight": 10, "guaranteed": true},
+    {"item": "minecraft:torch", "count": 16, "price": 12, "stock": 16, "weight": 8},
+    {"item": "minecraft:oak_log", "count": 16, "price": 40, "payout": 16, "stock": 8, "demand": 16, "weight": 6},
+    {"item": "minecraft:iron_ingot", "count": 4, "price": 60, "payout": 32, "stock": 8, "demand": 16, "weight": 8},
+    {"item": "minecraft:coal", "count": 8, "price": 24, "payout": 12, "stock": 16, "demand": 32, "weight": 8},
+    {"item": "minecraft:glass", "count": 16, "price": 40, "stock": 8, "weight": 5},
+    {"item": "minecraft:leather", "count": 4, "payout": 16, "demand": 24, "weight": 6},
+    {"item": "minecraft:carrot", "count": 16, "payout": 10, "demand": 32, "weight": 6},
+    {"item": "minecraft:rotten_flesh", "count": 16, "payout": 4, "demand": 48, "weight": 6},
+    {"item": "minecraft:string", "count": 8, "payout": 8, "demand": 32, "weight": 6},
+    {"item": "minecraft:saddle", "count": 1, "price": 200, "stock": 1, "weight": 2},
+    {"item": "minecraft:name_tag", "count": 1, "price": 150, "stock": 2, "weight": 2},
+    {"item": "minecraft:experience_bottle", "count": 4, "price": 80, "stock": 4, "weight": 3}
+  ]
+}

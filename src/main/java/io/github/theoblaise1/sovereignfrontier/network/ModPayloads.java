@@ -1,10 +1,14 @@
 package io.github.theoblaise1.sovereignfrontier.network;
 
+import io.github.theoblaise1.sovereignfrontier.contract.ContractManager;
 import io.github.theoblaise1.sovereignfrontier.engineering.EngineeringManager;
+import io.github.theoblaise1.sovereignfrontier.enterprise.EnterpriseManager;
+import io.github.theoblaise1.sovereignfrontier.enterprise.Sector;
 import io.github.theoblaise1.sovereignfrontier.nation.ActionResult;
 import io.github.theoblaise1.sovereignfrontier.nation.NationManager;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.nation.NationRole;
+import io.github.theoblaise1.sovereignfrontier.outpost.MarketManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
@@ -19,7 +23,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * Écouteur ajouté explicitement sur le bus du mod dans {@code SovereignFrontier}.
  */
 public final class ModPayloads {
-    public static final String PROTOCOL_VERSION = "3";
+    public static final String PROTOCOL_VERSION = "4";
 
     private ModPayloads() {
     }
@@ -47,6 +51,57 @@ public final class ModPayloads {
         registrar.playToServer(EngineeringCraftC2S.TYPE, EngineeringCraftC2S.STREAM_CODEC, ModPayloads::onEngineeringCraft);
         registrar.playToServer(StartResearchC2S.TYPE, StartResearchC2S.STREAM_CODEC, ModPayloads::onStartResearch);
         registrar.playToServer(CancelResearchC2S.TYPE, CancelResearchC2S.STREAM_CODEC, ModPayloads::onCancelResearch);
+
+        // J4 : économie (marchands, contrats, entreprises, caisses)
+        registrar.playToClient(TradeViewS2C.TYPE, TradeViewS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleTradeView(payload, context));
+        registrar.playToClient(EconomyViewS2C.TYPE, EconomyViewS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleEconomyView(payload, context));
+        registrar.playToClient(CratePreviewS2C.TYPE, CratePreviewS2C.STREAM_CODEC,
+                (payload, context) -> io.github.theoblaise1.sovereignfrontier.client.ClientPayloadHandler.handleCratePreview(payload, context));
+        registrar.playToServer(TradeActionC2S.TYPE, TradeActionC2S.STREAM_CODEC, ModPayloads::onTradeAction);
+        registrar.playToServer(RequestEconomyC2S.TYPE, RequestEconomyC2S.STREAM_CODEC, ModPayloads::onRequestEconomy);
+        registrar.playToServer(ContractActionC2S.TYPE, ContractActionC2S.STREAM_CODEC, ModPayloads::onContractAction);
+        registrar.playToServer(EnterpriseAssignC2S.TYPE, EnterpriseAssignC2S.STREAM_CODEC, ModPayloads::onEnterpriseAssign);
+    }
+
+    // ------------------------------------------------------------------ J4 : économie
+
+    private static void onTradeAction(TradeActionC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)
+                && payload.lots() >= 1 && payload.lots() <= TradeActionC2S.MAX_LOTS) {
+            reply(player, MarketManager.handleTrade(player, payload));
+        }
+    }
+
+    /** Débit limité dans {@link EconomyNetwork#request}. */
+    private static void onRequestEconomy(RequestEconomyC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            EconomyNetwork.request(player);
+        }
+    }
+
+    private static void onContractAction(ContractActionC2S payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player)
+                && ContractActionC2S.isValid(payload.action())) {
+            replyEconomy(player, ContractManager.handleAction(player, payload.action(), payload.id()));
+        }
+    }
+
+    private static void onEnterpriseAssign(EnterpriseAssignC2S payload, IPayloadContext context) {
+        Sector sector = Sector.byOrdinal(payload.sector());
+        if (context.player() instanceof ServerPlayer player && NationSync.allowMutation(player) && sector != null
+                && payload.workers() >= 0 && payload.workers() <= EnterpriseAssignC2S.MAX_WORKERS) {
+            replyEconomy(player, EnterpriseManager.assign(player, sector, payload.workers()));
+        }
+    }
+
+    /** Comme {@link #reply}, et en cas d'échec la vue Économie est renvoyée pour resynchroniser l'onglet. */
+    private static void replyEconomy(ServerPlayer player, ActionResult result) {
+        reply(player, result);
+        if (!result.success()) {
+            EconomyNetwork.request(player);
+        }
     }
 
     // Les paquets qui modifient la nation passent par NationSync.allowMutation : au-delà du plafond, ils sont ignorés.
@@ -115,10 +170,11 @@ public final class ModPayloads {
     }
 
     /**
-     * Envoie le résultat dans le chat et dans la barre d'état de l'écran. En cas de succès, {@link NationManager} a déjà
-     * rafraîchi tous les membres ; en cas d'échec on renvoie l'état pour resynchroniser l'écran (débit limité).
+     * Envoie le résultat dans le chat et dans la barre d'état de l'écran ouvert ({@code FeedbackScreen}). En cas de
+     * succès, l'appelant a déjà rafraîchi ce qui doit l'être ; en cas d'échec on renvoie l'état national pour
+     * resynchroniser l'écran (débit limité). Public : réutilisé par les systèmes J4.
      */
-    private static void reply(ServerPlayer player, ActionResult result) {
+    public static void reply(ServerPlayer player, ActionResult result) {
         player.sendSystemMessage(result.message());
         if (NationSync.canReceive(player)) {
             PacketDistributor.sendToPlayer(player, new ActionFeedbackS2C(result.message(), result.success()));

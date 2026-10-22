@@ -1,0 +1,8 @@
+{
+  "kind": "kill",
+  "weight": 6,
+  "min_population": 2,
+  "duration_hours": 24,
+  "objective": {"entity": "minecraft:creeper", "amount": {"min": 8, "max": 16, "step": 2}},
+  "reward": {"money": 100, "money_per_unit": 12, "points": 4, "points_per_unit": 0.3, "keys": [{"crate": "militaire", "count": 1, "chance": 0.5}]}
+}

@@ -2,16 +2,27 @@
 
 Ce document est le **contrat** entre le contenu (`data/sovereignfrontier/research/*.json`) et le
 code : noms, récompenses, prérequis croisés et population minimale de chacun des 65 paliers.
-Les coûts (objets, trésorerie) sont fixés dans les JSON et vérifiés par `tools/check_research.py`.
+Les coûts (objets, trésorerie, points de recherche) sont fixés dans les JSON et vérifiés par
+`tools/check_research.py`.
 
 ## Règles du moteur
 - 5 domaines ; dans chaque domaine le palier `n` exige implicitement le palier `n-1`.
 - Une seule recherche active par nation, tous domaines confondus (permission `rechercher`).
 - Lancement : objets **consommés dans le coffre national**, coût débité de la trésorerie
-  (et des points de recherche, gagnés par contrats au J4 ; `0` partout au J2).
+  et des points de recherche (gagnés par les contrats nationaux, voir « Points de recherche »).
 - Durée : `120 s × palier^1,35`, divisée par `1 + bonus research_speed`. Fin = horodatage epoch :
   la recherche avance serveur éteint et se termine au premier contrôle (toutes les 20 ticks).
-- Annulation : objets perdus, `researchCancelRefund` (50 % par défaut) du coût en trésorerie rendu.
+- Annulation : objets perdus, `researchCancelRefund` (50 % par défaut) du coût en trésorerie rendu ;
+  les points de recherche ne sont **jamais** rendus.
+
+## Points de recherche (J4)
+- Règle imposée par `tools/check_research.py` : `cost.points = 5 × (palier − 5)` à partir du
+  palier 6, `0` (champ absent) pour les paliers 1 à 5. Soit 5, 10, 15… points : 40 paliers payants,
+  **1 035 points** pour l'arbre complet (civil 275, militaire 330, ressources 275, industrie 140,
+  technologie 15).
+- Seule source : les contrats nationaux (`data/sovereignfrontier/contracts/`, environ 3 à 20 points
+  par contrat réussi), versés à la nation. L'arbre complet demande 3 à 5 semaines à une nation active.
+- Les paliers déjà terminés avant le J4 ne sont pas facturés rétroactivement.
 
 ## Bonus passifs (`"type": "bonus"`) — effet immédiat
 | stat | effet |
@@ -23,35 +34,59 @@ Les coûts (objets, trésorerie) sont fixés dans les JSON et vérifiés par `to
 | `max_members` | membres supplémentaires |
 | `research_speed` | durée des recherches ÷ (1 + somme) |
 
-## Déblocages (`"type": "unlock"`) — consommés par les jalons suivants
-La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unlock.<clé>`.
+## Déblocages (`"type": "unlock"`) — consommés par les jalons
+La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unlock.<clé>`. La colonne « jalon » du
+catalogue est lue par `tools/check_research.py` : toute clé dont le jalon est au plus `WIRED_UP_TO` (actuellement
+`J5`) doit être consommée par le code ou les données (voir « Validation » ci-dessous).
 
 **Implémentées au J3** (recettes `data/sovereignfrontier/engineering/`) : `station.machines`,
 `energy.cables`, `generator.thermal`, `generator.solar`, `machines.automation`, `drill.gas`,
-`reactor.nuclear`, `reactor.enriched_fuel`, `circuits`. Restent à venir (sans effet pour l'instant) :
-`tools.*`, `drill.survey`, `drill.mechanical`, `drill.deep`, `machines.alloy`.
+`reactor.nuclear`, `reactor.enriched_fuel`, `circuits`.
+
+**Implémentées au J5** (les 15 déblocages du jalon plus `refinery`, longtemps marquée J3 sans jamais avoir été
+câblée) :
+- onglet et machines : `station.aerospace` (onglet Aérospatial de la Station d'ingénierie), `rocket` (coque, moteur,
+  fusée ; tout vol), `refinery` (recette de la Raffinerie, onglet Machines), `rocket.fuel` (la Raffinerie produit du
+  carburant de fusée), `oxygen.systems` (Diffuseur d'oxygène), `boiler.gas` (Chaudière à gaz), `armor.gas_heated`
+  (Plastron chauffant), `heater.nuclear` (Réchauffeur nucléaire), `propulsion.advanced` (Propulseur avancé :
+  carburant × 0,75) ;
+- destinations : `dimension.lune`, `dimension.mars`, `dimension.planete_glacee` (vol, revendication de territoire sur
+  la planète ; la Lune ouvre aussi la recette de la bouteille d'oxygène), `rocket.upgrade_module` (condition de la
+  3ᵉ destination : le Module cryogénique en soute ; ouvre le contrat de mission qui le donne) ;
+- extraction : `mining.lunar`, `mining.martian`, `mining.cryogenic` (casser le minerai de titane, de soufre, cryogénique
+  — verrou valable dans toute dimension).
+
+Ces clés **verrouillent l'effet**, pas seulement la recette : une machine J5 ne fonctionne que sur le territoire d'une
+nation qui possède sa clé, un propulseur ou un plastron n'agit que pour une nation qui possède la sienne. Le détail
+(planètes, fusée, environnement) est dans [`docs/espace.md`](espace.md).
+
+**Restent à venir** (sans effet pour l'instant) : `tools.*`, `drill.survey`, `drill.mechanical`, `drill.deep`,
+`machines.alloy`, `storage.expansion_*` (colonne « reporté »), `diplomacy.embassy` et `missile.*` (J7), `station.armament`,
+`ammo.*`, `weapon.*`, `armor.ballistic_*`, `defense.*` (J6).
 
 | clé | effet | jalon |
 |---|---|---|
-| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national | J4 |
+| `storage.expansion_1`, `storage.expansion_2` | agrandissement du stockage national (reporté : le déblocage reste sans effet) | reporté |
 | `diplomacy.embassy` | ambassades et traités | J7 |
-| `tools.reinforced`, `tools.precision` | outils de minage avancés (Station d'ingénierie) | J3 |
-| `drill.survey`, `drill.mechanical`, `drill.gas`, `drill.deep` | prospection et foreuses | J3 |
-| `refinery` | raffinerie de carburant | J3 |
-| `mining.lunar`, `mining.martian`, `mining.cryogenic` | extraction sur Lune / Mars / planète glacée | J5 |
+| `tools.reinforced`, `tools.precision` | outils de minage avancés (Station d'ingénierie) | reporté |
+| `drill.gas` | foreuse à gaz | J3 |
+| `drill.survey`, `drill.mechanical`, `drill.deep` | prospection, foreuses mécanique et profonde | reporté |
+| `refinery` | Raffinerie (machine fabriquée à la Station d'ingénierie, onglet Machines) | J5 |
+| `mining.lunar`, `mining.martian`, `mining.cryogenic` | extraction sur Lune / Mars / planète glacée : casser le minerai de titane / de soufre / cryogénique | J5 |
 | `station.machines` | onglet Machines de la Station d'ingénierie | J3 |
 | `energy.cables` | câbles d'énergie | J3 |
 | `generator.thermal`, `generator.solar` | générateurs thermique et solaire | J3 |
-| `machines.automation`, `machines.alloy` | machines d'automatisation et d'alliage | J3 |
+| `machines.automation` | machines d'automatisation | J3 |
+| `machines.alloy` | machines d'alliage | reporté |
 | `reactor.nuclear`, `reactor.enriched_fuel` | réacteur nucléaire 5×5×5, combustible enrichi | J3 |
-| `station.aerospace`, `rocket` | onglet Aérospatial, fusée | J5 |
-| `rocket.fuel`, `rocket.upgrade_module` | carburant de fusée, module pour la 3e destination | J5 |
-| `heater.nuclear` | générateur thermique nucléaire (rayon 200, planète glacée) | J5 |
+| `station.aerospace`, `rocket` | onglet Aérospatial ; coque, moteur et fusée (tout vol exige `rocket`) | J5 |
+| `rocket.fuel`, `rocket.upgrade_module` | carburant de fusée (procédé de la Raffinerie), module pour la 3e destination (ouvre le contrat de mission du Module cryogénique) | J5 |
+| `heater.nuclear` | Réchauffeur nucléaire (zone de chaleur de rayon 200, planète glacée ; ne produit pas d'énergie) | J5 |
 | `circuits` | circuits électroniques | J3 |
-| `dimension.lune`, `dimension.mars`, `dimension.planete_glacee` | accès aux dimensions | J5 |
-| `oxygen.systems` | zones oxygénées | J5 |
-| `propulsion.advanced` | propulseurs avancés | J5 |
-| `armor.gas_heated`, `boiler.gas` | armure chauffée au gaz, chaudière au gaz (rayon 50) | J5 |
+| `dimension.lune`, `dimension.mars`, `dimension.planete_glacee` | accès aux dimensions : vol en fusée et revendication de territoire | J5 |
+| `oxygen.systems` | Diffuseur d'oxygène : zones oxygénées | J5 |
+| `propulsion.advanced` | Propulseur avancé (carburant des vols × 0,75) | J5 |
+| `armor.gas_heated`, `boiler.gas` | Plastron chauffant (armure chauffée au gaz), Chaudière à gaz (zone de chaleur de rayon 50) | J5 |
 | `station.armament` | onglet Armement de la Station d'ingénierie | J6 |
 | `ammo.basic`, `ammo.piercing`, `ammo.sulfur` | munitions | J6 |
 | `weapon.pistol`, `weapon.rifle`, `weapon.sniper`, `weapon.explosives` | armes | J6 |
@@ -154,5 +189,33 @@ sans repasser par le palier demandeur (par ex. `industrie_8 → technologie_1 �
 - Trésorerie ≈ `200 × palier^1,5` (arrondi à 50) ; ×1,2 militaire, ×1,5 industrie, ×4 technologie.
 - 1 à 4 types d'objets **vanilla** (ou blocs du mod), quantités croissantes : matériaux communs
   aux premiers paliers, fer/redstone/or ensuite, diamants/obsidienne/objets du Nether en fin d'arbre.
-- Les jalons J3 à J6 remplaceront une partie des coûts par les ressources qu'ils introduisent
+- Les jalons J3 à J6 remplacent une partie des coûts par les ressources qu'ils introduisent
   (minerais lunaires, soufre de Mars, gaz…).
+- **Matériaux spatiaux (J5).** Sept paliers remplacent un objet vanilla par un matériau spatial, uniquement dans des
+  paliers qui exigent (transitivement) l'extraction correspondante (contrôlé par `check_research.py`, contrôle 9) ;
+  trésorerie et points inchangés, sans effet rétroactif sur les paliers déjà terminés :
+
+  | Palier | Remplacé | Par |
+  |---|---|---|
+  | `technologie_5` Propulsion avancée | charge de feu × 32 | lingot de titane × 24 |
+  | `industrie_11` Module de fusée | membrane de phantom × 16 | lingot de titane × 32 |
+  | `ressources_14` Extraction martienne | bloc de quartz × 32 | lingot de titane × 32 |
+  | `ressources_15` Ingénierie cryogénique | œil de l'Ender × 8 | soufre × 64 |
+  | `technologie_6` Thermorégulation | cuir × 32 | soufre × 48 |
+  | `industrie_12` Chauffage nucléaire | bloc de magma × 48 | soufre × 64 |
+  | `technologie_7` Programme glaciaire | glace bleue × 32 | lingot de titane × 64 |
+
+  Le cristal cryogénique n'entre dans aucun coût de recherche (il sert aux contrats de livraison, voir
+  `docs/economie.md`). Aucun marchand n'achète ni ne vend ces matériaux.
+
+## Validation — `tools/check_research.py`
+```bash
+python3 tools/check_research.py              # vérification complète (code de sortie 1 en cas d'erreur)
+python3 tools/check_research.py --self-test  # tests intégrés sur un arbre temporaire
+```
+Schéma des 65 paliers, séquences, prérequis sans cycle, conformité à ce plan (récompenses, prérequis croisés,
+population), barème des coûts et des points, objets connus, traductions, puis (J5) **câblage des déblocages** :
+chaque clé de jalon au plus `WIRED_UP_TO` est consommée par un champ `unlock` d'une recette d'ingénierie, un champ
+`requires` ou `mining.unlock` d'une planète, ou un littéral du code Java ; un matériau spatial n'apparaît dans le coût
+d'un palier que si ce palier exige le palier d'extraction correspondant (`mining.lunar` pour le titane,
+`mining.martian` pour le soufre, `mining.cryogenic` pour le cristal).

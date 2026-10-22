@@ -7,6 +7,12 @@ import io.github.theoblaise1.sovereignfrontier.energy.EnergyNode;
 import io.github.theoblaise1.sovereignfrontier.energy.EnergyRole;
 import io.github.theoblaise1.sovereignfrontier.registry.ModBlockEntities;
 import io.github.theoblaise1.sovereignfrontier.registry.ModItems;
+import io.github.theoblaise1.sovereignfrontier.rocket.RefineryLogic;
+import io.github.theoblaise1.sovereignfrontier.space.HeaterLogic;
+import io.github.theoblaise1.sovereignfrontier.space.OxygenDiffuserLogic;
+import io.github.theoblaise1.sovereignfrontier.space.PlanetDefinition;
+import io.github.theoblaise1.sovereignfrontier.space.SpaceDimensions;
+import io.github.theoblaise1.sovereignfrontier.space.ZoneIndex;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -29,9 +35,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Comportement de toutes les machines du J3, selon leur {@link MachineKind}. Travail par tick
+ * Comportement de toutes les machines, selon leur {@link MachineKind}. Travail par tick
  * borné : quelques opérations arithmétiques et une distribution sur le réseau mis en cache ;
- * la structure du réacteur n'est revalidée que toutes les 40 ticks.
+ * la structure du réacteur n'est revalidée que toutes les 40 ticks. Les machines du J5 délèguent leur tick à
+ * {@link RefineryLogic}, {@link OxygenDiffuserLogic} et {@link HeaterLogic}, qui passent par les accesseurs ci-dessous
+ * (aucun nouveau champ persisté : la Raffinerie utilise {@code progress}, la Chaudière {@code burn}/{@code burnTotal},
+ * le Réchauffeur {@code fuelTicks}).
  */
 public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuProvider {
     /**
@@ -64,6 +73,8 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
     private int sinks;
     private int counter;
     private long dimensionGas;
+    /** Machines du J5 : état « actif » fixé par leur logique à chaque tick (non persisté). */
+    private boolean active;
 
     public MachineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE.get(), pos, state);
@@ -116,6 +127,57 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         setChanged();
     }
 
+    // ------------------------------------------------------------------ accesseurs des logiques du J5
+
+    /**
+     * Compteur de ticks du bloc-entité depuis son chargement (non persisté) : les logiques du J5 s'en servent pour
+     * leurs passages toutes les 20 ticks.
+     */
+    public int ticks() {
+        return counter;
+    }
+
+    /** Progression du cycle (Raffinerie : ticks écoulés du cycle). */
+    public int progress() {
+        return progress;
+    }
+
+    public void setProgress(int value) {
+        progress = Math.max(0, value);
+    }
+
+    /** Combustion restante (Chaudière : ticks de la bouteille en cours). */
+    public int burn() {
+        return burn;
+    }
+
+    public int burnTotal() {
+        return burnTotal;
+    }
+
+    public void setBurn(int remaining, int total) {
+        burn = Math.max(0, remaining);
+        burnTotal = Math.max(0, total);
+    }
+
+    /** Combustible restant (réacteur, Réchauffeur nucléaire : ticks). */
+    public int fuelTicks() {
+        return fuelTicks;
+    }
+
+    public void setFuelTicks(int value) {
+        fuelTicks = Math.max(0, value);
+    }
+
+    /** État « actif » d'une machine du J5 (zone maintenue, cycle en cours) : écran et diagnostic. */
+    public boolean active() {
+        return kind.isSpace() ? active : progress > 0 || burn > 0;
+    }
+
+    public void setActive(boolean value) {
+        active = value;
+    }
+
     // ------------------------------------------------------------------ tick
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, MachineBlockEntity be) {
@@ -131,9 +193,25 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
             case REACTOR -> tickReactor(level, pos, state);
             case BATTERY -> {
             }
+            case REFINERY -> RefineryLogic.tick(level, pos, this);
+            case OXYGEN_DIFFUSER -> OxygenDiffuserLogic.tick(level, pos, this);
+            case GAS_BOILER -> HeaterLogic.tickBoiler(level, pos, this);
+            case NUCLEAR_HEATER -> HeaterLogic.tickNuclear(level, pos, this);
         }
         EnergyNetworks.push(level, pos, energy, kind.role());
         setChanged();
+    }
+
+    /**
+     * Retrait du bloc-entité (bloc cassé, chunk déchargé) : la zone d'oxygène ou de chaleur de la machine disparaît
+     * aussitôt de l'index.
+     */
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && !level.isClientSide() && kind.isSpace()) {
+            ZoneIndex.remove(level.dimension(), worldPosition);
+        }
     }
 
     private void tickThermal() {
@@ -156,12 +234,30 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
     }
 
     private void tickSolar(ServerLevel level, BlockPos pos) {
-        if (level.isDay() && !level.isRaining() && level.canSeeSky(pos.above())) {
-            energy.generate(SFConfig.SOLAR_OUTPUT.get());
+        long output = solarOutput(level.isDay(), level.isRaining(), level.canSeeSky(pos.above()),
+                SpaceDimensions.planet(level), SFConfig.SOLAR_OUTPUT.get());
+        if (output > 0) {
+            energy.generate(output);
             progress = 100;
         } else {
             progress = 0;
         }
+    }
+
+    /**
+     * Production d'un panneau solaire (En/tick) : de jour, ciel visible. Hors planète, rien sous la pluie ; sur une
+     * planète (J5), la pluie terrestre (météo partagée de l'Overworld) est ignorée et la production est multipliée par
+     * {@code solar_multiplier}, arrondie au plus proche.
+     */
+    public static long solarOutput(boolean day, boolean raining, boolean skyVisible, @javax.annotation.Nullable PlanetDefinition planet,
+                                   int base) {
+        if (!day || !skyVisible) {
+            return 0L;
+        }
+        if (planet == null) {
+            return raining ? 0L : base;
+        }
+        return Math.max(0L, Math.round(base * planet.solarMultiplier()));
     }
 
     private void tickDrill(ServerLevel level) {
@@ -259,12 +355,11 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
                 case 3 -> hi(energy.capacity());
                 case 4 -> lo(heat);
                 case 5 -> hi(heat);
-                case 6 -> kind == MachineKind.THERMAL ? (burnTotal == 0 ? 0 : burn * 100 / burnTotal)
-                        : kind == MachineKind.GAS_DRILL ? progress * 5 : progress;
+                case 6 -> percent();
                 case 7 -> kind == MachineKind.REACTOR ? cells * 100 + sinks : gasTank;
                 case 8 -> lo(SFConfig.REACTOR_MAX_HEAT.get());
                 case 9 -> hi(SFConfig.REACTOR_MAX_HEAT.get());
-                case 10 -> (running ? FLAG_RUNNING : 0) | (valid ? FLAG_VALID : 0) | (progress > 0 || burn > 0 ? FLAG_ACTIVE : 0);
+                case 10 -> (running ? FLAG_RUNNING : 0) | (valid ? FLAG_VALID : 0) | (active() ? FLAG_ACTIVE : 0);
                 case 11 -> quarter(dimensionGas, 0);
                 case 12 -> quarter(dimensionGas, 1);
                 case 13 -> quarter(dimensionGas, 2);
@@ -282,6 +377,21 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
             return DATA_SIZE;
         }
     };
+
+    /**
+     * Valeur d'écran n° 6 (0 à 100) : combustion (générateur thermique, chaudière), progression (foreuse, raffinerie),
+     * combustible restant (réchauffeur nucléaire), production (panneau, réacteur).
+     */
+    private int percent() {
+        return switch (kind) {
+            case THERMAL, GAS_BOILER -> burnTotal == 0 ? 0 : burn * 100 / burnTotal;
+            case GAS_DRILL -> progress * 5;
+            case REFINERY -> Math.min(100, progress * 100 / Math.max(1, SFConfig.REFINERY_CYCLE_TICKS.get()));
+            case NUCLEAR_HEATER -> Math.min(100, (int) ((long) fuelTicks * 100 / Math.max(1, SFConfig.NUCLEAR_HEATER_FUEL_TICKS.get())));
+            case OXYGEN_DIFFUSER -> active ? 100 : 0;
+            default -> progress;
+        };
+    }
 
     private static int lo(long v) {
         return (int) (Math.min(v, 0xFFFFFFFFL) & 0xFFFF);
@@ -326,6 +436,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         tag.putInt("heat", heat);
         tag.putInt("gasTank", gasTank);
         tag.putInt("fuelTicks", fuelTicks);
+        tag.putInt("progress", progress);
         tag.putBoolean("running", running);
     }
 
@@ -339,6 +450,7 @@ public class MachineBlockEntity extends BlockEntity implements EnergyNode, MenuP
         heat = tag.getInt("heat");
         gasTank = tag.getInt("gasTank");
         fuelTicks = tag.getInt("fuelTicks");
+        progress = Math.max(0, tag.getInt("progress"));
         running = tag.getBoolean("running");
     }
 }

@@ -39,6 +39,9 @@ public final class ClientEvents {
         ClientNationState.clear();
         ClientResearchState.clear();
         ClientEngineeringState.clear();
+        ClientMarket.clear();
+        ClientEconomy.clear();
+        ClientRewards.clear();
     }
 
     /** Évite d'envoyer le paquet à un serveur qui n'a pas le mod. */

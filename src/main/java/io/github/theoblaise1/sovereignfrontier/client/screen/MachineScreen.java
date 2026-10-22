@@ -51,14 +51,17 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
             g.fill(leftPos + slot.x - 1, topPos + slot.y - 1, leftPos + slot.x + 17, topPos + slot.y + 17, COL_SLOT);
         }
         long energy = menu.wide(0);
-        long capacity = Math.max(1, menu.wide(2));
-        bar(g, 8, 16, 160, 4, (float) energy / capacity, COL_ENERGY);
-        if (menu.kind() == MachineKind.REACTOR) {
-            bar(g, 8, 22, 160, 4, (float) menu.wide(4) / Math.max(1, menu.wide(8)), COL_HEAT);
-        } else if (menu.kind() == MachineKind.GAS_DRILL) {
-            bar(g, 8, 22, 160, 4, (float) menu.value(7) / MachineBlockEntity.GAS_TANK, COL_GAS);
-        } else if (menu.kind() == MachineKind.THERMAL) {
-            bar(g, 8, 22, 160, 3, menu.value(6) / 100f, COL_HEAT);
+        long capacity = menu.wide(2);
+        if (capacity > 0) {
+            bar(g, 8, 16, 160, 4, (float) energy / capacity, COL_ENERGY);
+        }
+        switch (menu.kind()) {
+            case REACTOR -> bar(g, 8, 22, 160, 4, (float) menu.wide(4) / Math.max(1, menu.wide(8)), COL_HEAT);
+            case GAS_DRILL -> bar(g, 8, 22, 160, 4, (float) menu.value(7) / MachineBlockEntity.GAS_TANK, COL_GAS);
+            case THERMAL, GAS_BOILER, NUCLEAR_HEATER -> bar(g, 8, 22, 160, 3, menu.value(6) / 100f, COL_HEAT);
+            case REFINERY -> bar(g, 8, 22, 160, 3, menu.value(6) / 100f, COL_GAS);
+            default -> {
+            }
         }
     }
 
@@ -71,7 +74,10 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, title, 8, 6, COL_TEXT, false);
         g.drawString(font, playerInventoryTitle, 8, inventoryLabelY, COL_TEXT, false);
-        g.drawString(font, Msg.tr("gui.machine.energy", menu.wide(0), menu.wide(2)).getString(), 8, 28, COL_TEXT, false);
+        if (menu.wide(2) > 0) {
+            // Machines inertes (chaudière, réchauffeur) : aucune réserve d'énergie à afficher.
+            g.drawString(font, Msg.tr("gui.machine.energy", menu.wide(0), menu.wide(2)).getString(), 8, 28, COL_TEXT, false);
+        }
         Component[] lines = statusLines();
         for (int i = 0; i < lines.length; i++) {
             g.drawString(font, lines[i], 8, 37 + 9 * i, COL_TEXT, false);
@@ -97,7 +103,21 @@ public class MachineScreen extends AbstractContainerScreen<MachineMenu> {
             case SOLAR -> new Component[]{Msg.tr(menu.value(6) > 0 ? "gui.machine.solar_on" : "gui.machine.solar_off")};
             case THERMAL -> new Component[]{Msg.tr(menu.value(6) > 0 ? "gui.machine.burning" : "gui.machine.idle")};
             case BATTERY -> new Component[]{Msg.tr("gui.machine.battery")};
+            case REFINERY -> new Component[]{
+                    active() ? Msg.tr("gui.machine.refinery_on", menu.value(6)) : Msg.tr("gui.machine.refinery_off"),
+                    Msg.tr("gui.machine.refinery_recipe")};
+            case OXYGEN_DIFFUSER -> new Component[]{active()
+                    ? Msg.tr("gui.machine.diffuser_on").withStyle(ChatFormatting.GREEN)
+                    : Msg.tr("gui.machine.diffuser_off")};
+            case GAS_BOILER -> new Component[]{
+                    active() ? Msg.tr("gui.machine.boiler_on", menu.value(6)) : Msg.tr("gui.machine.boiler_off")};
+            case NUCLEAR_HEATER -> new Component[]{
+                    active() ? Msg.tr("gui.machine.heater_on", menu.value(6)) : Msg.tr("gui.machine.heater_off")};
         };
+    }
+
+    private boolean active() {
+        return (menu.value(10) & MachineBlockEntity.FLAG_ACTIVE) != 0;
     }
 
     @Override

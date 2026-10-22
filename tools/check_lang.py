@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Vérifie que chaque clé de traduction utilisée par le code Java existe dans le fichier de langue.
+"""Vérifie le fichier de langue : chaque clé de traduction utilisée par le code Java existe, et les clés sont
+triées (ordre des points de code), sans doublon. Le tri permet aux lots de travail parallèles d'insérer leurs
+clés à leur place alphabétique sans conflit de fusion.
 
-Usage : python3 tools/check_lang.py   (code de sortie 1 si des clés manquent)
+Usage : python3 tools/check_lang.py   (code de sortie 1 si des clés manquent, sont en double ou mal ordonnées)
 
 Clés détectées :
   * littérales : Msg.tr/ok/err/info/warn("clé") et Component.translatable("sovereignfrontier.…") ;
@@ -9,8 +11,11 @@ Clés détectées :
   * dynamiques : role.<NationRole>, perm.<id NationPermission>, building.<BuildingType>,
     log.<clé de nation.log(...)>, help.nation.<sous-commande>, gui.tab.<id NationTab>,
     l'aide tr("x") de l'écran national (gui.x), les touches (KeyMapping), research.domain.<id>,
-    research.stat.<id> et research.state.<statut>. Les noms de paliers et de déblocages
-    (research.<palier>, unlock.<clé>) sont vérifiés par tools/check_research.py.
+    research.stat.<id>, research.state.<statut>, reward.crate.<id CrateKind>,
+    enterprise.sector.<id Sector>, contract.kind.<id ContractKind> (si l'énumération existe), machine.<id> et
+    tooltip.<id> de chaque MachineKind (premier argument).
+    Les noms de paliers et de déblocages (research.<palier>, unlock.<clé>) sont vérifiés par
+    tools/check_research.py.
 """
 import json
 import re
@@ -35,8 +40,37 @@ def enum_constants(source: str) -> list[str]:
     return re.findall(r"^\s*([A-Z_]+)\b", body.group(1), re.M)
 
 
+def enum_ids(source: str) -> list[str]:
+    """Identifiants des constantes « NOM("id") » d'une énumération à un seul argument chaîne."""
+    return re.findall(r'^\s*[A-Z_]+\("([a-z_]+)"\)', source, re.M)
+
+
+def order_errors(pairs: list[tuple[str, object]]) -> list[str]:
+    """Doublons et clés hors de l'ordre trié (points de code), dans l'ordre du fichier."""
+    errors: list[str] = []
+    seen: set[str] = set()
+    for key, _ in pairs:
+        if key in seen:
+            errors.append(f"clé en double : {key}")
+        seen.add(key)
+    keys = [k for k, _ in pairs]
+    for prev, cur in zip(keys, keys[1:]):
+        if prev > cur:
+            errors.append(f"ordre : « {cur} » doit précéder « {prev} »")
+    return errors
+
+
 def main() -> int:
-    lang = json.loads(LANG.read_text(encoding="utf-8"))
+    pairs = json.loads(LANG.read_text(encoding="utf-8"), object_pairs_hook=lambda p: p)
+    lang = dict(pairs)
+    order = order_errors(pairs)
+    if order:
+        print(f"ERREUR : {LANG.relative_to(ROOT)} doit être trié, sans doublon ({len(order)} problème(s)) :")
+        for e in order[:20]:
+            print("  - " + e)
+        if len(order) > 20:
+            print(f"  … et {len(order) - 20} autre(s)")
+        return 1
     used: set[str] = set()
     for f in JAVA.rglob("*.java"):
         src = f.read_text(encoding="utf-8")
@@ -75,6 +109,16 @@ def main() -> int:
         used.add(PREFIX + "perm." + pid)
     for tid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)"\)', read("NationTab.java"), re.M):
         used.add(PREFIX + "gui.tab." + tid)
+    # J4 : noms des types de caisse, des secteurs d'entreprise et des types de contrat.
+    for kid in enum_ids(read("CrateKind.java")):
+        used.add(PREFIX + "reward.crate." + kid)
+    for sid in enum_ids(read("Sector.java")):
+        used.add(PREFIX + "enterprise.sector." + sid)
+    for cid in enum_ids(read("ContractKind.java")):
+        used.add(PREFIX + "contract.kind." + cid)
+    # J5 : nom et info-bulle de chaque machine (premier argument de MachineKind, « NOM("id", rôle, … ) »).
+    for mid in re.findall(r'^\s*[A-Z_]+\("([a-z_]+)",', read("MachineKind.java"), re.M):
+        used.update({PREFIX + "machine." + mid, PREFIX + "tooltip." + mid})
     help_list = re.search(r'for \(String sub : List\.of\((.*?)\)\)', read("NationCommand.java"), re.S)
     if help_list:
         for sub in re.findall(r'"([a-z]+)"', help_list.group(1)):

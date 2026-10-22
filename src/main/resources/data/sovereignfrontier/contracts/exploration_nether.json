@@ -1,0 +1,8 @@
+{
+  "kind": "explore",
+  "weight": 4,
+  "min_population": 3,
+  "duration_hours": 48,
+  "objective": {"dimension": "minecraft:the_nether"},
+  "reward": {"money": 250, "points": 6}
+}

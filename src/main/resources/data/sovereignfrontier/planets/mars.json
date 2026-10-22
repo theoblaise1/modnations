@@ -1,0 +1,15 @@
+{
+  "dimension": "sovereignfrontier:mars",
+  "requires": ["rocket", "dimension.mars"],
+  "outbound": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 6}
+  ],
+  "return": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 4}
+  ],
+  "radius": 3000,
+  "environment": {"oxygen": true, "cold": false},
+  "gas_reserve": 600000,
+  "solar_multiplier": 0.6,
+  "mining": {"unlock": "mining.martian", "blocks": "#sovereignfrontier:minerais/mars"}
+}

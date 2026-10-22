@@ -3,6 +3,7 @@
   "tier": 6,
   "cost": {
     "treasury": 11750,
+    "points": 5,
     "items": [
       {
         "item": "minecraft:magma_block",
@@ -17,8 +18,8 @@
         "count": 24
       },
       {
-        "item": "minecraft:leather",
-        "count": 32
+        "item": "sovereignfrontier:soufre",
+        "count": 48
       }
     ]
   },

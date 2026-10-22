@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 0.7,
+  "group": "lingot_titane",
+  "ingredient": {
+    "item": "sovereignfrontier:titane_brut"
+  },
+  "result": {
+    "id": "sovereignfrontier:lingot_titane"
+  }
+}

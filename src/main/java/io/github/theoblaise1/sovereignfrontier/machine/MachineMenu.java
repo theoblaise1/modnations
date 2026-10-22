@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 
 import javax.annotation.Nullable;
@@ -69,11 +70,16 @@ public class MachineMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
-    static boolean accepts(MachineKind kind, int slot, ItemStack stack) {
+    /** Règle de dépôt dans une case de machine (les cases de sortie n'acceptent rien). */
+    public static boolean accepts(MachineKind kind, int slot, ItemStack stack) {
         return switch (kind) {
             case THERMAL -> stack.getBurnTime(RecipeType.SMELTING) > 0;
             case GAS_DRILL -> slot == 0 && stack.is(ModItems.GAS_BOTTLE.get());
             case REACTOR -> stack.is(ModItems.ENRICHED_FUEL.get());
+            case REFINERY -> slot == MachineKind.REFINERY_GAS ? stack.is(ModItems.FULL_GAS_BOTTLE.get())
+                    : slot == MachineKind.REFINERY_BLAZE && stack.is(Items.BLAZE_POWDER);
+            case GAS_BOILER -> slot == MachineKind.BOILER_GAS && stack.is(ModItems.FULL_GAS_BOTTLE.get());
+            case NUCLEAR_HEATER -> slot == MachineKind.HEATER_FUEL && stack.is(ModItems.ENRICHED_FUEL.get());
             default -> false;
         };
     }

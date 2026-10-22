@@ -1,0 +1,8 @@
+{
+  "kind": "explore",
+  "weight": 6,
+  "requires": ["sovereignfrontier:technologie_4"],
+  "duration_hours": 96,
+  "objective": {"dimension": "sovereignfrontier:mars"},
+  "reward": {"money": 900, "points": 25, "keys": [{"crate": "spatiale", "count": 1, "chance": 1.0}]}
+}

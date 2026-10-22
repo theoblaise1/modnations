@@ -8,6 +8,12 @@
     "sovereignfrontier:cellule_combustible",
     "sovereignfrontier:dissipateur_thermique",
     "sovereignfrontier:station_ingenierie",
-    "sovereignfrontier:controleur_reacteur"
+    "sovereignfrontier:controleur_reacteur",
+    "sovereignfrontier:fusee",
+    "sovereignfrontier:raffinerie",
+    "sovereignfrontier:diffuseur_oxygene",
+    "sovereignfrontier:chaudiere_gaz",
+    "sovereignfrontier:rechauffeur_nucleaire",
+    "sovereignfrontier:minerai_titane"
   ]
 }

@@ -94,7 +94,10 @@ public final class ProtectionGameTests {
         for (int x = fromX; x <= toX; x++) {
             for (int dz = -5; dz <= 5; dz++) {
                 level.setBlock(new BlockPos(x, y, z + dz), Blocks.STONE.defaultBlockState(), 3);
-                for (int dy = 1; dy <= 3; dy++) {
+                // 8 blocs d'air : la bande déborde parfois sur le mur de barrières que le serveur de GameTests dresse
+                // autour de la zone (de la hauteur de la zone + 10), selon l'alignement des chunks ; un bloc de barrière
+                // à la hauteur de la tête d'un joueur de test fausse ses tirs (nénuphar, par exemple).
+                for (int dy = 1; dy <= 8; dy++) {
                     level.setBlock(new BlockPos(x, y + dy, z + dz), Blocks.AIR.defaultBlockState(), 3);
                 }
             }

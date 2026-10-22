@@ -3,6 +3,7 @@
   "tier": 15,
   "cost": {
     "treasury": 11600,
+    "points": 50,
     "items": [
       {
         "item": "minecraft:netherite_ingot",
@@ -17,8 +18,8 @@
         "count": 4
       },
       {
-        "item": "minecraft:ender_eye",
-        "count": 8
+        "item": "sovereignfrontier:soufre",
+        "count": 64
       }
     ]
   },

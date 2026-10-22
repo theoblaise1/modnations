@@ -1,0 +1,16 @@
+{
+  "variant": "trappeur",
+  "rolls": 6,
+  "offers": [
+    {"item": "minecraft:cooked_beef", "count": 8, "price": 32, "stock": 16, "weight": 10, "guaranteed": true},
+    {"item": "minecraft:leather", "count": 4, "payout": 16, "demand": 24, "weight": 10, "guaranteed": true},
+    {"item": "minecraft:cooked_salmon", "count": 8, "price": 24, "stock": 16, "weight": 8},
+    {"item": "minecraft:arrow", "count": 16, "price": 24, "stock": 8, "weight": 8},
+    {"item": "minecraft:leather_chestplate", "count": 1, "price": 30, "stock": 2, "weight": 4},
+    {"item": "minecraft:spruce_log", "count": 16, "price": 40, "payout": 16, "stock": 8, "demand": 16, "weight": 6},
+    {"item": "minecraft:rabbit_hide", "count": 8, "payout": 12, "demand": 24, "weight": 6},
+    {"item": "minecraft:feather", "count": 16, "payout": 12, "demand": 32, "weight": 6},
+    {"item": "minecraft:bone", "count": 16, "payout": 10, "demand": 32, "weight": 6},
+    {"item": "minecraft:sweet_berries", "count": 16, "payout": 10, "demand": 32, "weight": 6}
+  ]
+}

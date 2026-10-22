@@ -3,6 +3,7 @@
   "tier": 8,
   "cost": {
     "treasury": 4550,
+    "points": 15,
     "items": [
       {
         "item": "minecraft:copper_block",

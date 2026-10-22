@@ -2,8 +2,12 @@ package io.github.theoblaise1.sovereignfrontier.nation;
 
 import io.github.theoblaise1.sovereignfrontier.SFConfig;
 import io.github.theoblaise1.sovereignfrontier.economy.EconomyData;
+import io.github.theoblaise1.sovereignfrontier.enterprise.EnterpriseManager;
+import io.github.theoblaise1.sovereignfrontier.network.EconomyNetwork;
 import io.github.theoblaise1.sovereignfrontier.network.NationSync;
+import io.github.theoblaise1.sovereignfrontier.outpost.OutpostRules;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
+import io.github.theoblaise1.sovereignfrontier.space.SpaceRules;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
@@ -56,10 +60,24 @@ public final class NationManager {
         return cost >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) Math.ceil(cost - 1e-9);
     }
 
-    /** Revenu versé à chaque cycle : habitants effectifs × revenu par habitant × (1 + bonus de revenu). */
+    /**
+     * Habitants libres : habitants effectifs moins ceux affectés aux entreprises (J4). Seuls les libres touchent le
+     * revenu passif ; les affectés produisent à la place.
+     */
+    public static int freeInhabitants(Nation nation) {
+        return Math.max(0, nation.effectivePopulation() - nation.enterprises().assignedTotal());
+    }
+
+    /** Revenu versé à chaque cycle : habitants libres × revenu par habitant × (1 + bonus de revenu). */
     public static long incomePerCycle(Nation nation) {
         double multiplier = 1.0D + Math.max(-1.0D, nation.research().bonus(ResearchStat.INCOME_MULTIPLIER));
-        return (long) Math.floor(nation.effectivePopulation() * SFConfig.INCOME_PER_INHABITANT.get() * multiplier + 1e-9);
+        return (long) Math.floor(freeInhabitants(nation) * SFConfig.INCOME_PER_INHABITANT.get() * multiplier + 1e-9);
+    }
+
+    /** Ticks restants avant le prochain cycle de revenu (et de production des entreprises). */
+    public static int ticksToNextIncome(MinecraftServer server) {
+        long left = SFConfig.INCOME_INTERVAL_TICKS.get() - NationData.get(server).incomeTickCounter();
+        return (int) Math.max(0L, Math.min(Integer.MAX_VALUE, left));
     }
 
     /** Nombre maximal de membres : configuration + bonus de recherche. */
@@ -143,6 +161,14 @@ public final class NationManager {
         Nation capitalOwner = data.ownerAt(dimension, capital.toLong());
         if (capitalOwner != null) {
             return ActionResult.fail(Msg.err("nation.error.capital_taken", capitalOwner.name()));
+        }
+        Component outpost = OutpostRules.claimBlockReason(server, dimension, capital);
+        if (outpost != null) {
+            return ActionResult.fail(outpost);
+        }
+        Component space = SpaceRules.foundBlockReason(dimension);
+        if (space != null) {
+            return ActionResult.fail(space);
         }
         long cost = SFConfig.NATION_CREATION_COST.get();
         EconomyData eco = EconomyData.get(server);
@@ -301,6 +327,7 @@ public final class NationManager {
         nation.log("transfer", actor.getGameProfile().getName(), name);
         broadcast(server, nation, tag(nation).append(Msg.warn("nation.leader_changed", name)));
         changed(nation);
+        EconomyNetwork.markDirty(nation);
         return ActionResult.ok(Msg.ok("nation.transferred", name));
     }
 
@@ -372,6 +399,7 @@ public final class NationManager {
         nation.log("role", actor.getGameProfile().getName(), name, "@role." + role.id());
         broadcast(server, nation, tag(nation).append(Msg.info("nation.role_changed", name, role.displayName())));
         changed(nation);
+        EconomyNetwork.markDirty(nation);
         return ActionResult.ok(Msg.ok("nation.role_set", name, role.displayName()));
     }
 
@@ -394,6 +422,7 @@ public final class NationManager {
         }
         nation.log(granted ? "perm_grant" : "perm_revoke", actor.getGameProfile().getName(), "@perm." + permission.id(), "@role." + role.id());
         changed(nation);
+        EconomyNetwork.markDirty(nation);
         return ActionResult.ok(Msg.ok(granted ? "nation.perm_granted" : "nation.perm_revoked",
                 permission.displayName(), role.displayName()));
     }
@@ -417,6 +446,14 @@ public final class NationManager {
         }
         if (owner != null) {
             return ActionResult.fail(Msg.err("claim.error.owned_by", owner.name()));
+        }
+        Component outpost = OutpostRules.claimBlockReason(server, dimension, chunk);
+        if (outpost != null) {
+            return ActionResult.fail(outpost);
+        }
+        Component space = SpaceRules.claimBlockReason(nation, dimension);
+        if (space != null) {
+            return ActionResult.fail(space);
         }
         if (SFConfig.CLAIM_REQUIRE_CONTIGUOUS.get() && nation.hasClaimsIn(dimension) && !touchesOwn(data, nation, dimension, chunk)) {
             return ActionResult.fail(Msg.err("claim.error.not_contiguous"));
@@ -532,7 +569,11 @@ public final class NationManager {
 
     // ------------------------------------------------------------------ revenu périodique
 
-    /** Appelé à chaque tick serveur : avance un compteur persistant, verse le revenu à chaque cycle. */
+    /**
+     * Appelé à chaque tick serveur : avance un compteur persistant ; à chaque cycle, fait produire les entreprises
+     * puis verse le revenu passif des habitants libres. Production et revenu sont évalués au même instant, dans
+     * le même passage : un habitant ne peut pas être compté deux fois.
+     */
     public static void tickIncome(MinecraftServer server) {
         NationData data = NationData.get(server);
         if (!data.advanceIncomeCounter(SFConfig.INCOME_INTERVAL_TICKS.get())) {
@@ -541,10 +582,11 @@ public final class NationManager {
         long now = TimeUtil.now();
         for (Nation nation : data.nationsSnapshot()) {
             nation.purgeExpiredInvites(now);
+            EnterpriseManager.produceCycle(server, nation);
             long income = incomePerCycle(nation);
             if (income > 0) {
                 nation.addTreasury(income);
-                broadcast(server, nation, tag(nation).append(Msg.info("treasury.income", Money.format(income), nation.effectivePopulation())));
+                broadcast(server, nation, tag(nation).append(Msg.info("treasury.income", Money.format(income), freeInhabitants(nation))));
                 // Trésorerie affichée (Aperçu, Trésor, bouton « Lancer » de la Science) : envoi groupé.
                 NationSync.scheduleRefresh(nation);
             }

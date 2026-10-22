@@ -1,5 +1,7 @@
 package io.github.theoblaise1.sovereignfrontier.nation;
 
+import io.github.theoblaise1.sovereignfrontier.contract.NationContracts;
+import io.github.theoblaise1.sovereignfrontier.enterprise.NationEnterprises;
 import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.research.NationResearch;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
@@ -40,7 +42,7 @@ import java.util.UUID;
 
 /**
  * Une nation : membres et rôles, permissions par rôle, trésorerie, territoire, bâtiments civils,
- * coffre national partagé et journal des 50 dernières actions sensibles.
+ * coffre national partagé, journal des 50 dernières actions sensibles, recherche, contrats et entreprises.
  * Toute mutation passe par {@link #markDirty()} pour que le {@link NationData} soit sauvegardé.
  */
 public final class Nation {
@@ -64,6 +66,9 @@ public final class Nation {
     private final Set<GlobalPos> cores = new LinkedHashSet<>();
     private final SimpleContainer chest = new SimpleContainer(CHEST_SIZE);
     private NationResearch research = new NationResearch();
+    private NationContracts contracts = new NationContracts();
+    private NationEnterprises enterprises = new NationEnterprises();
+    private NationSpace space = new NationSpace();
     private Runnable dirtyCallback = () -> {
     };
 
@@ -303,6 +308,21 @@ public final class Nation {
         return research;
     }
 
+    /** Tableau de contrats (J4). Appeler {@link #markDirty()} après mutation. */
+    public NationContracts contracts() {
+        return contracts;
+    }
+
+    /** Entreprises : habitants affectés et production (J4). Appeler {@link #markDirty()} après mutation. */
+    public NationEnterprises enterprises() {
+        return enterprises;
+    }
+
+    /** Programme spatial : premiers atterrissages et vols (J5). Appeler {@link #markDirty()} après mutation. */
+    public NationSpace space() {
+        return space;
+    }
+
     public int buildingCount(BuildingType type) {
         int n = 0;
         for (BuildingType t : buildings.values()) {
@@ -320,6 +340,14 @@ public final class Nation {
     void addBuilding(GlobalPos pos, BuildingType type) {
         buildings.put(pos, type);
         markDirty();
+    }
+
+    /**
+     * Trésors et coffres nationaux enregistrés, dans l'ordre de pose (lecture seule). Une position peut être périmée
+     * (bloc détruit hors événement) : elle n'est retirée qu'à la vérification de son chunk.
+     */
+    public Set<GlobalPos> cores() {
+        return Collections.unmodifiableSet(cores);
     }
 
     /** Trésor ou coffre national posé sur le territoire de la nation. */
@@ -425,6 +453,7 @@ public final class Nation {
         }
         tag.put("members", memberList);
 
+        tag.putInt("permVersion", NationPermission.CURRENT_VERSION);
         CompoundTag perms = new CompoundTag();
         for (NationRole role : NationRole.values()) {
             ListTag list = new ListTag();
@@ -479,6 +508,9 @@ public final class Nation {
         ContainerHelper.saveAllItems(chestTag, chest.getItems(), registries);
         tag.put("chest", chestTag);
         tag.put("research", research.save());
+        tag.put("contracts", contracts.save());
+        tag.put("enterprises", enterprises.save());
+        tag.put("space", space.save());
         return tag;
     }
 
@@ -495,6 +527,9 @@ public final class Nation {
         }
         n.members.put(n.leader, NationRole.CHEF);
 
+        // Les ensembles sauvegardés remplacent les défauts : une permission ajoutée depuis (permVersion absent = 0)
+        // n'y figurerait pas sans migration.
+        int permVersion = tag.getInt("permVersion");
         CompoundTag perms = tag.getCompound("permissions");
         for (NationRole role : NationRole.values()) {
             if (!perms.contains(role.id())) {
@@ -505,7 +540,7 @@ public final class Nation {
             for (int i = 0; i < list.size(); i++) {
                 NationPermission.byId(list.getString(i)).ifPresent(set::add);
             }
-            n.permissions.put(role, set);
+            n.permissions.put(role, NationPermission.migrate(role, set, permVersion));
         }
 
         CompoundTag claimTag = tag.getCompound("claims");
@@ -558,6 +593,9 @@ public final class Nation {
 
         ContainerHelper.loadAllItems(tag.getCompound("chest"), n.chest.getItems(), registries);
         n.research = NationResearch.load(tag.getCompound("research"));
+        n.contracts = NationContracts.load(tag.getCompound("contracts"));
+        n.enterprises = NationEnterprises.load(tag.getCompound("enterprises"));
+        n.space = NationSpace.load(tag.getCompound("space"));
         return n;
     }
 

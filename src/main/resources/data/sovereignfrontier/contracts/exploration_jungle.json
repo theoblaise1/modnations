@@ -1,0 +1,7 @@
+{
+  "kind": "explore",
+  "weight": 6,
+  "duration_hours": 48,
+  "objective": {"biome": "#minecraft:is_jungle", "min_distance": 800},
+  "reward": {"money": 300, "points": 8, "keys": [{"crate": "commune", "count": 1, "chance": 1.0}]}
+}

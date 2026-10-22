@@ -1,0 +1,17 @@
+{
+  "dimension": "sovereignfrontier:lune",
+  "requires": ["rocket", "dimension.lune"],
+  "outbound": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 3},
+    {"item": "sovereignfrontier:bouteille_gaz_pleine", "count": 12}
+  ],
+  "return": [
+    {"item": "sovereignfrontier:carburant_fusee", "count": 1},
+    {"item": "sovereignfrontier:bouteille_gaz_pleine", "count": 4}
+  ],
+  "radius": 2000,
+  "environment": {"oxygen": true, "cold": false},
+  "gas_reserve": 400000,
+  "solar_multiplier": 1.5,
+  "mining": {"unlock": "mining.lunar", "blocks": "#sovereignfrontier:minerais/lune"}
+}

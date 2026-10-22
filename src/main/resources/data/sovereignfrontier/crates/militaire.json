@@ -1,0 +1,22 @@
+{
+  "rolls": 3,
+  "entries": [
+    {"item": "minecraft:arrow", "count": [16, 32], "weight": 18},
+    {"item": "minecraft:potion", "count": [1, 2], "components": {"minecraft:potion_contents": {"potion": "minecraft:healing"}}, "weight": 12},
+    {"item": "minecraft:golden_apple", "count": [1, 2], "weight": 6, "rarity": "peu_commun"},
+    {"item": "minecraft:cooked_beef", "count": [6, 12], "weight": 14},
+    {"item": "minecraft:shield", "count": 1, "weight": 8},
+    {"item": "minecraft:crossbow", "count": 1, "weight": 6},
+    {"item": "minecraft:chainmail_helmet", "count": 1, "weight": 6},
+    {"item": "minecraft:chainmail_chestplate", "count": 1, "weight": 5},
+    {"item": "minecraft:iron_leggings", "count": 1, "weight": 4, "rarity": "peu_commun"},
+    {"item": "minecraft:iron_boots", "count": 1, "weight": 6},
+    {"item": "minecraft:gunpowder", "count": [4, 10], "weight": 12},
+    {"money": [100, 250], "weight": 12},
+    {"id": "plastron_diamant", "item": "minecraft:diamond_chestplate", "count": 1, "weight": 1, "rarity": "rare"},
+    {"id": "totem", "item": "minecraft:totem_of_undying", "count": 1, "weight": 1, "rarity": "rare"},
+    {"placeholder": {"milestone": "J6", "label": "munitions"}, "weight": 10},
+    {"placeholder": {"milestone": "J6", "label": "trousse_soins"}, "weight": 6},
+    {"placeholder": {"milestone": "J6", "label": "gilet_balistique_leger"}, "weight": 2}
+  ]
+}

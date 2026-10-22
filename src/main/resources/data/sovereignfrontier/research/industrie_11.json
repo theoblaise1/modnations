@@ -3,14 +3,15 @@
   "tier": 11,
   "cost": {
     "treasury": 10950,
+    "points": 30,
     "items": [
       {
         "item": "minecraft:gold_block",
         "count": 8
       },
       {
-        "item": "minecraft:phantom_membrane",
-        "count": 16
+        "item": "sovereignfrontier:lingot_titane",
+        "count": 32
       },
       {
         "item": "minecraft:ender_eye",

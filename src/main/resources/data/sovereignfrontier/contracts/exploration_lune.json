@@ -1,0 +1,8 @@
+{
+  "kind": "explore",
+  "weight": 8,
+  "requires": ["sovereignfrontier:technologie_2"],
+  "duration_hours": 72,
+  "objective": {"dimension": "sovereignfrontier:lune"},
+  "reward": {"money": 600, "points": 15, "keys": [{"crate": "spatiale", "count": 1, "chance": 1.0}]}
+}

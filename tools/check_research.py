@@ -21,9 +21,17 @@ Contrôles (code de sortie 1 en cas d'erreur ; les avertissements ne font pas é
   6. objets : « minecraft:… » ou « sovereignfrontier:… » (enregistré dans registry/),
      quantité entière > 0, au plus 30 piles de 64 au total ;
   7. trésorerie : AVERTISSEMENT si l'écart au barème 200 × palier^1,5 (×1,2 militaire,
-     ×1,5 industrie, ×4 technologie) dépasse 25 % ;
+     ×1,5 industrie, ×4 technologie) dépasse 25 % ; points de recherche (J4) : exactement
+     « cost.points = 5 × (palier − 5) » à partir du palier 6, 0 (ou absent) en dessous ;
   8. traductions (en_us.json) : nom de chaque palier (identique au plan), description
-     « .desc », nom « sovereignfrontier.unlock.<clé> » de chaque déblocage utilisé.
+     « .desc », nom « sovereignfrontier.unlock.<clé> » de chaque déblocage utilisé ;
+  9. (J5) câblage des déblocages : colonne « jalon » du catalogue lue (J3, J5…J8 ou
+     « reporté ») ; toute clé dont le jalon est au plus WIRED_UP_TO doit être consommée par un
+     champ « unlock » d'une recette d'ingénierie, un champ « requires » ou « mining.unlock » d'une
+     planète, ou un littéral du code Java principal (hors commentaires, hors GameTests ; les
+     littéraux de research/UnlockKeys.java ne comptent que si la constante est référencée
+     ailleurs). Un matériau spatial (titane, soufre, cristal cryogénique) n'apparaît dans le coût
+     d'un palier que si ce palier exige transitivement le palier qui accorde son extraction.
 
 Le dépôt est localisé à partir de l'emplacement du script (racine = parent de ``tools/``).
 
@@ -57,6 +65,23 @@ STAT_REL = JAVA_REL / "research" / "ResearchStat.java"
 DOMAIN_REL = JAVA_REL / "research" / "ResearchDomain.java"
 REGISTRY_REL = JAVA_REL / "registry"
 LANG_REL = Path("src/main/resources/assets") / NAMESPACE / "lang" / "en_us.json"
+ENGINEERING_REL = Path("src/main/resources/data") / NAMESPACE / "engineering"
+PLANETS_REL = Path("src/main/resources/data") / NAMESPACE / "planets"
+JAVA_SRC_REL = Path("src/main/java")
+UNLOCK_KEYS_REL = JAVA_REL / "research" / "UnlockKeys.java"
+GAMETEST_REL = JAVA_REL / "gametest"
+
+# Câblage des déblocages (contrôle 9) : jalons au plus WIRED_UP_TO vérifiés (WP5 du J5 : « J5 »).
+WIRED_UP_TO = "J5"
+DEFERRED = "reporté"
+MILESTONE_RE = re.compile(r"^J([1-9][0-9]*)$")
+# Matériaux spatiaux (J5) : clé d'extraction exigée (transitivement) par tout palier qui les coûte.
+SPACE_MATERIALS = {
+    f"{NAMESPACE}:titane_brut": "mining.lunar",
+    f"{NAMESPACE}:lingot_titane": "mining.lunar",
+    f"{NAMESPACE}:soufre": "mining.martian",
+    f"{NAMESPACE}:cristal_cryogenique": "mining.cryogenic",
+}
 
 # Domaines et nombre de paliers (recoupés avec ResearchDomain.java et les titres du plan).
 DOMAINS = {"civil": 15, "militaire": 16, "ressources": 15, "industrie": 12, "technologie": 7}
@@ -68,6 +93,11 @@ TREASURY_EXPONENT = 1.5
 TREASURY_FACTOR = {"militaire": 1.2, "industrie": 1.5, "technologie": 4.0}
 TREASURY_TOLERANCE = 0.25
 TREASURY_ROUNDING = 50
+
+# Points de recherche (J4, gagnés par les contrats) : 5 × (palier − 5) à partir du palier 6, 0 en dessous.
+POINTS_PER_TIER = 5
+POINTS_FREE_TIERS = 5
+POINTS_RULE = "5 × (palier − 5) à partir du palier 6, 0 en dessous"
 
 MAX_STACKS = 30          # somme des piles (ceil(count / 64)) d'un palier
 STACK_SIZE = 64
@@ -126,6 +156,11 @@ def round_to(x: float, step: int) -> int:
 
 def treasury_target(domain: str, tier: int) -> float:
     return TREASURY_BASE * tier ** TREASURY_EXPONENT * TREASURY_FACTOR.get(domain, 1.0)
+
+
+def expected_points(tier: int) -> int:
+    """Points de recherche exigés (J4) : 5 × (palier − 5) à partir du palier 6, 0 en dessous."""
+    return POINTS_PER_TIER * (tier - POINTS_FREE_TIERS) if tier > POINTS_FREE_TIERS else 0
 
 
 def plan_duration(tier: int) -> int:
@@ -219,7 +254,7 @@ def format_report(rep: Report) -> str:
                 else "traductions non vérifiées (--no-lang)")
         out = [f"OK : {rep.tiers} paliers valides ({len(DOMAINS)} domaines, {rep.cross} prérequis "
                f"croisés, {rep.unlocks} déblocages, {rep.bonuses} bonus), conformes à "
-               f"{PLAN_REL.as_posix()} ; {lang}."]
+               f"{PLAN_REL.as_posix()} ; câblage des déblocages vérifié jusqu'à {WIRED_UP_TO} ; {lang}."]
     if rep.warnings:
         out.append(f"AVERTISSEMENT : {len(rep.warnings)} point(s) à vérifier :")
         out += _format_entries(rep.warnings)
@@ -246,6 +281,8 @@ class PlanRow:
 class Plan:
     rows: dict[str, PlanRow] = field(default_factory=dict)
     catalogue: set[str] = field(default_factory=set)
+    # Jalon de chaque clé du catalogue (« J3 », « J5 »…, ou « reporté »).
+    milestones: dict[str, str] = field(default_factory=dict)
     documented_stats: set[str] = field(default_factory=set)
     sections: set[str] = field(default_factory=set)
     errors: list[tuple[str, str]] = field(default_factory=list)
@@ -330,12 +367,22 @@ def parse_plan(text: str) -> Plan:
             continue  # ligne de séparation
         if section[0] in ("unlock", "stats"):
             target = plan.catalogue if section[0] == "unlock" else plan.documented_stats
-            for key in re.findall(r"`([^`]+)`", cells[0]):
+            keys = re.findall(r"`([^`]+)`", cells[0])
+            milestone = None
+            if section[0] == "unlock" and keys:
+                milestone = cells[2] if len(cells) >= 3 else ""
+                if milestone != DEFERRED and not MILESTONE_RE.match(milestone):
+                    err(no, f"jalon « {milestone} » invalide pour {', '.join(keys)} "
+                            f"(attendu : J<n> ou « {DEFERRED} », une seule valeur par ligne)")
+                    milestone = None
+            for key in keys:
                 if section[0] == "unlock" and not UNLOCK_KEY_RE.match(key):
                     err(no, f"clé de déblocage « {key} » mal formée")
                 elif key in target:
                     err(no, f"clé « {key} » en double dans le tableau")
                 target.add(key)
+                if milestone is not None:
+                    plan.milestones[key] = milestone
             continue
         domain = section[1]
         if not re.fullmatch(r"[0-9]+", cells[0]):
@@ -634,9 +681,10 @@ def validate_file(path: Path, rel: str, ctx: Context, rep: Report
         v = cost["points"]
         if not is_int(v) or not 0 <= v <= LONG_MAX:
             err(f"cost.points doit être un entier ≥ 0 (lu : {show(v)})")
-        elif v > 0:
-            err(f"cost.points = {v} : les points de recherche ne s'obtiennent qu'avec les "
-                f"contrats (J4) ; le plan impose 0 au J2")
+        elif tier and v != expected_points(tier):
+            err(f"cost.points = {v} : {expected_points(tier)} attendu ({POINTS_RULE})")
+    elif tier and expected_points(tier):
+        err(f"cost.points absent : {expected_points(tier)} attendu ({POINTS_RULE})")
     if "items" in cost:
         items = _check_items(cost["items"], ctx, err)
     if not ITEM_TYPES[0] <= len(items) <= ITEM_TYPES[1]:
@@ -800,6 +848,148 @@ def check_lang(root: Path, tiers: dict[str, Tier], plan: Plan, stats: list[str] 
 
 
 # ---------------------------------------------------------------------------
+# Câblage des déblocages (contrôle 9, J5)
+# ---------------------------------------------------------------------------
+
+def milestone_number(value: str) -> int | None:
+    """« J5 » → 5 ; « reporté » (ou valeur invalide) → None."""
+    m = MILESTONE_RE.match(value)
+    return int(m.group(1)) if m else None
+
+
+def java_strip(src: str) -> tuple[list[str], str]:
+    """
+    Littéraux chaîne d'un source Java (hors commentaires ; un bloc de texte « \"\"\" » compte comme un seul
+    littéral), et le code sans commentaires ni chaînes (remplacés par des espaces).
+    """
+    literals: list[str] = []
+    code: list[str] = []
+    i, n = 0, len(src)
+    while i < n:
+        if src.startswith("//", i):
+            j = src.find("\n", i)
+            i = n if j < 0 else j
+        elif src.startswith("/*", i):
+            j = src.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            code.append(" ")
+        elif src.startswith('"""', i):
+            j = src.find('"""', i + 3)
+            end = n if j < 0 else j
+            literals.append(src[i + 3:end])
+            i = n if j < 0 else j + 3
+            code.append(" ")
+        elif src[i] in "\"'":
+            quote = src[i]
+            j = i + 1
+            buf: list[str] = []
+            while j < n and src[j] != quote and src[j] != "\n":
+                if src[j] == "\\" and j + 1 < n:
+                    buf.append(src[j:j + 2])
+                    j += 2
+                    continue
+                buf.append(src[j])
+                j += 1
+            if quote == '"':
+                literals.append("".join(buf))
+            i = j + 1
+            code.append(" ")
+        else:
+            code.append(src[i])
+            i += 1
+    return literals, "".join(code)
+
+
+def unlock_consumers(root: Path) -> dict[str, list[str]]:
+    """Clé de déblocage → sources qui la consomment (fichiers de données, fichiers Java)."""
+    consumers: dict[str, list[str]] = {}
+
+    def add(key: object, where: str) -> None:
+        if isinstance(key, str) and key:
+            consumers.setdefault(key, []).append(where)
+
+    for folder, kind in ((ENGINEERING_REL, "engineering"), (PLANETS_REL, "planets")):
+        base = root / folder
+        for path in sorted(base.rglob("*.json")) if base.is_dir() else []:
+            try:
+                data = load_json(path)
+            except (ValueError, OSError):
+                continue  # JSON invalide : signalé par tools/check_economy.py ou tools/check_space.py
+            if not isinstance(data, dict):
+                continue
+            where = f"{kind}/{path.relative_to(base).as_posix()}"
+            if kind == "engineering":
+                add(data.get("unlock"), where)
+            else:
+                for key in data.get("requires", []) if isinstance(data.get("requires"), list) else []:
+                    add(key, where)
+                mining = data.get("mining")
+                if isinstance(mining, dict):
+                    add(mining.get("unlock"), where)
+
+    unlock_keys_path = root / UNLOCK_KEYS_REL
+    constants: dict[str, str] = {}
+    if unlock_keys_path.is_file():
+        raw = unlock_keys_path.read_text(encoding="utf-8")
+        for name, value in re.findall(r'static\s+final\s+String\s+([A-Z_][A-Z0-9_]*)\s*=\s*"([a-z0-9_.]+)"\s*;', raw):
+            constants[name] = value
+    java_root = root / JAVA_SRC_REL
+    for path in sorted(java_root.rglob("*.java")) if java_root.is_dir() else []:
+        rel = path.relative_to(root)
+        if rel == UNLOCK_KEYS_REL or GAMETEST_REL in rel.parents:
+            continue
+        literals, code = java_strip(path.read_text(encoding="utf-8"))
+        where = path.name
+        for literal in literals:
+            add(literal, where)
+        for name in re.findall(r"\bUnlockKeys\s*\.\s*([A-Z_][A-Z0-9_]*)\b", code):
+            if name in constants:
+                add(constants[name], where)
+        for name in re.findall(r"import\s+static\s+[\w.]*\bUnlockKeys\s*\.\s*([A-Z_][A-Z0-9_]*|\*)\s*;", code):
+            for const in (constants if name == "*" else [name]):
+                if const in constants and (name != "*" or re.search(rf"\b{const}\b", code)):
+                    add(constants[const], where)
+    return consumers
+
+
+def check_wiring(root: Path, plan: Plan, tiers: dict[str, "Tier"], graph: dict[str, list[str]],
+                 used_unlocks: dict[str, str], rep: Report) -> None:
+    limit = milestone_number(WIRED_UP_TO)
+    consumers = unlock_consumers(root)
+    for key in sorted(plan.milestones):
+        number = milestone_number(plan.milestones[key])
+        if number is None or limit is None or number > limit:
+            continue  # jalon à venir ou « reporté »
+        if key not in consumers:
+            rep.error(PLAN_REL.as_posix(), f"clé « {key} » (jalon {plan.milestones[key]}, câblage jusqu'à {WIRED_UP_TO}) "
+                                           f"jamais consommée : ni champ « unlock » d'ingénierie, ni « requires » ou "
+                                           f"« mining.unlock » de planète, ni littéral Java")
+
+    def closure(tid: str) -> set[str]:
+        seen: set[str] = set()
+        stack = list(graph.get(tid, []))
+        while stack:
+            cur = stack.pop()
+            if cur not in seen:
+                seen.add(cur)
+                stack.extend(graph.get(cur, []))
+        return seen
+
+    for tid in sorted(tiers, key=natural_key):
+        t = tiers[tid]
+        for item, _ in t.items:
+            key = SPACE_MATERIALS.get(item)
+            if key is None:
+                continue
+            source = used_unlocks.get(key)
+            if source is None:
+                rep.error(t.file, f"coût en « {item} » : aucun palier n'accorde « {key} » (extraction)")
+            elif source not in closure(tid):
+                rep.error(t.file, f"coût en « {item} » : le palier doit exiger (transitivement) {source}, "
+                                  f"qui accorde l'extraction « {key} »")
+
+
+# ---------------------------------------------------------------------------
 # Vérification complète
 # ---------------------------------------------------------------------------
 
@@ -926,6 +1116,9 @@ def check(root: Path, lang: bool = True) -> Report:
         if t.pop is not None and t.pop != row.pop:
             rep.error(t.file, f"écart au plan (population minimale) : JSON {t.pop}, plan {row.pop}")
 
+    # --- 9. Câblage des déblocages et matériaux spatiaux (J5) ---------------------
+    check_wiring(root, plan, tiers, graph, used_unlocks, rep)
+
     # --- 8. Traductions ------------------------------------------------------------
     if lang:
         rep.lang_checked = True
@@ -958,18 +1151,30 @@ def _build_fixture(root: Path) -> None:
     registry.parent.mkdir(parents=True, exist_ok=True)
     registry.write_text('class ModBlocks { Object A = BLOCKS.registerBlock("registre_civil", null); }\n',
                         encoding="utf-8")
+    (root / REGISTRY_REL / "ModItems.java").write_text(
+        "class ModItems {\n" + "".join(f'  Object {n.upper()} = ITEMS.registerSimpleItem("{n}");\n'
+                                       for n in ("titane_brut", "lingot_titane", "soufre", "cristal_cryogenique"))
+        + "}\n", encoding="utf-8")
     plan = parse_plan((root / PLAN_REL).read_text(encoding="utf-8"))
     if plan.errors:
         raise RuntimeError("plan de référence invalide :\n" + "\n".join(f"{s} : {m}" for s, m in plan.errors))
+    # Contrôle 9 : une recette d'ingénierie consomme chaque clé déjà câblée (jalon ≤ WIRED_UP_TO).
+    limit = milestone_number(WIRED_UP_TO)
+    for key, milestone in plan.milestones.items():
+        number = milestone_number(milestone)
+        if number is not None and limit is not None and number <= limit:
+            _write_json(root / ENGINEERING_REL / f"{key}.json", {"tab": "machines", "unlock": key})
     lang: dict[str, str] = {}
     for tid, row in plan.rows.items():
         items = [{"item": "minecraft:cobblestone", "count": 16 * row.tier},
                  {"item": "minecraft:iron_ingot", "count": row.tier}]
         if tid == "civil_1":
             items.append({"item": f"{NAMESPACE}:registre_civil", "count": 1})
-        data: dict = {"domain": row.domain, "tier": row.tier,
-                      "cost": {"treasury": round_to(treasury_target(row.domain, row.tier), TREASURY_ROUNDING),
-                               "items": items}}
+        cost: dict = {"treasury": round_to(treasury_target(row.domain, row.tier), TREASURY_ROUNDING)}
+        if expected_points(row.tier):
+            cost["points"] = expected_points(row.tier)
+        cost["items"] = items
+        data: dict = {"domain": row.domain, "tier": row.tier, "cost": cost}
         if row.requires:
             data["requires"] = [f"{NAMESPACE}:{r}" for r in sorted(row.requires, key=natural_key)]
         if row.pop:
@@ -1022,6 +1227,37 @@ def _remove(tid: str):
 
 def _req(tid: str) -> str:
     return f"{NAMESPACE}:{tid}"
+
+
+def _edit_plan(fn):
+    def mutate(root: Path) -> None:
+        path = root / PLAN_REL
+        path.write_text(fn(path.read_text(encoding="utf-8")), encoding="utf-8")
+    return mutate
+
+
+def _write(rel: Path, content: str):
+    def mutate(root: Path) -> None:
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_text(content, encoding="utf-8")
+    return mutate
+
+
+def _unlink(rel: Path):
+    def mutate(root: Path) -> None:
+        (root / rel).unlink()
+    return mutate
+
+
+def _all(*mutations):
+    def mutate(root: Path) -> None:
+        for m in mutations:
+            m(root)
+    return mutate
+
+
+def _add_cost(tid: str, item: str, count: int):
+    return _edit(tid, lambda d: d["cost"]["items"].append({"item": item, "count": count}))
 
 
 def _self_test() -> int:
@@ -1095,8 +1331,14 @@ def _self_test() -> int:
          ["introuvable en survie"], [], True),
         ("trop de piles", _edit("civil_2", lambda d: d["cost"]["items"][0].update(count=64 * 30 + 1)),
          ["piles de 64 au total"], [], True),
-        ("points de recherche au J2", _edit("civil_2", lambda d: d["cost"].update(points=5)),
-         ["cost.points = 5"], [], True),
+        ("points de recherche sous le palier 6", _edit("civil_2", lambda d: d["cost"].update(points=5)),
+         ["cost.points = 5 : 0 attendu"], [], True),
+        ("points de recherche hors règle", _edit("civil_6", lambda d: d["cost"].update(points=4)),
+         ["cost.points = 4 : 5 attendu"], [], True),
+        ("points de recherche absents (palier ≥ 6)", _edit("militaire_16", lambda d: d["cost"].pop("points")),
+         ["cost.points absent : 55 attendu"], [], True),
+        ("points de recherche négatifs", _edit("industrie_12", lambda d: d["cost"].update(points=-35)),
+         ["cost.points doit être un entier ≥ 0"], [], True),
         ("JSON invalide", _raw("civil_2.json", '{ "domain": "civil", '), ["JSON invalide"], [], True),
         ("clé JSON en double", _raw("civil_2.json", '{"domain": "civil", "tier": 2, "tier": 2}'),
          ["« tier » en double"], [], True),
@@ -1131,6 +1373,52 @@ def _self_test() -> int:
          ["unlock.refinery"], [], True),
         ("--no-lang ignore les traductions", _edit_lang(lambda d: d.pop(f"{PREFIX}research.civil_1.desc")),
          [], [], False),
+        # --- 9. câblage des déblocages (J5) ---
+        ("jalon invalide", _edit_plan(lambda t: t.replace("| `circuits` | circuits électroniques | J3 |",
+                                                          "| `circuits` | circuits électroniques | J3 bis |")),
+         ["jalon « J3 bis » invalide pour circuits"], [], True),
+        ("jalon absent", _edit_plan(lambda t: t.replace("| `circuits` | circuits électroniques | J3 |",
+                                                        "| `circuits` | circuits électroniques |")),
+         ["invalide pour circuits"], [], True),
+        ("clé câblée jamais consommée", _unlink(ENGINEERING_REL / "circuits.json"),
+         ["clé « circuits » (jalon J3", "jamais consommée"], [], True),
+        ("littéral Java consommateur", _all(_unlink(ENGINEERING_REL / "circuits.json"),
+                                            _write(JAVA_REL / "engineering" / "Essai.java",
+                                                   'class Essai { String k = "circuits"; }\n')),
+         [], [], True),
+        ("littéral en commentaire ignoré", _all(_unlink(ENGINEERING_REL / "circuits.json"),
+                                                _write(JAVA_REL / "engineering" / "Essai.java",
+                                                       'class Essai { // "circuits"\n /* "circuits" */ }\n')),
+         ["clé « circuits »"], [], True),
+        ("littéral d'un GameTest ignoré", _all(_unlink(ENGINEERING_REL / "circuits.json"),
+                                               _write(GAMETEST_REL / "EssaiGameTests.java",
+                                                      'class EssaiGameTests { String k = "circuits"; }\n')),
+         ["clé « circuits »"], [], True),
+        ("constante d'UnlockKeys jamais référencée", _all(
+            _unlink(ENGINEERING_REL / "circuits.json"),
+            _write(UNLOCK_KEYS_REL, 'class UnlockKeys { public static final String CIRCUITS = "circuits"; }\n')),
+         ["clé « circuits »"], [], True),
+        ("constante d'UnlockKeys référencée", _all(
+            _unlink(ENGINEERING_REL / "circuits.json"),
+            _write(UNLOCK_KEYS_REL, 'class UnlockKeys { public static final String CIRCUITS = "circuits"; }\n'),
+            _write(JAVA_REL / "machine" / "Essai.java", "class Essai { boolean ok = has(UnlockKeys.CIRCUITS); }\n")),
+         [], [], True),
+        ("planète consommatrice (requires et mining.unlock)", _all(
+            _unlink(ENGINEERING_REL / "drill.gas.json"), _unlink(ENGINEERING_REL / "energy.cables.json"),
+            _write(PLANETS_REL / "essai.json", json.dumps({"requires": ["drill.gas"],
+                                                           "mining": {"unlock": "energy.cables"}}))),
+         [], [], True),
+        ("matériau spatial sans extraction", _add_cost("civil_2", f"{NAMESPACE}:lingot_titane", 4),
+         [f"coût en « {NAMESPACE}:lingot_titane »", "ressources_13"], [], True),
+        ("matériau spatial sur son propre palier d'extraction", _add_cost("ressources_13", f"{NAMESPACE}:titane_brut", 8),
+         ["ressources_13, qui accorde l'extraction « mining.lunar »"], [], True),
+        ("cristal cryogénique : aucun palier n'exige ressources_15",
+         _add_cost("technologie_7", f"{NAMESPACE}:cristal_cryogenique", 8), ["ressources_15"], [], True),
+        ("matériaux spatiaux après leur extraction", _all(
+            _add_cost("technologie_5", f"{NAMESPACE}:lingot_titane", 24),
+            _add_cost("industrie_12", f"{NAMESPACE}:soufre", 64),
+            _add_cost("technologie_7", f"{NAMESPACE}:lingot_titane", 64)),
+         [], [], True),
     ]
 
     with tempfile.TemporaryDirectory(prefix="check_research_") as tmp:

@@ -3,6 +3,7 @@
   "tier": 9,
   "cost": {
     "treasury": 6500,
+    "points": 20,
     "items": [
       {
         "item": "sovereignfrontier:blindage_national",

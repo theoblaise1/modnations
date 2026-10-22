@@ -98,7 +98,7 @@ public final class ResearchGameTests {
         try {
             lifecycle(helper, server, registry, chef);
         } finally {
-            NationManager.disband(chef);
+            J4TestUtil.disband(chef);
         }
         helper.succeed();
     }
@@ -188,7 +188,7 @@ public final class ResearchGameTests {
             helper.assertTrue(nation.research().active() != null, "la recherche en cours n'est pas annulée");
             expect(helper, ResearchManager.cancel(chef, civil1.id()), true, "annulation du palier affiché");
         } finally {
-            NationManager.disband(chef);
+            J4TestUtil.disband(chef);
         }
         helper.succeed();
     }
@@ -228,7 +228,7 @@ public final class ResearchGameTests {
             nation.chest().addItem(new ItemStack(Items.IRON_INGOT, 32));
             helper.assertTrue(ResearchManager.blockers(nation, registry, tier).isEmpty(), "64 lingots suffisent");
         } finally {
-            NationManager.disband(chef);
+            J4TestUtil.disband(chef);
         }
         helper.succeed();
     }
@@ -284,7 +284,7 @@ public final class ResearchGameTests {
             helper.assertTrue(nation.research().active() != null, "la recherche relancée n'est pas annulée");
             expect(helper, ResearchManager.cancel(chef, civil1.id(), secondStart), true, "début affiché accepté");
         } finally {
-            NationManager.disband(chef);
+            J4TestUtil.disband(chef);
         }
         helper.succeed();
     }

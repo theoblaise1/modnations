@@ -22,7 +22,15 @@ public enum NationPermission {
     START_RESEARCH("rechercher"),
     DECLARE_WAR("declarer_guerre"),
     SIGN_TREATY("signer_traite"),
-    FIRE_MISSILE("tirer_missile");
+    FIRE_MISSILE("tirer_missile"),
+    /** J4 : contrats et entreprises (bit 11, ajoutée en dernier : les masques existants restent valables). */
+    ECONOMY("economie");
+
+    /**
+     * Version du schéma des permissions sauvegardé dans le NBT de chaque nation ({@code permVersion}).
+     * 0 (absente) : avant le J4 ; 1 : {@link #ECONOMY} existe.
+     */
+    public static final int CURRENT_VERSION = 1;
 
     private static final NationPermission[] VALUES = values();
     private final String id;
@@ -78,10 +86,25 @@ public enum NationPermission {
     public static EnumSet<NationPermission> defaults(NationRole role) {
         return switch (role) {
             case CHEF -> EnumSet.allOf(NationPermission.class);
-            case MINISTRE -> EnumSet.of(CLAIM, UNCLAIM, WITHDRAW, NATIONAL_CHEST, BUILD, INVITE, KICK, START_RESEARCH, SIGN_TREATY);
-            case OFFICIER -> EnumSet.of(CLAIM, NATIONAL_CHEST, BUILD, INVITE, KICK, START_RESEARCH);
+            case MINISTRE -> EnumSet.of(CLAIM, UNCLAIM, WITHDRAW, NATIONAL_CHEST, BUILD, INVITE, KICK, START_RESEARCH, SIGN_TREATY,
+                    ECONOMY);
+            case OFFICIER -> EnumSet.of(CLAIM, NATIONAL_CHEST, BUILD, INVITE, KICK, START_RESEARCH, ECONOMY);
             case CITOYEN -> EnumSet.of(NATIONAL_CHEST, BUILD);
             case RECRUE -> EnumSet.of(BUILD);
         };
+    }
+
+    /**
+     * Migration (fonction pure) des permissions d'un rôle sauvegardées avec la version de schéma {@code fromVersion} :
+     * une permission apparue depuis est accordée si les défauts du rôle la contiennent ; les choix du chef sur les
+     * permissions existantes sont conservés.
+     */
+    public static EnumSet<NationPermission> migrate(NationRole role, Set<NationPermission> saved, int fromVersion) {
+        EnumSet<NationPermission> out = EnumSet.noneOf(NationPermission.class);
+        out.addAll(saved);
+        if (fromVersion < 1 && defaults(role).contains(ECONOMY)) {
+            out.add(ECONOMY);
+        }
+        return out;
     }
 }

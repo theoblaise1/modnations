@@ -1,0 +1,8 @@
+{
+  "kind": "deliver",
+  "weight": 8,
+  "min_population": 2,
+  "duration_hours": 48,
+  "objective": {"item": "minecraft:copper_ingot", "amount": {"min": 32, "max": 96, "step": 16}},
+  "reward": {"money": 100, "money_per_unit": 1, "points": 4, "points_per_unit": 0.06}
+}

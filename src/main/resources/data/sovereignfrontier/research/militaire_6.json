@@ -3,6 +3,7 @@
   "tier": 6,
   "cost": {
     "treasury": 3550,
+    "points": 5,
     "items": [
       {
         "item": "minecraft:stone_bricks",

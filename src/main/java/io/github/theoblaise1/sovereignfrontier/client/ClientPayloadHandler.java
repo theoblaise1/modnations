@@ -1,13 +1,17 @@
 package io.github.theoblaise1.sovereignfrontier.client;
 
 import io.github.theoblaise1.sovereignfrontier.client.screen.EngineeringScreen;
+import io.github.theoblaise1.sovereignfrontier.client.screen.FeedbackScreen;
 import io.github.theoblaise1.sovereignfrontier.client.screen.NationScreen;
 import io.github.theoblaise1.sovereignfrontier.network.ActionFeedbackS2C;
+import io.github.theoblaise1.sovereignfrontier.network.CratePreviewS2C;
+import io.github.theoblaise1.sovereignfrontier.network.EconomyViewS2C;
 import io.github.theoblaise1.sovereignfrontier.network.EngineeringRecipesS2C;
 import io.github.theoblaise1.sovereignfrontier.network.OpenEngineeringS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationSnapshotS2C;
 import io.github.theoblaise1.sovereignfrontier.network.NationTab;
 import io.github.theoblaise1.sovereignfrontier.network.ResearchDefinitionsS2C;
+import io.github.theoblaise1.sovereignfrontier.network.TradeViewS2C;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -64,11 +68,23 @@ public final class ClientPayloadHandler {
 
     private static void applyFeedback(ActionFeedbackS2C payload) {
         // Sans écran ouvert, le message est déjà dans le chat
-        if (Minecraft.getInstance().screen instanceof NationScreen screen) {
-            screen.showFeedback(payload.message(), payload.success());
-        } else if (Minecraft.getInstance().screen instanceof EngineeringScreen screen) {
+        if (Minecraft.getInstance().screen instanceof FeedbackScreen screen) {
             screen.showFeedback(payload.message(), payload.success());
         }
+    }
+
+    // ------------------------------------------------------------------ J4 : économie
+
+    public static void handleTradeView(TradeViewS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientMarket.apply(payload));
+    }
+
+    public static void handleEconomyView(EconomyViewS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientEconomy.apply(payload.view()));
+    }
+
+    public static void handleCratePreview(CratePreviewS2C payload, IPayloadContext context) {
+        context.enqueueWork(() -> ClientRewards.applyPreview(payload.view()));
     }
 
     public static void handleEngineeringRecipes(EngineeringRecipesS2C payload, IPayloadContext context) {
