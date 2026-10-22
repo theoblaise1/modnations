@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "ammo.basic",
+  "ingredients": [
+    {"item": "minecraft:iron_nugget", "count": 4},
+    {"item": "minecraft:gunpowder", "count": 2}
+  ],
+  "result": {"item": "sovereignfrontier:munitions_basiques", "count": 16}
+}

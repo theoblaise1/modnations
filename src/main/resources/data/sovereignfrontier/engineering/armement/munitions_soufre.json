@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "ammo.sulfur",
+  "ingredients": [
+    {"item": "sovereignfrontier:soufre", "count": 2},
+    {"item": "minecraft:gunpowder", "count": 4}
+  ],
+  "result": {"item": "sovereignfrontier:munitions_soufre", "count": 8}
+}

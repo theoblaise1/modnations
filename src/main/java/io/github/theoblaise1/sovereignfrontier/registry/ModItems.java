@@ -94,11 +94,11 @@ public final class ModItems {
 
     /** Armes à feu (piles de 1) : le tir et les munitions sont dans {@code armement/FirearmItem} (WP2). */
     public static final DeferredItem<FirearmItem> PISTOL = ITEMS.register("pistolet",
-            () -> new FirearmItem(new Item.Properties().stacksTo(1)));
+            () -> new FirearmItem(new Item.Properties().stacksTo(1), FirearmItem.Spec.PISTOL));
     public static final DeferredItem<FirearmItem> RIFLE = ITEMS.register("fusil",
-            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON), FirearmItem.Spec.RIFLE));
     public static final DeferredItem<FirearmItem> SNIPER_RIFLE = ITEMS.register("fusil_precision",
-            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
+            () -> new FirearmItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC), FirearmItem.Spec.SNIPER));
     public static final DeferredItem<ExplosiveItem> EXPLOSIVE = ITEMS.register("explosif",
             () -> new ExplosiveItem(new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON)));
 

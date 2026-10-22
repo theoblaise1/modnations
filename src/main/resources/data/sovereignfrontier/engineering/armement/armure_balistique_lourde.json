@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "armor.ballistic_heavy",
+  "ingredients": [
+    {"item": "sovereignfrontier:lingot_titane", "count": 8},
+    {"item": "minecraft:iron_block", "count": 4}
+  ],
+  "result": {"item": "sovereignfrontier:armure_balistique_lourde", "count": 1}
+}

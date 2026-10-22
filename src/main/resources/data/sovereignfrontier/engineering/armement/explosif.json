@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "weapon.explosives",
+  "ingredients": [
+    {"item": "minecraft:gunpowder", "count": 8},
+    {"item": "minecraft:paper", "count": 4}
+  ],
+  "result": {"item": "sovereignfrontier:explosif", "count": 2}
+}

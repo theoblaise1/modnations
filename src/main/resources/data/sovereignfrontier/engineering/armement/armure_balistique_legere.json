@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "armor.ballistic_light",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 8},
+    {"item": "minecraft:leather", "count": 4}
+  ],
+  "result": {"item": "sovereignfrontier:armure_balistique_legere", "count": 1}
+}

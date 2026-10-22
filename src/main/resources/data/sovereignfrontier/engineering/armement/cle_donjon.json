@@ -1,0 +1,8 @@
+{
+  "tab": "armement",
+  "ingredients": [
+    {"item": "minecraft:iron_ingot", "count": 4},
+    {"item": "minecraft:gunpowder", "count": 2}
+  ],
+  "result": {"item": "sovereignfrontier:cle_donjon", "count": 1}
+}
