@@ -1,0 +1,26 @@
+{
+  "tab": "aerospatial",
+  "unlock": "armor.gas_heated",
+  "ingredients": [
+    {
+      "item": "minecraft:leather_chestplate",
+      "count": 1
+    },
+    {
+      "item": "sovereignfrontier:lingot_titane",
+      "count": 8
+    },
+    {
+      "item": "minecraft:copper_ingot",
+      "count": 8
+    },
+    {
+      "item": "sovereignfrontier:bouteille_gaz",
+      "count": 2
+    }
+  ],
+  "result": {
+    "item": "sovereignfrontier:plastron_chauffant",
+    "count": 1
+  }
+}
