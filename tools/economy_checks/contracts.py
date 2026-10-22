@@ -14,7 +14,8 @@
     déclarée par une planète (``planets/*.json``, miroir de ``ContractRegistry.exploreProblem``) ;
   * récompense : ``money`` 0..1 000 000, ``points`` 0..1000, au plus 4 clés (type de caisse connu, 1..64, chance
     dans ]0 ; 1]), au plus 8 objets (connus, uniques, 1..64, ni clé de caisse, ni ``#interdit_caisses`` **sauf**
-    ``#restreint/fusee_finale`` : seule exemption du J5, ``RestrictedItems.isBannedFromContracts``) ;
+    ``#restreint/fusee_finale`` (J5) et ``#restreint/palier_3``, ``#restreint/palier_4`` (J6), comme
+    ``RestrictedItems.isBannedFromContracts``) ;
   * plafonds : ``money_per_unit × max × 2,5 ≤ 100 000`` et ``points + points_per_unit × max × 2,5 ≤ 1000``
     (exploration : ``max`` sans facteur de taille) ;
   * règle CI seulement : ``money_per_unit ≤ 0,5 ×`` le prix unitaire marchand minimal du même objet (livraison) ;
@@ -33,9 +34,13 @@ from .common import (
 
 LANG_REL = Path("src/main/resources/assets") / NAMESPACE / "lang" / "en_us.json"
 
-# Seule exemption de la garde #interdit_caisses dans une récompense de contrat (J5, décision validée) : le composant
-# final de la fusée, dont la seule source est le contrat de mission (RestrictedItems.isBannedFromContracts).
+# Exemptions de la garde #interdit_caisses dans une récompense de contrat (RestrictedItems.isBannedFromContracts) :
+# le composant final de la fusée (J5, contrat du Module) et les objets de palier 3 et 4 (J6, contrats de mission).
+# arme_max reste interdit partout hors butin de donjon.
 FINAL_ROCKET = f"{NAMESPACE}:restreint/fusee_finale"
+TIER_3 = f"{NAMESPACE}:restreint/palier_3"
+TIER_4 = f"{NAMESPACE}:restreint/palier_4"
+CONTRACT_EXEMPT_TAGS = (FINAL_ROCKET, TIER_3, TIER_4)
 
 KINDS = ("deliver", "kill", "explore")
 FIELDS = {"kind", "weight", "requires", "min_population", "duration_hours", "objective", "reward"}
@@ -325,9 +330,10 @@ def _check_reward(ctx: Context, chk: _Checker, reward: object) -> dict:
             seen.add(item)
             if item in ctx.key_items():
                 chk.error(f"{where}.item : clé de caisse « {item} » : utiliser « keys »")
-            if ctx.banned_from_loot(item) and item not in ctx.tags.get(FINAL_ROCKET, frozenset()):
-                chk.error(f"{where}.item : objet interdit « {item} » (#{BANNED_FROM_LOOT}, sauf #{FINAL_ROCKET}) "
-                          f"dans une récompense de contrat")
+            exempt = any(item in ctx.tags.get(tag, frozenset()) for tag in CONTRACT_EXEMPT_TAGS)
+            if ctx.banned_from_loot(item) and not exempt:
+                chk.error(f"{where}.item : objet interdit « {item} » (#{BANNED_FROM_LOOT}, sauf #{FINAL_ROCKET}, "
+                          f"#{TIER_3} et #{TIER_4}) dans une récompense de contrat")
         chk.int_field(it, "count", 1, ITEM_COUNT_MAX, where, default=1)
     empty = all(not r.get(k) for k in ("money", "money_per_unit", "points", "points_per_unit")) and not keys and not items
     if empty:

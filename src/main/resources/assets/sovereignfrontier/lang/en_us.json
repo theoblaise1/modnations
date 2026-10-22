@@ -219,6 +219,7 @@
   "sovereignfrontier.contract.template.livraison_soufre": "Livraison de soufre",
   "sovereignfrontier.contract.template.livraison_titane": "Livraison de titane",
   "sovereignfrontier.contract.template.mission_module_cryogenique": "Mission : module cryogénique",
+  "sovereignfrontier.contract.template.mission_trident": "Mission : trident",
   "sovereignfrontier.creative_tab": "Sovereign Frontier",
   "sovereignfrontier.dungeon.altar_active": "Un gardien occupe déjà cet autel.",
   "sovereignfrontier.dungeon.altar_cooldown": "L'autel se recharge : encore %s h.",

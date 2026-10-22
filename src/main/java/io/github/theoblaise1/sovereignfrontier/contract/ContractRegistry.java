@@ -145,11 +145,12 @@ public final class ContractRegistry {
             return objective;
         }
         for (ContractTemplate.ItemReward item : t.reward().items()) {
-            // J5 : #interdit_caisses sauf #restreint/fusee_finale (module cryogénique du contrat de mission).
+            // J5 : #interdit_caisses sauf #restreint/fusee_finale (module cryogénique) ; J6 : sauf palier_3 et palier_4.
             if (RestrictedItems.isBannedFromContracts(item.item())) {
                 return "récompense interdite « " + BuiltInRegistries.ITEM.getKey(item.item()) + " » (#"
-                        + RestrictedItems.BANNED_FROM_LOOT.location() + ", seul #" + RestrictedItems.FINAL_ROCKET.location()
-                        + " est permis dans un contrat)";
+                        + RestrictedItems.BANNED_FROM_LOOT.location() + ", seuls #" + RestrictedItems.FINAL_ROCKET.location()
+                        + ", #" + RestrictedItems.TIER_3.location() + " et #" + RestrictedItems.TIER_4.location()
+                        + " sont permis dans un contrat)";
             }
         }
         return null;

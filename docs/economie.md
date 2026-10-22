@@ -1,4 +1,4 @@
-# Économie, récompenses et contrats — contrat de données (J4, complété au J5)
+# Économie, récompenses et contrats — contrat de données (J4, complété aux J5 et J6)
 
 Ce document est le **contrat** entre le contenu JSON (`src/main/resources/data/sovereignfrontier/`,
 modifiable par un datapack de monde) et le code : où vivent les données, format de chaque fichier,
@@ -55,12 +55,13 @@ vérifient leur présence.
 
 | Tag (`#sovereignfrontier:…`) | Contenu |
 |---|---|
-| `restreint` | regroupe `restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max`. `restreint/fusee_finale` contient `module_cryogenique` depuis le J5 (seul composant final de fusée) ; les trois autres sont vides jusqu'au J6 |
+| `restreint` | regroupe `restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max`. `restreint/fusee_finale` contient `module_cryogenique` depuis le J5 (seul composant final de fusée) ; au J6, `restreint/palier_3` = `minecraft:trident`, `restreint/palier_4` = `minecraft:totem_of_undying`, `restreint/arme_max` = `sovereignfrontier:fusil_precision` |
 | `hors_economie` | objets vanilla de fin de jeu (netherite complète, gabarit d'amélioration, élytres, étoile du Nether, balise, pomme dorée enchantée, œuf de dragon, masse, noyau lourd), objets de Créatif (blocs de commande, barrière, blocs de structure et puzzle, bâton de débogage, lumière, cage d'apparition, bedrock), les machines J3 soumises à recherche (`generateur_thermique`, `panneau_solaire`, `cellule_energie`, `foreuse_gaz`, `controleur_reacteur`, `caisson_reacteur`, `cellule_combustible`, `dissipateur_thermique`) et les objets J5 soumis à recherche (`fusee`, `raffinerie`, `diffuseur_oxygene`, `chaudiere_gaz`, `rechauffeur_nucleaire`, `propulseur_avance`, `plastron_chauffant`) : aucune source automatique ne les donne |
 | `interdit_caisses` | `#restreint` + `#hors_economie` |
 
 **Règle absolue.** Un objet de palier 3 ou 4, un composant final de fusée ou une arme militaire
-maximale ne se trouve **jamais** dans :
+maximale ne se trouve **jamais** dans les sources suivantes, à deux exceptions près, marquées dans le tableau : les
+récompenses de contrat (paliers 3 et 4, fusée finale) et le butin du gardien de donjon :
 
 | Source | Tag appliqué | CI (`check_economy.py`) | Au chargement | À l'exécution |
 |---|---|---|---|---|
@@ -69,20 +70,29 @@ maximale ne se trouve **jamais** dans :
 | `/daily` (clés) | clés absentes de `#interdit_caisses` | erreur | table rejetée | clé non remise |
 | Marchand (vente **et** rachat) | `#interdit_caisses` | erreur | pool rejeté en entier | achat refusé |
 | Produit d'entreprise | `#interdit_caisses` + clés de caisse | erreur | secteur rejeté | objet non déposé |
-| Récompense de contrat (`reward.items`) | `#interdit_caisses` **sauf `#restreint/fusee_finale`** | erreur | modèle rejeté | objet non remis, ERREUR au journal |
+| Récompense de contrat (`reward.items`) | `#interdit_caisses` **sauf `#restreint/fusee_finale`, `palier_3` et `palier_4`** (`arme_max` reste interdit) | erreur | modèle rejeté | objet non remis, ERREUR au journal |
 | Butin des tonneaux d'avant-poste | `#interdit_caisses` | erreur | — (table de butin vanilla) | — |
+| Butin du gardien de donjon (`loot_table/entities/gardien_donjon.json`) | **exception** (C7) : paliers 3 et 4 et arme maximale permis dans cette seule table | — (table vanilla, non lue par `check_economy.py`) | — | — |
 
 - Les références `#minecraft:…` sont **interdites** dans ces tags (y compris indirectement) : les
   objets vanilla y sont listés un par un, pour que le contenu ne change pas avec Minecraft.
-- **Exemption des contrats (J5).** `docs/conception/J4.md` §1.4 et §9 prévoient que `reward.items` des
+- **Exemptions des contrats (J5, J6).** `docs/conception/J4.md` §1.4 et §9 prévoient que `reward.items` des
   contrats puisse contenir des objets `#restreint` (source légitime des objets de palier 3 et 4). Le J4
-  appliquait `#interdit_caisses` aussi aux contrats ; le J5 y ajoute **une seule exemption explicite** :
-  `#sovereignfrontier:restreint/fusee_finale`. La garde des contrats est donc « `#interdit_caisses` sauf
-  `#restreint/fusee_finale` » (`RestrictedItems.isBannedFromContracts` au chargement, `allowInContractReward` à la
-  remise). `restreint/palier_3`, `restreint/palier_4` et `restreint/arme_max` restent **interdits dans les
-  contrats** jusqu'à ce que le J6 tranche ; il suffira alors d'étendre l'exemption. C'est ainsi que le Module
+  appliquait `#interdit_caisses` aussi aux contrats ; le J5 y ajoute l'exemption
+  `#sovereignfrontier:restreint/fusee_finale`, et le J6 les exemptions `restreint/palier_3` et `restreint/palier_4`.
+  La garde des contrats est donc « `#interdit_caisses` sauf `#restreint/fusee_finale`, `palier_3` et `palier_4` »
+  (`RestrictedItems.isBannedFromContracts` au chargement, `allowInContractReward` à la remise, `check_economy.py` en
+  CI). `restreint/arme_max` (`sovereignfrontier:fusil_precision`) reste **interdit dans tout contrat**. C'est ainsi que le Module
   cryogénique (seul membre de `restreint/fusee_finale`) est obtenu : uniquement par le contrat de mission
   `mission_module_cryogenique`, jamais par un craft, une caisse, un marchand, une entreprise ni `/daily`.
+- **Butin du gardien de donjon (J6, C7).** La table `loot_table/entities/gardien_donjon.json` (table de butin vanilla,
+  `type` `minecraft:entity`, clé par défaut du type `sovereignfrontier:gardien_donjon`) est la seule source automatique
+  qui contient des objets `#restreint` hors contrat : `minecraft:trident` (25 %, palier 3), `minecraft:totem_of_undying`
+  (5 %, palier 4) et `sovereignfrontier:fusil_precision` (10 %, arme maximale), en plus de 8 à 16 munitions perforantes,
+  1 à 2 explosifs (50 %) et une trousse de soins (50 %). Le gardien remet aussi une clé militaire à la nation de l'autel
+  activé. Ce butin n'est pas une caisse : aucune garde d'exécution ni contrôle `check_economy.py` ne lit cette table ; la
+  règle est couverte par `ButinJ6GameTests`. `fusil_precision` n'a aucune recette et n'est jamais en caisse, en marchand,
+  en entreprise ni dans `/daily`.
 - **Procédure.** Tout nouvel objet de palier 3 ou 4, composant final de fusée ou arme militaire
   maximale doit être ajouté **dans le même commit** au sous-tag correspondant
   (`restreint/palier_3`, `restreint/palier_4`, `restreint/fusee_finale`, `restreint/arme_max`).
@@ -118,8 +128,10 @@ maximale ne se trouve **jamais** dans :
   entrée rare, par joueur et par type : une rare manquée `cratePityThreshold` fois (20) est garantie à
   l'ouverture suivante (la 21ᵉ) ; si deux rares atteignent le seuil ensemble, la plus manquée tombe
   d'abord (égalité : ordre du JSON), l'autre à l'ouverture d'après.
-- Le contenu livré est dans `crates/*.json` ; seule la caisse militaire porte encore des entrées
-  provisoires (J6 : munitions, trousse de soins, gilet balistique léger).
+- Le contenu livré est dans `crates/*.json`. **Caisse militaire (J6)** : ses trois entrées provisoires sont remplacées
+  (`munitions_basiques` 8 à 16, poids 10 ; `trousse_soins` 1 à 2, poids 6 ; `armure_balistique_legere` 1, poids 2,
+  « peu commune ») ; `plastron_diamant` et `totem` sont retirés (palier 3 et 4 interdits en caisse) et
+  `armure_balistique_lourde` (1, poids 1, « rare ») garde une entrée rare. Aucune entrée provisoire ne subsiste.
 - **Caisse spatiale (J5).** Ses trois entrées provisoires (pièces de fusée, oxygène, carburant de fusée) sont
   remplacées par du contenu réel : `coque_fusee` × 1 (poids 4), `moteur_fusee` × 1 (poids 2), `bouteille_oxygene`
   2 à 6 (poids 8) et `carburant_fusee` 1 à 2 (poids 8), en plus des bouteilles de gaz, du verre, des blocs de
@@ -217,9 +229,9 @@ survie sans `/sfadmin bypass` ne cassent ni ne posent, et les explosions ne dét
 - **Récompense** (au moins un élément non vide) : `money` (0 à 1 000 000), `money_per_unit`,
   `points` (0 à 1 000), `points_per_unit`, `keys` (au plus 4 : `crate`, `count` de 1 à 64, `chance` dans
   ]0 ; 1]), `items` (au plus 8 : `item`, `count` de 1 à 64 ; ni doublon, ni clé de caisse, ni objet de
-  `#interdit_caisses` **hors `#restreint/fusee_finale`** : un modèle qui en contient un autre est rejeté au
-  chargement avec « récompense interdite … seul #sovereignfrontier:restreint/fusee_finale est permis dans un
-  contrat »).
+  `#interdit_caisses` **hors `#restreint/fusee_finale`, `palier_3` et `palier_4`** : un modèle qui en contient un autre
+  est rejeté au chargement avec « récompense interdite … seuls #sovereignfrontier:restreint/fusee_finale,
+  #sovereignfrontier:restreint/palier_3 et #sovereignfrontier:restreint/palier_4 sont permis dans un contrat »).
 - **Plafonds** : `money_per_unit × max × 2,5 ≤ 100 000` et `points + points_per_unit × max × 2,5 ≤ 1 000`
   (exploration : sans facteur de taille). **Règle CI seulement** : pour un contrat de livraison,
   `money_per_unit ≤ 0,5 ×` le prix unitaire marchand minimal du même objet (pas d'arbitrage
@@ -242,11 +254,11 @@ survie sans `/sfadmin bypass` ne cassent ni ne posent, et les explosions ne dét
   `CHUNK_GENERATION`, `STRUCTURE`, `PATROL`, `EVENT`, `JOCKEY`), tués directement par un vrai joueur
   membre d'une nation. Cages, œufs, commandes, reproduction et faux joueurs sont ignorés.
 
-Modèles livrés (27) :
+Modèles livrés (28) :
 
 | Type | Modèles |
 |---|---|
-| Livraison (13) | `livraison_ble`, `livraison_pain`, `livraison_bois`, `livraison_charbon`, `livraison_fer` (`ressources_3`), `livraison_cuivre` (pop. 2), `livraison_redstone` (`industrie_2`), `livraison_circuits` (`technologie_1`), `livraison_gaz` (`ressources_8`) ; **J5** : `livraison_titane` (`ressources_13`), `livraison_soufre` (`ressources_14`), `livraison_cristaux` (`ressources_15` et `technologie_7`), `mission_module_cryogenique` |
+| Livraison (14) | `livraison_ble`, `livraison_pain`, `livraison_bois`, `livraison_charbon`, `livraison_fer` (`ressources_3`), `livraison_cuivre` (pop. 2), `livraison_redstone` (`industrie_2`), `livraison_circuits` (`technologie_1`), `livraison_gaz` (`ressources_8`) ; **J5** : `livraison_titane` (`ressources_13`), `livraison_soufre` (`ressources_14`), `livraison_cristaux` (`ressources_15` et `technologie_7`), `mission_module_cryogenique` ; **J6** : `mission_trident` (`militaire_12`) |
 | Chasse (6) | `chasse_zombies`, `chasse_squelettes` (`#sovereignfrontier:contrat/squelettes`), `chasse_araignees` (`#sovereignfrontier:contrat/araignees`), `chasse_creepers` (pop. 2), `chasse_endermen` (`militaire_3`), `chasse_blazes` (`militaire_5`, 8 fioles d'expérience en plus) |
 | Exploration (8) | `exploration_jungle`, `exploration_badlands` (pop. 2), `exploration_lointaine` (point à 1 000–2 000 blocs), `exploration_avant_postes` (2 à 3 avant-postes), `exploration_nether` (pop. 3) ; **J5** : `exploration_lune` (`technologie_2`), `exploration_mars` (`technologie_4`), `exploration_planete_glacee` (`technologie_7`) |
 
@@ -265,6 +277,12 @@ Les points de recherche gagnés ici paient les paliers 6 et suivants (voir `docs
   coffre national (chemin des objets de contrat du J4). C'est la seule source du composant final : il n'existe aucune
   recette, entrée de caisse, offre de marchand, produit d'entreprise ni clé `/daily` qui le donne.
 - Aucun marchand n'achète ni ne vend titane, soufre ou cristal (pas de conversion illimitée en argent).
+
+### Mission palier 3 (J6)
+- **Mission du trident** `mission_trident` : livrer 16 à 32 lingots de titane (pas de 8, mis à l'échelle par le nombre de
+  membres) ; récompense 1 200 cr, 30 points et **1 `minecraft:trident`** (palier 3) ; exige `militaire_12` et 8 habitants
+  effectifs ; durée 120 h, poids 5. Le trident suit la règle des objets de contrat (plus gros contributeur en ligne, sinon
+  coffre national). Avec le butin du gardien de donjon, c'est la seule source automatique du trident.
 
 ## Entreprises — `enterprises/<secteur>.json`
 ```json
@@ -365,9 +383,8 @@ caisse.
 5. `/reload` en jeu : les fichiers invalides sont ignorés avec un message explicite dans le journal.
 
 ## Reporté
-- Objets de palier 3 et 4 et armes maximales en récompense de contrat (J6 : il suffira d'étendre l'exemption
-  de `RestrictedItems.isBannedFromContracts`), clés lâchées par les boss et les victoires de guerre (J6, J7) : les
-  points d'entrée `CrateKeys.give` et `CrateKeys.giveToNation` existent.
+- Clés lâchées par les victoires de guerre (J7) : les points d'entrée `CrateKeys.give` et `CrateKeys.giveToNation`
+  existent. Le gardien de donjon (J6) remet, lui, une clé militaire (voir « Butin du gardien de donjon »).
 - Grade Souverain : `RankHooks.terminalMultiplier` renvoie 1,0 jusqu'au J8 (`terminalSouverainMultiplier`
   n'est pas encore lue).
 - Griefs des avant-postes (pillage d'un conteneur à butin non encore ouvert dans la boîte) : enregistrés

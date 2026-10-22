@@ -1,0 +1,9 @@
+{
+  "kind": "deliver",
+  "weight": 5,
+  "requires": ["sovereignfrontier:militaire_12"],
+  "min_population": 8,
+  "duration_hours": 120,
+  "objective": {"item": "sovereignfrontier:lingot_titane", "amount": {"min": 16, "max": 32, "step": 8}},
+  "reward": {"money": 1200, "points": 30, "items": [{"item": "minecraft:trident", "count": 1}]}
+}

@@ -158,9 +158,9 @@ public final class SpaceContentGameTests {
     @GameTest(template = AREA, batch = "sf_j5_space_contracts")
     public static void spaceContractsLoaded(GameTestHelper helper) {
         ContractRegistry live = ContractRegistry.get();
-        helper.assertTrue(live.size() == 27, "27 modèles publiés (obtenu " + live.size() + ")");
+        helper.assertTrue(live.size() == 28, "28 modèles publiés (obtenu " + live.size() + ")");
         Map<ContractKind, Integer> kinds = live.countByKind();
-        helper.assertTrue(kinds.getOrDefault(ContractKind.DELIVER, 0) == 13 && kinds.getOrDefault(ContractKind.KILL, 0) == 6
+        helper.assertTrue(kinds.getOrDefault(ContractKind.DELIVER, 0) == 14 && kinds.getOrDefault(ContractKind.KILL, 0) == 6
                 && kinds.getOrDefault(ContractKind.EXPLORE, 0) == 8, "13 livraisons, 6 chasses, 8 explorations : " + kinds);
 
         ContractTemplate lune = live.get(id("exploration_lune"));
