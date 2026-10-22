@@ -10,8 +10,10 @@ structures sont générées par script, tous les noms sont originaux.
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
 > recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
 > réacteur, Station d'ingénierie) ; **J4 livré et validé en jeu** (terminal bancaire, `/daily` et
-> caisses, avant-postes marchands, contrats, entreprises). **J5 livré, à valider en jeu**
-> (`docs/recette/J5.md`) : dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid.
+> caisses, avant-postes marchands, contrats, entreprises). **J5 validé en jeu** (`docs/recette/J5.md`) :
+> dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid. **J6 livré, à valider en jeu**
+> (`docs/recette/J6.md`) : armes à feu, munitions, armures balistiques, donjon à clé et gardien, caisse militaire,
+> contrats de palier 3.
 > Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
@@ -32,7 +34,7 @@ structures sont générées par script, tous les noms sont originaux.
    Station d'ingénierie, forage de gaz **fini** par dimension, ce qui pousse vers l'espace.
 6. **Commercer et contracter** (J4) : marchands PNJ, entreprises, contrats, `/daily`, caisses.
 7. **Conquérir l'espace** (J5) : Lune, Mars, planète glacée ; fusée et carburant.
-8. **Explorer et combattre** (J6) : donjons à clé, boss, armes à feu, missiles. Les objets de
+8. **Explorer et combattre** (J6) : donjons à clé, boss, armes à feu. Les objets de
    palier 3 et 4 ne se fabriquent jamais : ils proviennent des donjons et des contrats.
 9. **Diplomatie et guerre** (J7) : traités, déclaration avec préparation de 24 h, score de
    guerre, protections anti-écrasement, nations PNJ.
@@ -45,8 +47,8 @@ structures sont générées par script, tous les noms sont originaux.
 | J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré |
 | J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, validé en jeu |
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré et validé en jeu |
-| J5 | Dimensions Lune / Mars / planète glacée, fusée, carburant, oxygène et froid (syst. 4) | ✅ livré, à valider en jeu |
-| J6 | Donjons, boss, armement (syst. 6) | — |
+| J5 | Dimensions Lune / Mars / planète glacée, fusée, carburant, oxygène et froid (syst. 4) | ✅ livré et validé en jeu |
+| J6 | Donjons, boss, armement (syst. 6) | ✅ livré, à valider en jeu |
 | J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
 | J8 | Grade Souverain : `/home`, `/tpa`, `/back`, `/fly`… et leurs restrictions de guerre (syst. 9) | — |
 
@@ -169,7 +171,9 @@ partir du J8) ; `[rewards]` : `dailyCooldownHours`, `dailyStreakResetHours`, `cr
 `contractBaseOffers`, `contractMaxOffers`, `contractBaseActive`, `contractMaxActive`,
 `contractSizePerExtraMember`, `contractSizeCap`, `contractMoneyPerTier`, `contractContributorShare`,
 `contractMinNationAgeHours`, `contractMaintenanceTicks`, `contractExploreCheckTicks`,
-`contractHistorySize`. Section J5 : `[space]` (voir « Contenu du jalon J5 »).
+`contractHistorySize`. Section J5 : `[space]` (voir « Contenu du jalon J5 ») ; section J6 : `[dungeon]` :
+`altarCooldownHours` (6 par défaut, de 0 à 168 : délai de recharge de l'autel après la mort de son gardien, en
+heures réelles ; voir « Contenu du jalon J6 »).
 
 ## Contenu du jalon J4
 
@@ -312,6 +316,72 @@ réapparition ne fonctionne sur une planète ; une bordure souple (rayon 2 000, 
 `heatedChestplateBottleSeconds` (valeurs par défaut et plages dans `docs/espace.md`). Les coûts de vol, le rayon, la
 réserve de gaz, le multiplicateur solaire et l'environnement de chaque planète sont du contenu
 (`data/sovereignfrontier/planets/*.json`), pas de la configuration.
+
+---
+
+## Contenu du jalon J6
+
+Armement, donjon à clé et gardien, caisse militaire et contrats de palier 3. Les armes, munitions, armures et recettes
+sont en JSON de datapack (`data/sovereignfrontier/engineering/armement/`, `crates/militaire.json`,
+`loot_table/entities/gardien_donjon.json`) ; règles et interdictions dans [`docs/economie.md`](docs/economie.md),
+contrôlées par `python3 tools/check_economy.py`. Les règles de combat et de donjon sont dans
+[`docs/conception/J6.md`](docs/conception/J6.md).
+
+> **Graphismes.** Les armes, munitions, armures et l'autel n'ont pas encore de modèle ni de texture (lot graphique en
+> attente) : ils s'affichent avec le modèle manquant. Le gardien a l'apparence d'un zombi.
+
+### Blocs
+| Bloc | Rôle |
+|---|---|
+| **Autel de donjon** | Dans l'arène du donjon (Overworld seulement). Clic droit avec une clé de donjon en inventaire : la clé est consommée et le gardien apparaît. Après la mort du gardien, l'autel se recharge (`altarCooldownHours`). |
+
+### Objets
+| Objet | Rôle |
+|---|---|
+| **Pistolet**, **Fusil**, **Fusil de précision** | Armes à feu : tir instantané au clic droit (un rayon depuis les yeux, arrêté par les blocs), une munition par tir. Portées de 24, 48 et 96 blocs ; dégâts de 6, 9 et 18. Elles ne touchent que les monstres (ni joueurs, ni animaux). Le fusil de précision n'a aucune recette : il ne vient que du gardien. |
+| **Explosif** | Lancé au clic droit : portée de 20 blocs, 12 dégâts aux monstres dans un rayon de 3 blocs, sans destruction de blocs. |
+| **Munitions basiques**, **perforantes** (×1,5), **au soufre** (×1,25, feu pendant 4 s) | Consommées à chaque tir ; piles de 64. |
+| **Gilet balistique léger**, **Plastron balistique lourd** | Armures de torse (protection 5 et 8) : Station d'ingénierie, onglet Armement. |
+| **Trousse de soins** | Clic droit maintenu 1 s : rend 6 PV. Aucune recette : caisse militaire et butin du gardien. |
+| **Clé de donjon** | Fabriquée à la Station (onglet Armement), pile de 16. Ce n'est pas une clé de caisse. |
+| **Clé militaire** | Remise à la nation par le gardien (dans le coffre national) ; ouvre la caisse militaire. |
+| **Gardien du donjon** | Boss de 200 PV, invoqué par l'autel. Butin : munitions perforantes (toujours), explosifs, trousse, et plus rarement trident, totem et fusil de précision. |
+
+### Recherche (domaine Militaire)
+`militaire_1` (Arsenal) ouvre l'onglet Armement de la Station ; `militaire_2` et `militaire_7` débloquent les munitions
+basiques et perforantes ; `militaire_3`, `militaire_5` et `militaire_10` les armes (pistolet, fusil, fusil de
+précision) ; `militaire_11` l'explosif ; `militaire_4` et `militaire_9` les armures balistiques ; `militaire_12` les
+munitions au soufre (il exige aussi `technologie_4` et `ressources_14`). Les paliers `militaire_6`, `militaire_8` et
+`militaire_15` (défenses) sont livrés sans effet : leur effet arrive en J7.
+
+### Donjon à clé et gardien
+- L'arène (15 × 8 × 15, pierre taillée) est posée à la surface des plaines, déserts, taïgas et savanes, dans
+  l'Overworld : `/locate structure sovereignfrontier:donjon` la trouve. Un monde déjà exploré ne reçoit de donjon que
+  dans les zones jamais générées.
+- L'autel ne réactive pas un gardien vivant : tant qu'il vit, une nouvelle clé est refusée.
+- À la mort du gardien, la nation de l'activateur reçoit une **clé militaire** dans son coffre national ; sans nation,
+  c'est le tueur. Les membres en ligne sont prévenus.
+- Le gardien ne brûle pas au soleil et ne disparaît pas. La recharge de l'autel (6 h par défaut) survit aux
+  redémarrages.
+
+### Caisse militaire et contrats de palier 3
+- **Caisse militaire** (ouverte avec une clé militaire) : munitions basiques, trousse de soins, gilet balistique léger,
+  plastron balistique lourd (rare). Ni plastron en diamant, ni totem.
+- **Contrat « Mission : trident »** (`militaire_12`, 8 habitants au moins) : 16 à 32 lingots de titane pour 1 200 cr,
+  30 points et un trident. Le trident va au plus gros contributeur en ligne (sinon au coffre national).
+- Les objets de palier 3 et 4 ne sortent que de ce contrat (palier 3) et du butin du gardien (paliers 3 et 4). L'arme
+  maximale (fusil de précision) n'est jamais en contrat, ni en caisse, ni chez un marchand.
+
+### Reporté
+- Défenses anti-PNJ (`defense.walls`, `defense.turret`, `defense.shield`) : effet en J7 (cible : PNJ hostiles).
+- Missiles (silo, guidage, ogives) : J7.
+- PvP par les armes : J7 (les armes ne visent que les monstres au J6).
+- Donjons et gardiens planétaires : J7 ou plus tard (Overworld seulement au J6).
+- Cristal cryogénique (usage) : plus tard.
+
+### Commandes
+Aucune commande nouvelle au J6. Pour les tests : `/give` (objets), `/sfadmin research <nation> complete <palier>`,
+`/sfadmin crate givekey <joueur> militaire [n]`, `/sfadmin contract <nation> refresh`, `/kill` sur le gardien.
 
 ---
 

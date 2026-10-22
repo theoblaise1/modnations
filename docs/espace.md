@@ -393,8 +393,10 @@ Autres contrôles qui couvrent le J5 :
 
 ## Reporté (hors J5)
 - Graphismes des blocs, objets, ciel et HUD des planètes (lot graphique).
-- Objets de palier 3 et 4 et armes maximales en récompense de contrat, donjons et boss planétaires, usage du
-  cristal cryogénique, `ammo.sulfur` (J6).
+- Objets de palier 4 en récompense de contrat (aucun contrat ne le propose au J6), donjons et boss planétaires (J7 ou
+  plus tard ; les donjons J6 sont dans l'Overworld seulement), usage du cristal cryogénique. Les armes maximales ne
+  sont jamais en contrat. Livrés en J6 : munitions au soufre (`ammo.sulfur`) et objets de palier 3 en contrat
+  (`mission_trident`).
 - Alliés dans l'équipage, guerre sur les planètes (sabotage de zones), nations PNJ (J7).
 - `/home`, `/tpa`, `/back`, `/fly` vers ou sur une planète (J8) : tout transfert passe par `changeDimension`, donc par
   la garde de voyage.

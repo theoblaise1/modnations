@@ -61,8 +61,9 @@ nation qui possède sa clé, un propulseur ou un plastron n'agit que pour une na
 (planètes, fusée, environnement) est dans [`docs/espace.md`](espace.md).
 
 **Restent à venir** (sans effet pour l'instant) : `tools.*`, `drill.survey`, `drill.mechanical`, `drill.deep`,
-`machines.alloy`, `storage.expansion_*` (colonne « reporté »), `diplomacy.embassy` et `missile.*` (J7), `station.armament`,
-`ammo.*`, `weapon.*`, `armor.ballistic_*`, `defense.*` (J6).
+`machines.alloy`, `storage.expansion_*` (colonne « reporté »), `diplomacy.embassy` et `missile.*` (J7), `defense.*`
+(reporté : effet en J7, cible = PNJ hostiles). Les déblocages J6 (`station.armament`, `ammo.*`, `weapon.*`,
+`armor.ballistic_*`) sont livrés.
 
 | clé | effet | jalon |
 |---|---|---|

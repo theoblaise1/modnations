@@ -1,7 +1,8 @@
-# Guide de Sovereign Frontier (J1–J3)
+# Guide de Sovereign Frontier (J1–J6)
 
-Ce guide couvre ce qui est livré : nations, territoire, population, recherche et industrie.
-Les contrats, l'espace, les donjons et la guerre (J4 à J8) ne sont pas encore dans le mod.
+Ce guide couvre ce qui est livré jusqu'au J6 : nations, territoire, population, recherche, industrie, contrats,
+caisses, fusée, armes et donjon. La guerre, la diplomatie, les missiles, les défenses et les donjons planétaires
+arrivent en J7 et après.
 
 Pour installer le mod, voir la section « Essayer le mod » du [README](../README.md).
 
@@ -102,7 +103,60 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
 
 ---
 
-## 7. Commandes de référence
+## 7. Contrats, caisses et marchands (J4)
+
+- **Contrats nationaux.** Chaque nation a un tableau de contrats, renouvelé toutes les 24 h, ouvert 12 h après la
+  fondation. La permission `économie` accepte et abandonne ; tout membre peut livrer (`/contract deliver <n>`). À la
+  réussite, la moitié de la somme va aux contributeurs, et la nation gagne des points de recherche.
+- **Entreprises.** Des habitants affectés (`/enterprise assign <secteur> <nombre>`) produisent de l'argent et des
+  objets pour le coffre national.
+- **Caisses.** Commune, militaire, industrielle et spatiale. Une clé du même type ouvre une caisse. `/crate preview
+  <type>` montre le contenu et les chances. Une rare manquée 20 fois de suite est garantie à la 21ᵉ ouverture
+  (`/crate pity`).
+- **Récompenses personnelles.** `/daily` donne une récompense toutes les 24 h : de 100 cr au premier jour à 500 cr au
+  septième, puis 500 cr ensuite. Le **terminal bancaire** (`/terminal`) encaisse l'épargne du temps de jeu actif.
+- **Avant-postes.** Des marchands PNJ tiennent des avant-postes (`/trade`, à 8 blocs du comptoir au plus). Leur étal
+  change toutes les 24 000 ticks.
+
+## 8. Espace (J5)
+
+- Trois planètes : la **Lune**, **Mars** et la **planète glacée**. On ne s'y rend qu'en fusée.
+- **Fusée.** Posez-la sur le territoire de votre nation : elle lui appartient. Clic droit : soute de 9 cases. Clic droit
+  accroupi, main vide : fiche de vol, avec les recherches requises et le coût de chaque destination.
+- **Vol.** Clic droit accroupi, puis un bouton de destination (ou `/rocket launch <destination>`). Compte à rebours de
+  10 s, annulé si le pilote subit des dégâts ou s'éloigne de plus de 6 blocs. Les membres de la nation peuvent
+  embarquer (4 personnes au plus). Un délai de 60 s sépare deux vols d'un même joueur.
+- **Carburant.** La **Raffinerie** transforme 3 bouteilles de gaz et 1 poudre de blaze en carburant de fusée, avec de
+  l'énergie. Les vols en consomment.
+- **Oxygène et froid.** Hors d'une zone oxygénée, une bouteille d'oxygène dure 120 s ; sans bouteille, vous perdez des
+  PV. Sur la planète glacée, il faut aussi de la chaleur (chaudière, réchauffeur ou plastron chauffant). `/oxygen`
+  affiche votre état.
+- **Module cryogénique.** Il ouvre la planète glacée. Il ne se fabrique pas : il vient d'un contrat de mission.
+- Les lits et les ancres de réapparition ne fonctionnent pas sur une planète.
+
+## 9. Armes et donjon (J6)
+
+- **Recherche.** Le domaine Militaire débloque l'onglet **Armement** de la Station d'ingénierie, puis chaque arme et
+  chaque munition (voir `docs/recherche.md`). Sans nation, vous ne pouvez pas tirer.
+- **Armes.** Le clic droit tire : un rayon part de vos yeux et s'arrête au premier bloc. Une munition par tir. Le
+  pistolet, le fusil et le fusil de précision portent à 24, 48 et 96 blocs. L'explosif se lance au clic droit.
+- **Munitions.** Basiques (de base), perforantes (plus de dégâts), au soufre (plus de dégâts, et la cible prend feu).
+- **Armures.** Le gilet balistique léger et le plastron balistique lourd se portent au torse. Le plastron protège
+  davantage. Ils se fabriquent à la Station.
+- **Trousse de soins.** Maintenez le clic droit pendant 1 s : vous récupérez 6 PV. Elle n'a pas de recette : on la
+  trouve dans la caisse militaire et dans le butin du gardien.
+- **Donjon.** Une arène de pierre se trouve à la surface, dans l'Overworld (plaines, déserts, taïgas, savanes). Au
+  centre, un **autel de donjon**. Fabriquez une **clé de donjon** (4 lingots de fer et 2 poudres à canon, onglet
+  Armement), puis faites un clic droit sur l'autel : la clé est consommée et le gardien apparaît.
+- **Gardien.** 200 PV ; il ne brûle pas au soleil. À sa mort, la nation de l'autel reçoit une **clé militaire** dans son
+  coffre national, et du butin tombe au sol. Tant qu'il vit, l'autel refuse une autre clé.
+- **Recharge.** Après la mort du gardien, l'autel se recharge pendant 6 heures (réglage de l'opérateur).
+- **Caisse militaire.** Elle s'ouvre avec une clé militaire : munitions, trousse, gilet balistique léger, plastron
+  balistique lourd.
+- **Pas encore.** Les armes ne touchent que les monstres (le PvP arrive en J7). Le fusil de précision ne se fabrique
+  pas : il ne vient que du gardien.
+
+## 10. Commandes de référence
 
 | Commande | Effet |
 |---|---|
@@ -111,7 +165,7 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
 | `/balance [joueur]` · `/pay <joueur> <montant>` · `/baltop` | Économie personnelle. |
 | `/research …` | Voir la section 5. |
 
-## 8. Opérateur de serveur
+## 11. Opérateur de serveur
 
 - Le mod doit être installé sur le **serveur et sur chaque client**.
 - La configuration se trouve dans `world/serverconfig/sovereignfrontier-server.toml`. Elle est
@@ -124,7 +178,7 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
   - `/sfadmin bypass` : contourne la protection du territoire. Le mode s'éteint à la déconnexion.
 - Les données sont dans le dossier du monde. Sauvegardez-le avant une mise à jour.
 
-## 9. Questions fréquentes
+## 12. Questions fréquentes
 
 - **« Recette verrouillée : recherche … requise »** : la nation n'a pas encore terminé le palier
   nommé dans le message. Consultez `/research info <palier>`.
@@ -136,9 +190,9 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
   les membres de la nation propriétaire, selon leurs permissions, peuvent agir sur ce chunk. Pour construire, rejoignez la
   nation ou revendiquez une parcelle libre.
 
-## 10. Limites connues
+## 13. Limites connues
 
-- Les contrats, `/daily`, les caisses et la fusée sont absents : ils arrivent en J4 et J5.
+- Les défenses anti-PNJ, les missiles, le PvP par les armes et les donjons planétaires arrivent en J7 et après.
 - Un Trésor posé **avant** cette version n'est pas enregistré comme cœur : sa parcelle peut
   encore être abandonnée.
 - Un crash survenant entre deux écritures peut perdre un transfert d'argent entre un portefeuille
