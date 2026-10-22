@@ -8,8 +8,9 @@ structures sont générées par script, tous les noms sont originaux.
 > État : **J1 livré** (nation, grades, trésorerie, territoire, population) ; **J2 livré** (arbre de
 > recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
 > réacteur, Station d'ingénierie) ; **J4 livré et validé en jeu** (terminal bancaire, `/daily` et
-> caisses, avant-postes marchands, contrats, entreprises). **J5 conçu** (`docs/conception/J5.md`),
-> développement en attente. Les jalons suivants attendent la validation en jeu du précédent.
+> caisses, avant-postes marchands, contrats, entreprises). **J5 livré, à valider en jeu**
+> (`docs/recette/J5.md`) : dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid.
+> Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
 
@@ -42,7 +43,7 @@ structures sont générées par script, tous les noms sont originaux.
 | J2 | Arbre de recherche JSON (syst. 2) + onglet Recherche | ✅ livré |
 | J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, validé en jeu |
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré et validé en jeu |
-| J5 | Dimensions Lune / Mars / planète glacée, fusée (syst. 4) | — |
+| J5 | Dimensions Lune / Mars / planète glacée, fusée, carburant, oxygène et froid (syst. 4) | ✅ livré, à valider en jeu |
 | J6 | Donjons, boss, armement (syst. 6) | — |
 | J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
 | J8 | Grade Souverain : `/home`, `/tpa`, `/back`, `/fly`… et leurs restrictions de guerre (syst. 9) | — |
@@ -85,7 +86,7 @@ Mémoire : `-Xmx4G` dans `user_jvm_args.txt` suffit pour 2 à 10 joueurs. Config
   `/nation create Aurore` → touche **N** ; `/sfadmin money give <joueur> 100000` ;
   `/sfadmin treasury Aurore 100000` (ajoute au trésor) ; `/sfadmin research Aurore complete industrie_1` (Tab
   complète les paliers). Le Créatif contient tous les blocs dans l'onglet « Sovereign Frontier ».
-- Suivre ensuite les recettes en jeu `docs/recette/J1.md` à `J4.md`.
+- Suivre ensuite les recettes en jeu `docs/recette/J1.md` à `J5.md`.
 
 ## Contenu du jalon J1
 
@@ -166,7 +167,7 @@ partir du J8) ; `[rewards]` : `dailyCooldownHours`, `dailyStreakResetHours`, `cr
 `contractBaseOffers`, `contractMaxOffers`, `contractBaseActive`, `contractMaxActive`,
 `contractSizePerExtraMember`, `contractSizeCap`, `contractMoneyPerTier`, `contractContributorShare`,
 `contractMinNationAgeHours`, `contractMaintenanceTicks`, `contractExploreCheckTicks`,
-`contractHistorySize`.
+`contractHistorySize`. Section J5 : `[space]` (voir « Contenu du jalon J5 »).
 
 ## Contenu du jalon J4
 
@@ -233,6 +234,82 @@ objets pour le coffre national, au multiplicateur de leur domaine de recherche.
 | `/sfadmin contract <nation> refresh\|complete\|expire` · `/sfadmin enterprise <nation> cycle` | Contrats et production forcés. |
 
 Onglet **Économie** de l'écran national (touche N) : contrats (offres, en cours, historique) et entreprises.
+
+## Contenu du jalon J5
+
+Conquête spatiale : trois dimensions (Lune, Mars, planète glacée), une fusée à carburant, l'oxygène et le froid.
+Les planètes, leurs dimensions, leurs coûts de vol et leur environnement sont en JSON de datapack ; formats, bornes de
+validation, lois de l'oxygène et du froid dans [`docs/espace.md`](docs/espace.md) (contrôlé par
+`python3 tools/check_space.py`). Les 15 déblocages du J5 et `refinery` sont tous câblés (`check_research.py`). Le
+Module cryogénique, composant final de fusée, ne s'obtient que par un contrat de mission (tag
+`#sovereignfrontier:restreint/fusee_finale`, voir `docs/economie.md`).
+
+> **Paramètres expérimentaux.** Les dimensions de datapack rendent la durée de vie du registre « expérimentale » pour
+> Minecraft : en **solo**, le monde affiche une fois un avertissement de confirmation à l'ouverture (à accepter) ; sur
+> un serveur dédié, rien. Les trois dimensions sont ajoutées automatiquement aux mondes existants au démarrage suivant
+> (elles ne se rechargent pas par `/reload`). Les planètes ne s'atteignent qu'en fusée (ou en opérateur).
+
+### Blocs
+| Bloc | Rôle |
+|---|---|
+| **Fusée** | Posée par un membre de nation (la nation devient propriétaire). Clic droit : soute de 9 cases (membres) ; clic droit accroupi : fiche de vol et boutons de destination. Décolle depuis le territoire de sa nation, ciel dégagé ; protégée des étrangers (explosions sans effet). |
+| **Raffinerie** | Machine (`refinery`) : 3 bouteilles de gaz pleines + 1 poudre de blaze + 200 En/t pendant 200 ticks = 1 **carburant de fusée** (3 bouteilles vides rendues). Marche sur le territoire d'une nation qui a `rocket.fuel`. |
+| **Diffuseur d'oxygène** | 20 En/t : oxygène les 3 × 3 chunks **de sa nation** autour de lui (± 32 blocs), pour tous les joueurs. |
+| **Chaudière à gaz** | Brûle 1 bouteille de gaz pleine toutes les 2 min : chaleur sur 50 blocs. |
+| **Réchauffeur nucléaire** | 1 combustible enrichi pour 10 min : chaleur sur 200 blocs ; ne produit pas d'énergie. |
+| **Minerais** de titane (Lune), de soufre (Mars), cryogénique (planète glacée) | Se cassent avec la recherche `mining.*` de la nation (pioche en fer, pierre, diamant) ; insensibles aux explosions. |
+
+### Objets
+| Objet | Rôle |
+|---|---|
+| **Coque de fusée**, **Moteur de fusée** | Pièces de la fusée (Station d'ingénierie, onglet Aérospatial ; aussi en caisse spatiale). |
+| **Carburant de fusée** | Produit par la Raffinerie ; paie les vols (aussi en caisse spatiale). |
+| **Propulseur avancé** | Dans la soute : carburant × 0,75 (`propulsion.advanced`). |
+| **Bouteille d'oxygène** | 4 bouteilles de gaz vides + 4 blocs de mousse = 4 bouteilles ; 120 s d'autonomie chacune, hors zone oxygénée. |
+| **Plastron chauffant** | Protège du froid de la planète glacée en brûlant 1 bouteille de gaz pleine par 5 min. |
+| **Titane brut**, **Lingot de titane**, **Soufre**, **Cristal cryogénique** | Matériaux spatiaux : coûts de recherche, recettes, contrats de livraison. Le titane brut fond au four ou au haut fourneau. |
+| **Module cryogénique** | Dans la soute, il ouvre la planète glacée. Ni craft, ni caisse, ni marchand : récompense du contrat `mission_module_cryogenique` (64 à 128 soufres). |
+
+### Vols
+Clic droit accroupi sur la fusée (session de 60 s), puis `/rocket launch <destination>` ou un bouton : compte à rebours
+de 10 s (annulé par des dégâts ou si le pilote s'éloigne de plus de 6 blocs), membres de la nation à 4 blocs au plus
+embarqués par **[Embarquer]** (4 personnes au plus). Le pilote est un membre avec la permission `construire`.
+Carburant pris dans la soute au transfert ; délai de 60 s entre deux vols d'un joueur ; atterrissage jamais dans le
+territoire d'une autre nation. Le retour sur Terre n'exige aucune recherche.
+
+| Destination | Recherches terminées | Aller | Retour |
+|---|---|---|---|
+| Lune | `industrie_8`, `technologie_2` | 3 carburants ou 12 bouteilles de gaz pleines | 1 carburant ou 4 bouteilles |
+| Mars | `industrie_8`, `technologie_4` | 6 carburants | 4 carburants |
+| Planète glacée | `industrie_8`, `industrie_11`, `technologie_7` et un Module cryogénique en soute | 10 carburants | 6 carburants |
+
+### Oxygène et froid
+Sur une planète, hors d'une zone oxygénée, un joueur en survie consomme 1 s d'oxygène par seconde et une bouteille
+d'oxygène toutes les 120 s ; sans bouteille, dégâts d'asphyxie (2 par seconde, l'armure ne protège pas). Sur la planète
+glacée, il faut en plus de la chaleur (zone d'une chaudière ou d'un réchauffeur, ou plastron) : 30 s d'exposition au
+froid, puis dégâts de gel. Acclimatation de 10 s après un vol. Créatif et spectateur sont exemptés. Aucun lit ni ancre de
+réapparition ne fonctionne sur une planète ; une bordure souple (rayon 2 000, 3 000 et 2 000 blocs) ramène les joueurs.
+
+### Commandes
+| Commande | Effet |
+|---|---|
+| `/rocket` · `/rocket launch <destination>` | Fiche de la fusée de session · lancer (`lune`, `mars`, `planete_glacee`, `terre`). |
+| `/rocket board` · `/rocket abort` | Embarquer dans le décollage en cours · l'annuler (pilote). |
+| `/oxygen` | État spatial : planète, oxygène, froid, zone, point de retour. |
+| `/sfadmin space info` · `/sfadmin space rescue <joueur>` | Planètes publiées et joueurs présents · ramener un joueur sur Terre. |
+| `/sfadmin rocket info` · `/sfadmin rocket cooldown <joueur> reset` | Fusée de session · remise à zéro du délai de vol. |
+| `/sfadmin oxygen <joueur> <s>` · `/sfadmin cold <joueur> <s>` | Fixer l'oxygène ou le froid d'un joueur (tests). |
+
+### Configuration serveur — section `[space]`
+`<monde>/serverconfig/sovereignfrontier-server.toml`, rechargée à chaud : `rocketCountdownTicks`, `rocketCrewMax`,
+`rocketBoardRadius`, `rocketPilotLeash`, `rocketCooldownSeconds`, `rocketLandingSearchChunks`, `rocketPropulsorFactor`,
+`refineryEnergyPerTick`, `refineryCycleTicks`, `oxygenBottleSeconds`, `oxygenDamage`, `oxygenWarnSeconds`,
+`spaceGraceSeconds`, `spaceLoginGraceCooldownMinutes`, `diffuserEnergyPerTick`, `diffuserRadiusChunks`,
+`diffuserHalfHeight`, `coldThresholdSeconds`, `coldDamage`, `coldDamageIntervalSeconds`, `boilerRadius`,
+`boilerBottleTicks`, `boilerHalfHeight`, `nuclearHeaterRadius`, `nuclearHeaterFuelTicks`, `nuclearHeaterHalfHeight`,
+`heatedChestplateBottleSeconds` (valeurs par défaut et plages dans `docs/espace.md`). Les coûts de vol, le rayon, la
+réserve de gaz, le multiplicateur solaire et l'environnement de chaque planète sont du contenu
+(`data/sovereignfrontier/planets/*.json`), pas de la configuration.
 
 ---
 
@@ -301,6 +378,7 @@ python3 tools/check_sides.py       # aucune classe cliente hors du paquet client
 python3 tools/check_lang.py        # toute clé de traduction utilisée existe
 python3 tools/check_research.py    # arbre de recherche conforme à docs/recherche.md ; --self-test
 python3 tools/check_economy.py     # contenu de l'économie (docs/economie.md) et objets interdits ; --self-test
+python3 tools/check_space.py       # planètes et dimensions (docs/espace.md) ; --self-test
 
 # Captures automatiques de l'écran national (client sur écran virtuel, runs/client/screenshots/)
 SF_SCREENSHOTS=1 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient
@@ -323,6 +401,8 @@ sur serveur headless, et publie le `.jar` à chaque push.
 | `reward/` | `/daily` et série, caisses et clés, pitié, `RewardData` (SavedData des récompenses). |
 | `outpost/` | Avant-postes : comptoir, marchand, étal tournant, tarification (`PriceMath`), `OutpostData`. |
 | `contract/` | Contrats nationaux : modèles JSON, tableau, progression, réussite. |
+| `rocket/` | Fusée (bloc, soute, vol, compte à rebours, atterrissage, protection) et logique de la Raffinerie. |
+| `space/` | Planètes JSON (`PlanetRegistry`), règles d'accès (`SpaceRules`), oxygène et froid (`Environment`), zones (`ZoneIndex`), machines d'environnement, état spatial des joueurs. |
 | `enterprise/` | Entreprises : secteurs JSON, affectation des habitants, production par cycle. |
 | `player/` | DataAttachments joueur. |
 | `block/` | Blocs nationaux et menu du coffre. |
