@@ -16,6 +16,7 @@ import io.github.theoblaise1.sovereignfrontier.research.ResearchManager;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchTier;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
+import io.github.theoblaise1.sovereignfrontier.war.WarCommands;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,6 +63,7 @@ public final class AdminCommand {
         SpaceCommand.registerAdmin(root);
         RocketCommand.registerAdmin(root);
         EnvironmentCommand.registerAdmin(root);
+        WarCommands.registerAdmin(root);
         dispatcher.register(root);
     }
 

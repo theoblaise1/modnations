@@ -1059,6 +1059,7 @@
   "sovereignfrontier.treasury.error.no_access": "Placez-vous près d'un Trésor national de votre nation (clic droit dessus) pour déposer ou retirer.",
   "sovereignfrontier.treasury.income": "Revenu de population : +%s (%s habitant(s) libre(s)).",
   "sovereignfrontier.treasury.withdrawn": "%s retirés. Trésorerie : %s.",
+  "sovereignfrontier.treaty.error.ambiguous": "Plusieurs propositions en attente : précisez la nation.",
   "sovereignfrontier.treaty.error.embassy": "Un traité exige une ambassade : recherchez « Ambassades et traités ».",
   "sovereignfrontier.treaty.error.expired": "La proposition de paix a expiré.",
   "sovereignfrontier.treaty.error.none": "Aucune proposition de paix en attente.",

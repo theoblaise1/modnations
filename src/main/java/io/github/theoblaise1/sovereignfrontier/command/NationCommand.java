@@ -108,7 +108,7 @@ public final class NationCommand {
     private static int help(CommandSourceStack source) {
         MutableComponent c = Component.literal("=== /nation ===").withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD);
         for (String sub : List.of("create", "invite", "join", "kick", "leave", "transfer", "disband", "info", "list",
-                "log", "role", "perm", "perms", "gui")) {
+                "log", "role", "perm", "perms", "gui", "war", "treaty", "missile")) {
             c.append("\n").append(Component.literal("/nation " + sub + " ").withStyle(ChatFormatting.YELLOW))
                     .append(Msg.info("help.nation." + sub));
         }

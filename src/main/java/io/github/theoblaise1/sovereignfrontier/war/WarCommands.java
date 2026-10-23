@@ -72,6 +72,18 @@ public final class WarCommands {
                                 .executes(ctx -> answer(ctx, StringArgumentType.getString(ctx, "nation"), false))));
     }
 
+    /** {@code /sfadmin war end <nation> <nation>} (niveau 2) : fin de guerre sans score, pour l'opérateur et les tests. */
+    public static void registerAdmin(LiteralArgumentBuilder<CommandSourceStack> root) {
+        root.then(Commands.literal("war")
+                .requires(s -> s.hasPermission(2))
+                .then(Commands.literal("end")
+                        .then(Commands.argument("nation", StringArgumentType.word())
+                                .suggests(NATIONS)
+                                .then(Commands.argument("autre", StringArgumentType.word())
+                                        .suggests(NATIONS)
+                                        .executes(WarCommands::adminEnd)))));
+    }
+
     // ------------------------------------------------------------------ guerre
 
     private static int declare(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -222,6 +234,7 @@ public final class WarCommands {
                 return fail(source, Msg.err("treaty.error.none"));
             }
             if (incoming.size() > 1) {
+                source.sendFailure(Msg.err("treaty.error.ambiguous"));
                 for (WarTransitions.Incoming item : incoming) {
                     source.sendFailure(Msg.warn("treaty.proposed", item.proposer().name(), receiver.name(),
                             TimeUtil.duration(item.proposal().expiresEpochMs() - TimeUtil.now())));
@@ -234,6 +247,36 @@ public final class WarCommands {
                 ? WarTransitions.accept(server, receiver, proposer)
                 : WarTransitions.refuse(server, receiver, proposer);
         return error == null ? 1 : fail(source, error);
+    }
+
+    // ------------------------------------------------------------------ administration
+
+    /**
+     * Fin de guerre ordonnée par un opérateur, sans score. Sans effet hors guerre : {@link WarTransitions#endWar} ne
+     * ferait rien, et le message de fin serait faux ; le refus porte donc sur l'état {@code GUERRE} et non sur la seule
+     * présence d'une relation (préparation et trêve ont une relation).
+     */
+    private static int adminEnd(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        MinecraftServer server = source.getServer();
+        NationData nations = NationData.get(server);
+        String firstName = StringArgumentType.getString(ctx, "nation");
+        Nation first = nations.byName(firstName);
+        if (first == null) {
+            return fail(source, Msg.err("nation.error.unknown", firstName));
+        }
+        String secondName = StringArgumentType.getString(ctx, "autre");
+        Nation second = nations.byName(secondName);
+        if (second == null) {
+            return fail(source, Msg.err("nation.error.unknown", secondName));
+        }
+        WarData.Relation relation = WarData.get(server).relation(first.id(), second.id());
+        if (relation == null || relation.state() != WarState.GUERRE) {
+            return fail(source, Msg.err("war.admin.none", first.name(), second.name()));
+        }
+        WarTransitions.endWar(server, WarData.RelationKey.of(first.id(), second.id()), null, WarTransitions.WarEnd.ADMIN);
+        source.sendSuccess(() -> Msg.ok("war.admin.ended", first.name(), second.name()), true);
+        return 1;
     }
 
     // ------------------------------------------------------------------ aides
