@@ -13,7 +13,8 @@ structures sont générées par script, tous les noms sont originaux.
 > caisses, avant-postes marchands, contrats, entreprises). **J5 validé en jeu** (`docs/recette/J5.md`) :
 > dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid. **J6 livré et validé en jeu**
 > (`docs/recette/J6.md`) : armes à feu, munitions, armures balistiques, donjon à clé et gardien, caisse militaire,
-> contrats de palier 3.
+> contrats de palier 3. **J7 livré, à valider en jeu** (`docs/recette/J7.md`) : diplomatie, guerre et score,
+> traités, protections anti-écrasement, silo et missiles.
 > Les jalons suivants attendent la validation en jeu du précédent.
 
 ---
@@ -49,7 +50,7 @@ structures sont générées par script, tous les noms sont originaux.
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré et validé en jeu |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée, carburant, oxygène et froid (syst. 4) | ✅ livré et validé en jeu |
 | J6 | Donjons, boss, armement (syst. 6) | ✅ livré et validé en jeu |
-| J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
+| J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | ✅ livré, à valider en jeu |
 | J8 | Grade Souverain : `/home`, `/tpa`, `/back`, `/fly`… et leurs restrictions de guerre (syst. 9) | — |
 
 La répartition des systèmes 7 à 10 (ajoutés après le découpage initial J1–J6) est une
@@ -173,7 +174,8 @@ partir du J8) ; `[rewards]` : `dailyCooldownHours`, `dailyStreakResetHours`, `cr
 `contractMinNationAgeHours`, `contractMaintenanceTicks`, `contractExploreCheckTicks`,
 `contractHistorySize`. Section J5 : `[space]` (voir « Contenu du jalon J5 ») ; section J6 : `[dungeon]` :
 `altarCooldownHours` (6 par défaut, de 0 à 168 : délai de recharge de l'autel après la mort de son gardien, en
-heures réelles ; voir « Contenu du jalon J6 »).
+heures réelles ; voir « Contenu du jalon J6 ») ; section J7 : `[war]` (délais de guerre, trêve, traité, missiles ;
+voir « Contenu du jalon J7 »).
 
 ## Contenu du jalon J4
 
@@ -382,6 +384,95 @@ munitions au soufre (il exige aussi `technologie_4` et `ressources_14`). Les pal
 ### Commandes
 Aucune commande nouvelle au J6. Pour les tests : `/give` (objets), `/sfadmin research <nation> complete <palier>`,
 `/sfadmin crate givekey <joueur> militaire [n]`, `/sfadmin contract <nation> refresh`, `/kill` sur le gardien.
+
+---
+
+## Contenu du jalon J7
+
+Diplomatie entre nations, guerre avec préparation, score et victoire, traités, protections anti-écrasement, silo à
+missiles. Règles : [`docs/conception/J7.md`](docs/conception/J7.md) ; recette en jeu : [`docs/recette/J7.md`](docs/recette/J7.md) ;
+contenu JSON (recherche, recettes) : [`docs/recherche.md`](docs/recherche.md), [`docs/economie.md`](docs/economie.md).
+
+> **Graphismes.** Le silo et les missiles n'ont pas encore de modèle ni de texture (lot graphique en attente) : ils
+> s'affichent avec le modèle manquant.
+
+### Diplomatie et guerre
+| État | Entrée | Effet |
+|---|---|---|
+| Paix | par défaut | aucun combat entre les deux nations |
+| Préparation | `/nation war declare <nation>` (Chef) | 24 h par défaut ; annulable par le Chef de l'attaquant (`/nation war cancel`), sans trêve |
+| Guerre | fin de la préparation | combat entre joueurs des deux nations ; score ; 168 h par défaut |
+| Trêve | fin de guerre (victoire, délai, traité, opérateur) | 48 h par défaut : ni combat, ni nouvelle déclaration contre le même adversaire |
+
+Une déclaration est refusée si l'attaquant ou le défenseur a moins de 3 membres (`minMembersToDeclare`), si les deux
+nations sont déjà en préparation ou en guerre, ou si une trêve est en vigueur.
+
+**Combat.** Deux joueurs de nations en guerre peuvent se frapper ; deux membres d'une même nation ne se frappent jamais.
+Un joueur sans nation ne peut ni frapper ni être frappé ; le refus s'affiche dans la barre d'action. Les armes à feu ne
+touchent toujours que les monstres.
+
+### Score et victoire
+- Un point par joueur ennemi tué pendant la guerre, au corps à corps ou par missile. Une mort hors guerre, ou causée par
+  une commande, ne compte pas.
+- Victoire à 30 points (`killsToWin`) : la nation gagne une **clé militaire** dans son coffre national ; la guerre
+  s'arrête, suivie d'une trêve.
+- Délai de guerre écoulé : le plus grand score gagne (égalité : nul). Les scores repartent de zéro à la fin.
+
+### Traités
+- `/nation treaty propose <nation>` (permission `signer_traite`, Chef et Ministre par défaut) : seulement en guerre, et
+  si la nation a débloqué les ambassades (recherche `civil_12`). La proposition vaut 24 h.
+- `/nation treaty accept [<nation>]` ou `/nation treaty refuse [<nation>]` côté destinataire. Accepter met fin à la
+  guerre, avec une trêve de 48 h. Aucun transfert d'argent ni de territoire au J7.
+
+### Protections anti-écrasement
+- La capitale ne peut pas être visée par un missile. Une nation fondée avant J7 n'a pas de capitale enregistrée, donc
+  pas de protection à ce titre.
+- La trêve interdit toute nouvelle déclaration contre le même adversaire.
+- Une déclaration exige au moins `minMembersToDeclare` membres dans chacune des deux nations.
+
+### Silo et missiles
+| Élément | Rôle | Déblocage |
+|---|---|---|
+| **Silo à missiles** | Un par nation, sur son territoire, dans l'Overworld. Clic droit avec un missile guidé (4 au plus) ou une ogive lourde (2 au plus). | `missile.silo` (militaire 13) |
+| **Missile guidé** | Pile de 4. | `missile.guided` (militaire 14) |
+| **Ogive lourde** | Pile de 2. | `missile.heavy_warhead` (militaire 16) |
+
+Tir : `/nation missile fire` depuis le silo (6 blocs au plus), vers le chunk regardé (200 blocs au plus), revendiqué par
+une nation en guerre avec la vôtre, hors capitale. Un tir consomme un missile et une ogive, puis le silo se recharge
+pendant 6 h. L'impact a lieu 30 s après le tir : destruction de blocs dans un rayon de 4 autour du centre du chunk visé
+(seuls les blocs du territoire visé ; Trésor et coffre national épargnés), 12 de dégâts aux joueurs ennemis dans un rayon
+de 6 blocs.
+
+### Recherche (J7)
+`militaire_13` (silo), `militaire_14` (missile guidé), `militaire_16` (ogive lourde) et `civil_12` (Corps diplomatique :
+ambassades et traités, requises pour proposer un traité). Les paliers de défense (`militaire_6`, `militaire_8`,
+`militaire_15`) restent sans effet.
+
+### Configuration `[war]`
+Section `[war]` de `<monde>/serverconfig/sovereignfrontier-server.toml`, lue à l'exécution :
+
+| Clé | Défaut | Bornes |
+|---|---|---|
+| `preparationHours` | 24 | 1 à 168 |
+| `warHours` | 168 | 24 à 720 |
+| `truceHours` | 48 | 0 à 720 |
+| `treatyHours` | 24 | 1 à 168 |
+| `killsToWin` | 30 | 5 à 500 |
+| `minMembersToDeclare` | 3 | 1 à 10 |
+| `missileCooldownHours` | 6 | 0 à 168 |
+| `missileDelaySeconds` | 30 | 5 à 300 |
+
+### Reporté
+- Défenses anti-PNJ (`defense.walls`, `defense.turret`, `defense.shield`) et nations PNJ hostiles.
+- Prise de territoire après guerre, alliés dans l'équipage, onglet diplomatie de l'écran national.
+- Restrictions de guerre des commandes de téléportation (J8).
+- Silo multiple, armes à feu contre les joueurs, journal regroupé.
+
+### Commandes
+- `/nation war declare <nation>` · `/nation war cancel` · `/nation war status`.
+- `/nation treaty propose <nation>` · `/nation treaty accept [<nation>]` · `/nation treaty refuse [<nation>]`.
+- `/nation missile fire`.
+- Opérateur : `/sfadmin war end <nation> <nation>` (fin de guerre sans score, seulement pendant les hostilités).
 
 ---
 

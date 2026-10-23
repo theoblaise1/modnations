@@ -37,7 +37,7 @@ Les coûts (objets, trésorerie, points de recherche) sont fixés dans les JSON 
 ## Déblocages (`"type": "unlock"`) — consommés par les jalons
 La clé est un identifiant pointé ; son nom affiché est `sovereignfrontier.unlock.<clé>`. La colonne « jalon » du
 catalogue est lue par `tools/check_research.py` : toute clé dont le jalon est au plus `WIRED_UP_TO` (actuellement
-`J5`) doit être consommée par le code ou les données (voir « Validation » ci-dessous).
+`J7`) doit être consommée par le code ou les données (voir « Validation » ci-dessous).
 
 **Implémentées au J3** (recettes `data/sovereignfrontier/engineering/`) : `station.machines`,
 `energy.cables`, `generator.thermal`, `generator.solar`, `machines.automation`, `drill.gas`,
@@ -61,9 +61,10 @@ nation qui possède sa clé, un propulseur ou un plastron n'agit que pour une na
 (planètes, fusée, environnement) est dans [`docs/espace.md`](espace.md).
 
 **Restent à venir** (sans effet pour l'instant) : `tools.*`, `drill.survey`, `drill.mechanical`, `drill.deep`,
-`machines.alloy`, `storage.expansion_*` (colonne « reporté »), `diplomacy.embassy` et `missile.*` (J7), `defense.*`
-(reporté : effet en J7, cible = PNJ hostiles). Les déblocages J6 (`station.armament`, `ammo.*`, `weapon.*`,
-`armor.ballistic_*`) sont livrés.
+`machines.alloy`, `storage.expansion_*` (colonne « reporté »), `defense.*`
+(reporté : défenses anti-PNJ, hors J7). Les déblocages J6 (`station.armament`, `ammo.*`, `weapon.*`,
+`armor.ballistic_*`) sont livrés. Les déblocages J7 sont câblés : `diplomacy.embassy` (requis pour proposer un traité) et
+`missile.silo`, `missile.guided`, `missile.heavy_warhead` (silo, missile guidé et ogive lourde).
 
 | clé | effet | jalon |
 |---|---|---|

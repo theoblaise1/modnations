@@ -1,4 +1,4 @@
-# Économie, récompenses et contrats — contrat de données (J4, complété aux J5 et J6)
+# Économie, récompenses et contrats — contrat de données (J4, complété aux J5, J6 et J7)
 
 Ce document est le **contrat** entre le contenu JSON (`src/main/resources/data/sovereignfrontier/`,
 modifiable par un datapack de monde) et le code : où vivent les données, format de chaque fichier,
@@ -326,7 +326,9 @@ Les points de recherche gagnés ici paient les paliers 6 et suivants (voir `docs
 refuse tout résultat de `#restreint` et toute clé de caisse. Une recette n'est utilisable que si la nation a la clé de
 l'onglet (`station.machines`, `station.armament`, `station.aerospace`) **et** celle de la recette. Le J5 y ajoute les
 recettes de l'onglet Aérospatial et celle de la Raffinerie (liste dans `docs/espace.md` et `docs/recherche.md`) ;
-aucune ne produit `module_cryogenique` ni `carburant_fusee`.
+aucune ne produit `module_cryogenique` ni `carburant_fusee`. Le J7 ajoute `engineering/missiles/` (onglet `armement`) :
+`silo_missiles` (déblocage `missile.silo`), `missile_guide` (`missile.guided`) et `ogive_lourde` (`missile.heavy_warhead`) ;
+aucune de ces recettes ne produit un objet `#restreint`.
 
 **Écart avec les autres dossiers** : contrairement aux caisses, contrats, marchands et entreprises, `engineering/`
 n'est pas publié au `TagsUpdatedEvent` : `EngineeringRegistry` remplace son registre dès que l'écouteur a lu les
@@ -382,11 +384,23 @@ caisse.
 4. **Nouvel objet restreint** : l'ajouter au sous-tag de `restreint/` (voir « Objets interdits »).
 5. `/reload` en jeu : les fichiers invalides sont ignorés avec un message explicite dans le journal.
 
+## Guerre, traités et missiles (J7)
+- **Missiles hors `#restreint`.** `silo_missiles`, `missile_guide` et `ogive_lourde` ne figurent dans aucun tag
+  `restreint/…` ni dans `hors_economie`. Leur craft est permis une fois le déblocage acquis, car leur usage est gardé par
+  l'état de guerre et par le silo (D7 de `docs/conception/J7.md`, à valider). Aucune caisse, aucun marchand, aucun
+  contrat, aucune entreprise ni `/daily` ne les donne.
+- **Arme maximale inchangée.** `sovereignfrontier:fusil_precision` reste dans `#restreint/arme_max`, et aucune source ne le
+  fournit.
+- **Clé militaire de victoire.** Une victoire de guerre remet une clé militaire à la nation (`CrateKeys.giveToNation`,
+  dans le coffre national). Si le coffre est plein, la clé est perdue et journalisée : aucun joueur de repli.
+- **Traité.** Aucun transfert d'argent, d'objet ni de territoire au J7. Proposer un traité exige l'ambassade (palier
+  `civil_12`, « Corps diplomatique », déblocage `diplomacy.embassy`).
+
 ## Reporté
-- Clés lâchées par les victoires de guerre (J7) : les points d'entrée `CrateKeys.give` et `CrateKeys.giveToNation`
-  existent. Le gardien de donjon (J6) remet, lui, une clé militaire (voir « Butin du gardien de donjon »).
+- Clés des victoires de guerre (J7) : livrées par `CrateKeys.giveToNation` (voir « Guerre, traités et missiles (J7) »).
+  Le gardien de donjon (J6) remet, lui, une clé militaire (voir « Butin du gardien de donjon »).
 - Grade Souverain : `RankHooks.terminalMultiplier` renvoie 1,0 jusqu'au J8 (`terminalSouverainMultiplier`
   n'est pas encore lue).
 - Griefs des avant-postes (pillage d'un conteneur à butin non encore ouvert dans la boîte) : enregistrés
-  par nation, sans effet de jeu avant le J7 (`/sfadmin outpost info`).
+  par nation, sans effet de jeu (reporté après le J7 : `/sfadmin outpost info`).
 - `storage.expansion_1` et `storage.expansion_2` (voir `docs/recherche.md`).

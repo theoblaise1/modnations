@@ -1,8 +1,8 @@
-# Guide de Sovereign Frontier (J1–J6)
+# Guide de Sovereign Frontier (J1–J7)
 
-Ce guide couvre ce qui est livré jusqu'au J6 : nations, territoire, population, recherche, industrie, contrats,
-caisses, fusée, armes et donjon. La guerre, la diplomatie, les missiles, les défenses et les donjons planétaires
-arrivent en J7 et après.
+Ce guide couvre ce qui est livré jusqu'au J7 : nations, territoire, population, recherche, industrie, contrats,
+caisses, fusée, armes, donjon, diplomatie, guerre, traités, silo et missiles. Les défenses anti-PNJ, les nations PNJ
+et les donjons planétaires arrivent après J7.
 
 Pour installer le mod, voir la section « Essayer le mod » du [README](../README.md).
 
@@ -153,10 +153,45 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
 - **Recharge.** Après la mort du gardien, l'autel se recharge pendant 6 heures (réglage de l'opérateur).
 - **Caisse militaire.** Elle s'ouvre avec une clé militaire : munitions, trousse, gilet balistique léger, plastron
   balistique lourd.
-- **Pas encore.** Les armes ne touchent que les monstres (le PvP arrive en J7). Le fusil de précision ne se fabrique
+- **Pas encore.** Les armes à feu ne touchent que les monstres : les joueurs se combattent en guerre, au corps à corps (section 10). Le fusil de précision ne se fabrique
   pas : il ne vient que du gardien.
 
-## 10. Commandes de référence
+## 10. Diplomatie et guerre (J7)
+
+- **Déclarer.** Le Chef tape `/nation war declare <nation>`. Chaque nation doit compter au moins 3 membres, et les deux
+  nations ne doivent pas déjà être en guerre ou en préparation. La déclaration ouvre une **préparation de 24 h** ; les
+  deux nations sont prévenues.
+- **Annuler.** Pendant la préparation seulement, le Chef de l'attaquant tape `/nation war cancel`. Aucune guerre n'a
+  commencé : pas de trêve, rien n'est gagné ni perdu.
+- **Guerre.** Au bout de la préparation, la guerre dure 168 h au plus. Les joueurs des deux nations peuvent se frapper au
+  corps à corps. Deux membres d'une même nation ne se frappent pas. Un joueur sans nation ne peut être frappé ni frapper.
+  `/nation war status` affiche l'état, le score et les échéances.
+- **Score.** Chaque joueur ennemi tué pendant la guerre (au corps à corps ou par missile) rapporte 1 point. À 30 points,
+  la nation gagne : une **clé militaire** tombe dans son coffre national. À la fin du délai, le plus grand score gagne ;
+  à égalité, personne. Les scores repartent de zéro.
+- **Trêve.** Après toute fin de guerre, 48 h de trêve : ni combat, ni nouvelle déclaration contre le même adversaire.
+- **Traités.** Pendant une guerre, le Chef ou le Ministre propose la paix avec `/nation treaty propose <nation>`. Il faut
+  avoir débloqué les ambassades (recherche « Corps diplomatique »). La proposition vaut 24 h. Le destinataire répond par
+  `/nation treaty accept` ou `/nation treaty refuse` ; s'il reçoit plusieurs propositions, il précise la nation. Un
+  traité accepté termine la guerre, suivi d'une trêve. Aucun argent ni territoire n'est échangé.
+
+## 11. Silo et missiles (J7)
+
+- **Débloquer.** Recherche militaire : « Silo à missiles » (palier 13), « Guidage de missiles » (14), « Ogives lourdes »
+  (16). Les recettes sont à l'onglet Armement de la Station d'ingénierie : silo (8 blindages nationaux, 4 blocs de
+  redstone, 2 obsidiennes), missile guidé (4 TNT, 2 poudres à canon, 1 redstone), ogive lourde (8 TNT, 2 lingots de
+  netherite).
+- **Poser.** Un silo par nation, sur votre territoire, dans l'Overworld. Un second silo est refusé.
+- **Charger.** Clic droit sur le silo avec un missile guidé (jusqu'à 4) ou une ogive lourde (jusqu'à 2). Il faut la
+  permission « Tirer un missile » (Chef par défaut).
+- **Tirer.** Placez-vous à 6 blocs du silo au plus, regardez un chunk revendiqué par une nation **en guerre** avec la
+  vôtre (200 blocs au plus), puis `/nation missile fire`. La capitale ne peut pas être visée. Le missile tombe 30 s
+  après le tir. Chaque tir consomme un missile et une ogive ; le silo se recharge pendant 6 h.
+- **Effet.** Dans un rayon de 4 blocs autour du centre du chunk visé, les blocs du territoire ennemi sont détruits, sauf
+  le Trésor et le coffre national. Les joueurs ennemis proches (rayon de 6 blocs) prennent 12 de dégâts ; ceux qui
+  meurent rapportent un point de score. Si la guerre se termine pendant le vol, l'impact n'a aucun effet.
+
+## 12. Commandes de référence
 
 | Commande | Effet |
 |---|---|
@@ -164,21 +199,26 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
 | `/claim` · `/unclaim` · `/map` | Revendiquer ou abandonner le chunk courant ; carte texte. |
 | `/balance [joueur]` · `/pay <joueur> <montant>` · `/baltop` | Économie personnelle. |
 | `/research …` | Voir la section 5. |
+| `/nation war declare` · `cancel` · `status` | Déclarer, annuler ou suivre une guerre (section 10). |
+| `/nation treaty propose` · `accept` · `refuse` | Proposer ou répondre à un traité de paix (section 10). |
+| `/nation missile fire` | Tirer un missile depuis le silo (section 11). |
 
-## 11. Opérateur de serveur
+## 13. Opérateur de serveur
 
 - Le mod doit être installé sur le **serveur et sur chaque client**.
 - La configuration se trouve dans `world/serverconfig/sovereignfrontier-server.toml`. Elle est
   rechargée à chaud. Les clés principales : `startingBalance`, `claimBaseCost`, `maxMembers`,
-  `incomeIntervalTicks`, `treasuryReach`. La section `[energy]` règle les machines et le réacteur.
+  `incomeIntervalTicks`, `treasuryReach`. La section `[energy]` règle les machines et le réacteur, et la section `[war]` règle la guerre, les traités et les
+  missiles (section 10 et 11). Pour un essai rapide, `preparationHours` descend à 1 (minimum) et `killsToWin` à 5.
 - Pour tester rapidement, en opérateur :
   - `/sfadmin money give <joueur> <montant>` : crédite un joueur.
   - `/sfadmin treasury <nation> <montant>` : ajoute à la trésorerie.
   - `/sfadmin research <nation> complete <palier>` : termine un palier (`Tab` complète les noms).
   - `/sfadmin bypass` : contourne la protection du territoire. Le mode s'éteint à la déconnexion.
+  - `/sfadmin war end <nation> <nation>` : termine une guerre en cours entre deux nations, sans score.
 - Les données sont dans le dossier du monde. Sauvegardez-le avant une mise à jour.
 
-## 12. Questions fréquentes
+## 14. Questions fréquentes
 
 - **« Recette verrouillée : recherche … requise »** : la nation n'a pas encore terminé le palier
   nommé dans le message. Consultez `/research info <palier>`.
@@ -190,9 +230,16 @@ Paliers qui débloquent les blocs ci-dessus : `industrie_1` (station), `industri
   les membres de la nation propriétaire, selon leurs permissions, peuvent agir sur ce chunk. Pour construire, rejoignez la
   nation ou revendiquez une parcelle libre.
 
-## 13. Limites connues
+- **« Une trêve est en vigueur avec … »** : la guerre vient de se terminer. Aucune déclaration n'est possible avant la fin de
+  la trêve (`/nation war status` indique l'échéance).
+- **« Votre rang ne peut pas tirer de missile. »** : seul un rang doté de la permission « Tirer un missile » charge ou
+  tire (Chef par défaut).
+- **« Cible hors guerre … »** : un missile ne vise que le territoire d'une nation avec laquelle vous êtes en guerre.
 
-- Les défenses anti-PNJ, les missiles, le PvP par les armes et les donjons planétaires arrivent en J7 et après.
+## 15. Limites connues
+
+- Les défenses anti-PNJ, les nations PNJ, les armes à feu contre les joueurs, la prise de territoire après guerre et les
+  donjons planétaires ne sont pas livrés au J7.
 - Un Trésor posé **avant** cette version n'est pas enregistré comme cœur : sa parcelle peut
   encore être abandonnée.
 - Un crash survenant entre deux écritures peut perdre un transfert d'argent entre un portefeuille
