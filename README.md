@@ -11,7 +11,7 @@ structures sont générées par script, tous les noms sont originaux.
 > recherche de 65 paliers, onglet Recherche) ; **J3 livré et validé en jeu** (énergie, machines,
 > réacteur, Station d'ingénierie) ; **J4 livré et validé en jeu** (terminal bancaire, `/daily` et
 > caisses, avant-postes marchands, contrats, entreprises). **J5 validé en jeu** (`docs/recette/J5.md`) :
-> dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid. **J6 livré, à valider en jeu**
+> dimensions Lune, Mars et planète glacée, fusée, carburant, oxygène et froid. **J6 livré et validé en jeu**
 > (`docs/recette/J6.md`) : armes à feu, munitions, armures balistiques, donjon à clé et gardien, caisse militaire,
 > contrats de palier 3.
 > Les jalons suivants attendent la validation en jeu du précédent.
@@ -48,7 +48,7 @@ structures sont générées par script, tous les noms sont originaux.
 | J3 | Énergie, câbles, générateurs, réacteur, Station d'ingénierie, forage de gaz (syst. 3) | ✅ livré, validé en jeu |
 | J4 | Économie PNJ, entreprises, contrats (syst. 5), `/daily` et caisses (syst. 10) | ✅ livré et validé en jeu |
 | J5 | Dimensions Lune / Mars / planète glacée, fusée, carburant, oxygène et froid (syst. 4) | ✅ livré et validé en jeu |
-| J6 | Donjons, boss, armement (syst. 6) | ✅ livré, à valider en jeu |
+| J6 | Donjons, boss, armement (syst. 6) | ✅ livré et validé en jeu |
 | J7 | Diplomatie, guerre, silo à missiles, nations PNJ (syst. 8) | — |
 | J8 | Grade Souverain : `/home`, `/tpa`, `/back`, `/fly`… et leurs restrictions de guerre (syst. 9) | — |
 
