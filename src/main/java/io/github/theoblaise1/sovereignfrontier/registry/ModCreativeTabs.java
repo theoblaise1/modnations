@@ -76,6 +76,9 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.HEALING_KIT.get());
                         output.accept(ModItems.DUNGEON_KEY.get());
                         output.accept(ModItems.DUNGEON_ALTAR.get());
+                        output.accept(ModItems.SILO_MISSILES.get());
+                        output.accept(ModItems.MISSILE_GUIDE.get());
+                        output.accept(ModItems.OGIVE_LOURDE.get());
                     })
                     .build());
 

@@ -14,6 +14,7 @@ import io.github.theoblaise1.sovereignfrontier.outpost.ComptoirBlock;
 import io.github.theoblaise1.sovereignfrontier.reward.CrateBlock;
 import io.github.theoblaise1.sovereignfrontier.reward.CrateKind;
 import io.github.theoblaise1.sovereignfrontier.rocket.RocketBlock;
+import io.github.theoblaise1.sovereignfrontier.war.SiloBlock;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DropExperienceBlock;
@@ -109,6 +110,12 @@ public final class ModBlocks {
     /** Autel du donjon à clé : dureté 3, résistance 1 200, bloc plein (logique dans {@code AltarBlock}, WP1). */
     public static final DeferredBlock<AltarBlock> DUNGEON_ALTAR = BLOCKS.registerBlock("autel_donjon", AltarBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(3.0F, 1200.0F).sound(SoundType.STONE));
+
+    // ------------------------------------------------------------------ J7 : guerre et missiles (sans modèle : lot graphique)
+
+    /** Silo à missiles : dureté 3, résistance 1 200, bloc plein (logique dans {@code SiloBlock}, WP3). */
+    public static final DeferredBlock<SiloBlock> SILO_MISSILES = BLOCKS.registerBlock("silo_missiles", SiloBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 1200.0F).sound(SoundType.METAL));
 
     private static BlockBehaviour.Properties ore(MapColor color, SoundType sound) {
         return BlockBehaviour.Properties.of().mapColor(color).instrument(NoteBlockInstrument.BASEDRUM).strength(3.0F, 3.0F)

@@ -132,6 +132,19 @@ public final class ModItems {
     /** Objet-bloc de l'autel de donjon ({@link ModBlocks#DUNGEON_ALTAR}). */
     public static final DeferredItem<BlockItem> DUNGEON_ALTAR = ITEMS.registerSimpleBlockItem(ModBlocks.DUNGEON_ALTAR);
 
+    // J7 : guerre et missiles (sans modèle ni texture : lot graphique)
+
+    /** Objet-bloc du silo à missiles ({@link ModBlocks#SILO_MISSILES}). */
+    public static final DeferredItem<BlockItem> SILO_MISSILES = ITEMS.registerSimpleBlockItem(ModBlocks.SILO_MISSILES);
+
+    /** Missile guidé (pile de 4), consommé par un tir au silo (WP3). Hors #restreint (décision D7, à valider). */
+    public static final DeferredItem<Item> MISSILE_GUIDE = ITEMS.registerSimpleItem("missile_guide",
+            new Item.Properties().stacksTo(4).rarity(Rarity.UNCOMMON));
+
+    /** Ogive lourde (pile de 2), consommée avec un missile guidé à chaque tir (WP3). Hors #restreint (D7). */
+    public static final DeferredItem<Item> OGIVE_LOURDE = ITEMS.registerSimpleItem("ogive_lourde",
+            new Item.Properties().stacksTo(2).rarity(Rarity.RARE));
+
     private ModItems() {
     }
 }

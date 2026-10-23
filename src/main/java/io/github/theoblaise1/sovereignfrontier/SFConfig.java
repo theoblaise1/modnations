@@ -132,6 +132,24 @@ public final class SFConfig {
     /** Délai (heures réelles) avant qu'un autel de donjon accepte une nouvelle clé après la mort de son gardien. */
     public static final ModConfigSpec.IntValue ALTAR_COOLDOWN_HOURS;
 
+    // Guerre, traités et missiles (J7) : durées en heures réelles (timestamps epoch persistés).
+    /** Préparation entre une déclaration de guerre et l'ouverture des hostilités (annulable jusqu'à son terme). */
+    public static final ModConfigSpec.IntValue PREPARATION_HOURS;
+    /** Durée maximale d'une guerre ; à son terme, le plus grand score gagne. */
+    public static final ModConfigSpec.IntValue WAR_HOURS;
+    /** Trêve après la fin d'une guerre : pas de combat ni de nouvelle déclaration contre le même adversaire. */
+    public static final ModConfigSpec.IntValue TRUCE_HOURS;
+    /** Validité d'une proposition de traité de paix. */
+    public static final ModConfigSpec.IntValue TREATY_HOURS;
+    /** Points (joueurs ennemis tués) qui donnent la victoire immédiate. */
+    public static final ModConfigSpec.IntValue KILLS_TO_WIN;
+    /** Membres minimaux pour déclarer une guerre et pour être déclaré. */
+    public static final ModConfigSpec.IntValue MIN_MEMBERS_TO_DECLARE;
+    /** Recharge d'un silo après chaque tir. */
+    public static final ModConfigSpec.IntValue MISSILE_COOLDOWN_HOURS;
+    /** Délai entre le tir d'un missile et son impact (secondes réelles, liste persistée). */
+    public static final ModConfigSpec.IntValue MISSILE_DELAY_SECONDS;
+
     /** Barème par défaut du terminal (cr par heure active ; la dernière valeur se répète). */
     private static final List<Double> DEFAULT_TERMINAL_RATES = List.of(240.0D, 180.0D, 135.0D, 100.0D, 75.0D, 55.0D, 40.0D,
             30.0D, 20.0D);
@@ -359,6 +377,25 @@ public final class SFConfig {
         b.push("dungeon");
         ALTAR_COOLDOWN_HOURS = b.comment("Délai de recharge (heures réelles) d'un autel de donjon après la mort de son gardien.")
                 .defineInRange("altarCooldownHours", 6, 0, 168);
+        b.pop();
+
+        b.push("war");
+        PREPARATION_HOURS = b.comment("Délai (heures réelles) entre une déclaration de guerre et l'ouverture des hostilités ; annulable pendant ce délai.")
+                .defineInRange("preparationHours", 24, 1, 168);
+        WAR_HOURS = b.comment("Durée maximale (heures réelles) d'une guerre : à son terme, le plus grand score gagne (égalité : nul).")
+                .defineInRange("warHours", 168, 24, 720);
+        TRUCE_HOURS = b.comment("Trêve (heures réelles) après la fin d'une guerre : pas de combat ni de nouvelle déclaration contre le même adversaire.")
+                .defineInRange("truceHours", 48, 0, 720);
+        TREATY_HOURS = b.comment("Validité (heures réelles) d'une proposition de traité de paix.")
+                .defineInRange("treatyHours", 24, 1, 168);
+        KILLS_TO_WIN = b.comment("Joueurs ennemis tués pendant une guerre qui donnent la victoire immédiate à la nation.")
+                .defineInRange("killsToWin", 30, 5, 500);
+        MIN_MEMBERS_TO_DECLARE = b.comment("Membres minimaux d'une nation pour déclarer une guerre et pour être déclarée.")
+                .defineInRange("minMembersToDeclare", 3, 1, 10);
+        MISSILE_COOLDOWN_HOURS = b.comment("Recharge (heures réelles) d'un silo après chaque tir.")
+                .defineInRange("missileCooldownHours", 6, 0, 168);
+        MISSILE_DELAY_SECONDS = b.comment("Délai (secondes réelles) entre le tir d'un missile et son impact.")
+                .defineInRange("missileDelaySeconds", 30, 5, 300);
         b.pop();
 
         SPEC = b.build();

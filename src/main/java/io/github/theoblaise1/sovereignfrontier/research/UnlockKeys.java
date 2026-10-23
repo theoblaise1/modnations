@@ -68,6 +68,16 @@ public final class UnlockKeys {
     /** {@code militaire_9} : plastron balistique lourd. */
     public static final String ARMOR_BALLISTIC_HEAVY = "armor.ballistic_heavy";
 
+    // Clés J7 (silo, missiles, diplomatie) : consommées par les lots J7 (WP1 à WP3, docs/conception/J7.md §2.3).
+    /** {@code militaire_13} : silo à missiles (bloc {@code silo_missiles}). */
+    public static final String MISSILE_SILO = "missile.silo";
+    /** {@code militaire_14} : missile guidé (objet {@code missile_guide}). */
+    public static final String MISSILE_GUIDED = "missile.guided";
+    /** {@code militaire_16} : ogive lourde (objet {@code ogive_lourde}). */
+    public static final String MISSILE_HEAVY_WARHEAD = "missile.heavy_warhead";
+    /** {@code civil_12} : ambassade, requise pour proposer un traité de paix. */
+    public static final String DIPLOMACY_EMBASSY = "diplomacy.embassy";
+
     /** Les 16 clés câblées par le J5 (15 du catalogue J5, plus {@code refinery}). */
     public static final List<String> J5 = List.of(STATION_AEROSPACE, ROCKET, REFINERY, ROCKET_FUEL, DIMENSION_LUNE,
             OXYGEN_SYSTEMS, MINING_LUNAR, DIMENSION_MARS, PROPULSION_ADVANCED, MINING_MARTIAN, ROCKET_UPGRADE_MODULE,

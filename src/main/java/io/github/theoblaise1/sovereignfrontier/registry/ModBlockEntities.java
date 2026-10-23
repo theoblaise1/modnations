@@ -5,6 +5,7 @@ import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.outpost.ComptoirBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.reward.CrateBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.rocket.RocketBlockEntity;
+import io.github.theoblaise1.sovereignfrontier.war.SiloBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -40,6 +41,12 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("caisse", () -> BlockEntityType.Builder.of(CrateBlockEntity::new,
                     ModBlocks.CRATE_COMMUNE.get(), ModBlocks.CRATE_MILITAIRE.get(), ModBlocks.CRATE_INDUSTRIELLE.get(),
                     ModBlocks.CRATE_SPATIALE.get()).build(null));
+
+    /** Silo à missiles (J7) : propriétaire et file de tir ; le cooldown reste dans {@code WarData} (WP3). */
+    @SuppressWarnings("DataFlowIssue")
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SiloBlockEntity>> SILO_MISSILES =
+            BLOCK_ENTITIES.register("silo_missiles", () -> BlockEntityType.Builder.of(SiloBlockEntity::new,
+                    ModBlocks.SILO_MISSILES.get()).build(null));
 
     private ModBlockEntities() {
     }
