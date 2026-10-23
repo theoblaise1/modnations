@@ -59,6 +59,9 @@ public final class Nation {
     private long treasury;
     private final Map<ResourceKey<Level>, LongOpenHashSet> claims = new HashMap<>();
     private int claimCount;
+    /** Chunk de fondation (capitale), ou {@code null} pour une nation fondée avant J7 (aucune capitale connue). */
+    @Nullable
+    private CapitalChunk capital;
     private final Map<UUID, Long> invites = new HashMap<>();
     private final ArrayDeque<LogEntry> log = new ArrayDeque<>();
     private final LinkedHashMap<GlobalPos, BuildingType> buildings = new LinkedHashMap<>();
@@ -290,6 +293,18 @@ public final class Nation {
         }
     }
 
+    /** Chunk de capitale (fondation), ou {@code null} si la nation a été fondée avant J7. */
+    @Nullable
+    public CapitalChunk capital() {
+        return capital;
+    }
+
+    /** Fixe le chunk de capitale, à la fondation uniquement (appelé par {@link NationManager#create}). */
+    void setCapital(CapitalChunk chunk) {
+        capital = chunk;
+        markDirty();
+    }
+
     // ------------------------------------------------------------------ bâtiments civils
 
     /** Nombre de bâtiments civils validés (1 habitant chacun, avant bonus). */
@@ -503,6 +518,9 @@ public final class Nation {
             coreList.add(c);
         }
         tag.put("cores", coreList);
+        if (capital != null) {
+            tag.put("capital", capital.save());
+        }
 
         CompoundTag chestTag = new CompoundTag();
         ContainerHelper.saveAllItems(chestTag, chest.getItems(), registries);
@@ -591,6 +609,10 @@ public final class Nation {
             }
         }
 
+        // Absent des sauvegardes antérieures à J7 : la nation n'a alors pas de capitale connue (aucune protection).
+        if (tag.contains("capital", Tag.TAG_COMPOUND)) {
+            n.capital = CapitalChunk.load(tag.getCompound("capital"));
+        }
         ContainerHelper.loadAllItems(tag.getCompound("chest"), n.chest.getItems(), registries);
         n.research = NationResearch.load(tag.getCompound("research"));
         n.contracts = NationContracts.load(tag.getCompound("contracts"));

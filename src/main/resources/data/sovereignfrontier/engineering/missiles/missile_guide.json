@@ -1,0 +1,10 @@
+{
+  "tab": "armement",
+  "unlock": "missile.guided",
+  "ingredients": [
+    {"item": "minecraft:tnt", "count": 4},
+    {"item": "minecraft:gunpowder", "count": 2},
+    {"item": "minecraft:redstone", "count": 1}
+  ],
+  "result": {"item": "sovereignfrontier:missile_guide", "count": 1}
+}

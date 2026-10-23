@@ -15,6 +15,8 @@ import io.github.theoblaise1.sovereignfrontier.network.NationSync;
 import io.github.theoblaise1.sovereignfrontier.network.NationTab;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
+import io.github.theoblaise1.sovereignfrontier.war.WarCommands;
+import io.github.theoblaise1.sovereignfrontier.war.missile.MissileCommands;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -97,7 +99,10 @@ public final class NationCommand {
                 .then(Commands.literal("gui").executes(ctx -> {
                     NationSync.openScreen(ctx.getSource().getPlayerOrException(), NationTab.OVERVIEW);
                     return 1;
-                })));
+                }))
+                .then(WarCommands.war())
+                .then(WarCommands.treaty())
+                .then(MissileCommands.build()));
     }
 
     private static int help(CommandSourceStack source) {

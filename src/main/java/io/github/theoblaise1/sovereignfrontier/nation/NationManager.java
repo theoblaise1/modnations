@@ -179,6 +179,7 @@ public final class NationManager {
         data.claim(nation, dimension, capital.toLong());
         NationSync.scheduleTerritoryRefresh(server, dimension, capital.toLong());
         nation.log("create", player.getGameProfile().getName(), name);
+        nation.setCapital(new CapitalChunk(dimension, capital.x, capital.z));
         nation.log("capital", capital.x + ", " + capital.z, dimension.location().toString());
         server.getPlayerList().broadcastSystemMessage(Msg.info("nation.broadcast.created", player.getDisplayName(), name), false);
         changed(nation);

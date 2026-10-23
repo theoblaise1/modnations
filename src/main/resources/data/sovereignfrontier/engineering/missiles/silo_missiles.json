@@ -1,0 +1,10 @@
+{
+  "tab": "armement",
+  "unlock": "missile.silo",
+  "ingredients": [
+    {"item": "sovereignfrontier:blindage_national", "count": 8},
+    {"item": "minecraft:redstone_block", "count": 4},
+    {"item": "minecraft:obsidian", "count": 2}
+  ],
+  "result": {"item": "sovereignfrontier:silo_missiles", "count": 1}
+}

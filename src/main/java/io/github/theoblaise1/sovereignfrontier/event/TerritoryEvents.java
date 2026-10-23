@@ -9,6 +9,7 @@ import io.github.theoblaise1.sovereignfrontier.nation.NationData;
 import io.github.theoblaise1.sovereignfrontier.nation.NationPermission;
 import io.github.theoblaise1.sovereignfrontier.research.ResearchStat;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
+import io.github.theoblaise1.sovereignfrontier.war.WarRules;
 import net.minecraft.core.BlockPos;
 import io.github.theoblaise1.sovereignfrontier.machine.MachineBlockEntity;
 import io.github.theoblaise1.sovereignfrontier.nation.TerritoryRules;
@@ -594,16 +595,14 @@ public final class TerritoryEvents {
 
     // ------------------------------------------------------------------ combat
 
-    /** Tir ami désactivé entre membres d'une même nation. */
+    /** PvP entre joueurs : tir ami interdit, et combat entre nations seulement en guerre ({@link WarRules#mayHurt}). */
     @SubscribeEvent
     public static void onIncomingDamage(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer victim)
                 || !(event.getSource().getEntity() instanceof ServerPlayer attacker) || attacker == victim) {
             return;
         }
-        NationData data = NationData.get(victim.server);
-        Nation nation = data.nationOf(victim.getUUID());
-        if (nation != null && nation == data.nationOf(attacker.getUUID())) {
+        if (!WarRules.mayHurt(victim.server, attacker, victim)) {
             event.setCanceled(true);
         }
     }

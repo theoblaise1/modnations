@@ -1,0 +1,9 @@
+{
+  "tab": "armement",
+  "unlock": "missile.heavy_warhead",
+  "ingredients": [
+    {"item": "minecraft:tnt", "count": 8},
+    {"item": "minecraft:netherite_ingot", "count": 2}
+  ],
+  "result": {"item": "sovereignfrontier:ogive_lourde", "count": 1}
+}

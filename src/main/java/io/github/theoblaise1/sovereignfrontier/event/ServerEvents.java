@@ -24,6 +24,7 @@ import io.github.theoblaise1.sovereignfrontier.registry.ModAttachments;
 import io.github.theoblaise1.sovereignfrontier.util.Money;
 import io.github.theoblaise1.sovereignfrontier.util.Msg;
 import io.github.theoblaise1.sovereignfrontier.util.TimeUtil;
+import io.github.theoblaise1.sovereignfrontier.war.WarTicker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -59,6 +60,7 @@ public final class ServerEvents {
         NationManager.tickIncome(event.getServer());
         CivilBuildings.tickRevalidation(event.getServer());
         ResearchManager.tick(event.getServer());
+        WarTicker.tick(event.getServer());
         // En dernier : regroupe les rafraîchissements planifiés pendant ce tick.
         NationSync.tick(event.getServer());
     }
